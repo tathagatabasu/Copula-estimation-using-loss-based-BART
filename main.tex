@@ -1,0 +1,59 @@
+\documentclass{amsart}
+\usepackage[foot]{amsaddr} % put addresses on first page
+
+\usepackage{geometry}
+\usepackage{graphicx,psfrag,epsf}
+\usepackage{enumerate}
+\usepackage{enumitem}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\allowdisplaybreaks
+\usepackage{longtable}
+\usepackage{bigints}
+\usepackage{siunitx}
+\usepackage{amsthm}
+\usepackage{soul}
+\usepackage{color}
+
+\usepackage{hyperref}
+\usepackage[capitalise]{cleveref}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+%
+
+\usepackage[numbers]{natbib}
+\usepackage{url} % not crucial - just used below for the URL 
+\usepackage{doi}
+
+\title{Copula estimation using loss-based Bayesian Additive Regression Trees}
+\author{Tathagata Basu}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\section{Model}
+Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable 
+that might affect the relationship between $Y_1$ and $Y_2$. The joint conditional distribution 
+of $Y_1$ and $Y_2$ is given by:
+\begin{equation}
+    H_{X}(y_1,y_2\mid x; \theta, \alpha_1, \alpha_2) = C\{F_{Y_1\mid X}(y_1\mid x;\alpha_1),F_{Y_2\mid X}(y_2\mid x; \alpha_2)\mid x;\theta\}; \quad \forall (y_1,y_2) \in \mathbb{R}^2.
+\end{equation}
+This gives us the following
+\begin{equation}
+    h_{X}(y_1,y_2\mid x; \theta, \alpha_1, \alpha_2) = f_{Y_1\mid X}(y_1\mid x;\alpha_1)f_{Y_2\mid X}(y_2\mid x; \alpha_2)c(u_1,u_2\mid x;\theta, \alpha_1, \alpha_2),
+\end{equation}
+where
+\begin{equation}\label{eq:emp_dist:Y}
+    u_k = F_{Y_k\mid X}(y_k\mid x; \alpha_k)\approx \frac{1}{n}\sum_{i=1}^n \mathbb{I}(Y_{ki}\le y_k)
+\end{equation}
+and $c(u_1,u_2\mid x;\theta, \alpha_1, \alpha_2)$ is conditional copula density function.
+
+
+\end{document}
