@@ -2,6 +2,7 @@
 
 #install.packages(c("copula", "MASS", "coda"))
 source('code/import_functions.R')
+source('mclapply.R')
 library(data.tree)
 library(ggplot2)
 library(ggpubr)
@@ -15,12 +16,12 @@ set.seed(123)
 
 # generate predictor
 n <- 500
-x_pred <- rnorm(n)
+x_pred <- matrix(rnorm(2*n), ncol = 2)
 
 # Define true copula parameter
-calib_true <- 1+2*x_pred^2
+calib_true <- 1+x_pred %*% c(.2,1)
 
-rho_true <- 2 /(abs(calib_true)+1)-1
+rho_true <- (exp(2*calib_true)-1)/ (exp(2*calib_true)+1)
 
 # Define the Gaussian copula
 cop <- sapply(rho_true, function(x)normalCopula(param = x, dim = 2))
@@ -40,26 +41,32 @@ ecdf_y2 = ecdf(y2)
 pseudo_u1 = sapply(y1, ecdf_y1)
 pseudo_u2 = sapply(y2, ecdf_y2)
 
-triweight_ker <- function(u){
-  ifelse(abs(u)<=1, 35/32*(1-u^2)^3, 0)
+triweight <- function(u){
+  35/32*(1-u^2)^3 *(abs(u)<1)
 }
 
-NW_ker_reg <- function(x, obs_x, band = 0.5){
-  factors_NW <- sapply(obs_x, function(y)triweight_ker((y-x)/band))
+gaussweight <- function(x){
+  exp(-sum(x^2)/2)/(sqrt(2*pi))^length(x)
+}
+
+NW_weights <- function(x, x_obs, band = 2.1 * (1/nrow(x_obs))^.2){
+  wt <- apply(x_obs, 1, function(t)gaussweight((x-t)/band))
   
-  return(factors_NW/sum(factors_NW))
+  return(wt/sum(wt))
 }
 
-rho.cond=function(uu,x.vec, xgrid)
+rho.cond=function(uu, x, x_obs)
 {
   uu1=uu[,1]
   uu2=uu[,2]
   estim=c()
   
-  for(count in 1:length(xgrid))
+  n <- nrow(uu)
+  
+  for(count in 1:n)
   {
     # Weights
-    ww=NW_ker_reg(x.vec,xgrid[count])
+    ww=NW
     
     # Compute uu.hat
     uu1.hat=c()
@@ -71,90 +78,35 @@ rho.cond=function(uu,x.vec, xgrid)
       uu2.hat[i]=sum(ww*(uu2<=uu2[i]))
     }
     
-    estim[count]=12*sum(ww*(1-uu1.hat)*(1-uu2.hat))-3
+    estim[count]=12*sum(ww*(1-uu1.hat[count])*(1-uu2.hat[count]))-3
   }
   
   # Return
   return(estim)
 }
 
-sample_rho = rho.cond(cbind(y1,y2), x_pred, x_pred)
 
-# response
+sample_rho = rho.cond(cbind(y1,y2))
 
-theta_link_obs = 1/2*log((1+sample_rho)/(1-sample_rho))
+plot(rho_true, sample_rho)
 
+######################
 
-# Store in a dataframe
-data <- data.frame(d){
-  
-}
+X_pred <- x_pred
 
-# define likelihood function
-# import data
-bcancer.df <- read.table(file = 'data/breast_cancer_wisconsin_original/breast-cancer-wisconsin.data',
-                         sep = ',')
-# description
-#1. Sample code number            id number
-#2. Clump Thickness               1 - 10
-#3. Uniformity of Cell Size       1 - 10
-#4. Uniformity of Cell Shape      1 - 10
-#5. Marginal Adhesion             1 - 10
-#6. Single Epithelial Cell Size   1 - 10
-#7. Bare Nuclei                   1 - 10
-#8. Bland Chromatin               1 - 10
-#9. Normal Nucleoli               1 - 10
-#10. Mitoses                       1 - 10
-#11. Class:                        (2 for benign, 4 for malignant)
-
-colnames(bcancer.df) <- c('ID', 
-                          'clump.thick', 
-                          'cell.size', 
-                          'cell.shape',
-                          'marg.adhesion',
-                          'se.cell.size',
-                          'bar.nuclei',
-                          'bland.chromatin',
-                          'normal.nucleoli',
-                          'mitosis',
-                          'cancer.class')
-
-head(bcancer.df)
-# create predictor df 
-X_pred <- bcancer.df[,c('clump.thick', 
-                        'cell.size', 
-                        'cell.shape',
-                        'marg.adhesion',
-                        'se.cell.size',
-                        'bar.nuclei',
-                        'bland.chromatin',
-                        'normal.nucleoli',
-                        'mitosis')]
 summary(X_pred)
-# trasnform in numeric bar.nuclei
-X_pred$bar.nuclei <- as.numeric(X_pred$bar.nuclei)
-# remove NA 
-idx.na <- is.na(X_pred$bar.nuclei)
-X_pred <- X_pred[!idx.na,]
-rownames(X_pred) <- 1:nrow(X_pred)
-# create variable 1 if malignant and 0 if benign
-Y_mal <- bcancer.df$cancer.class == 4
-Y_mal <- Y_mal[!idx.na]
 
-# create lists representing different priors - 3 omega values x 2 beta values 
-lb.prior.small.hb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.small, 1.5))
-lb.prior.small.lb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.small, 0.5))
-lb.prior.medium.hb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.medium, 1.5))
-lb.prior.medium.lb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.medium, 0.5))
-lb.prior.large.hb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.large, 1.5))
-lb.prior.large.lb <- list(fun = joint.prior.new.tree, param = c(omeg.chip.large, 0.5))
+Y_mal <- sample_rho
 
-
+############################################################
+#
 # normalise predictors 
-X_pred.norm <- as.data.frame(apply(X_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
+X_pred.norm <- as.data.frame((X_pred - min(X_pred))/(max(X_pred) - min(X_pred)))
 X_pred.norm <- as.matrix(X_pred.norm)
 rownames(X_pred.norm) <- 1:nrow(X_pred.norm)
 # calculate correlations
+
+Y_mal <- (Y_mal - max(Y_mal))/(max(Y_mal)-min(Y_mal))
 
 cor(X_pred.norm, Y_mal)
 
@@ -165,92 +117,33 @@ n.chain_par <- 100
 n.iter_par <- 500
 incl.split_par <- FALSE
 cont.unif_par <- TRUE
-moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
+moves.prob_par <- c(0.3, 0.3, 0.3, 0.1)
 
 #############
 ## DEFUALT ##
 #############
 
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.56, 0.62))
-mcmc_lb.def <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                      n.chain = n.chain_par,
-                                      X = X_pred.norm,
-                                      Y = Y_mal,
-                                      alpha.prior = 1,
-                                      beta.prior = 1,
-                                      prior_list = lb.prior.def,
-                                      include.split = incl.split_par,
-                                      cont.unif = cont.unif_par,
-                                      moves.prob = c(0.4, 0.4, 0.1, 0.1))
-
-###########
-## SMALL ##
-###########
-# - Lossbased - beta = 1.5
-mcmc_lb.small.hb <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                           n.chain = n.chain_par,
-                                           X = X_pred.norm,
-                                           Y = Y_mal,
-                                           alpha.prior = 1,
-                                           beta.prior = 1,
-                                           prior_list = lb.prior.small.hb,
-                                           include.split = incl.split_par,
-                                           cont.unif = cont.unif_par,
-                                           moves.prob = c(0.4, 0.4, 0.1, 0.1))
-# - Lossbased - beta = 0.5
-mcmc_lb.small.lb <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                           n.chain = n.chain_par,
-                                           X = X_pred.norm,
-                                           Y = Y_mal,
-                                           alpha.prior = 1,
-                                           beta.prior = 1,
-                                           prior_list = lb.prior.small.lb,
-                                           include.split = incl.split_par,
-                                           cont.unif = cont.unif_par,
-                                           moves.prob = c(0.4, 0.4, 0.1, 0.1))
-
-############
-## MEDIUM ##
-############
-# - Lossbased - beta = 1.5
-mcmc_lb.medium.hb <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                            n.chain = n.chain_par,
-                                            X = X_pred.norm,
-                                            Y = Y_mal,
-                                            alpha.prior = 1,
-                                            beta.prior = 1,
-                                            prior_list = lb.prior.medium.hb,
-                                            include.split = incl.split_par,
-                                            cont.unif = cont.unif_par,
-                                            moves.prob = c(0.4, 0.4, 0.1, 0.1))
-# - Lossbased - beta = 0.5
-mcmc_lb.medium.lb <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                            n.chain = n.chain_par,
-                                            X = X_pred.norm,
-                                            Y = Y_mal,
-                                            alpha.prior = 1,
-                                            beta.prior = 1,
-                                            include.split = incl.split_par,
-                                            cont.unif = cont.unif_par,
-                                            prior_list = lb.prior.medium.lb,
-                                            moves.prob = c(0.4, 0.4, 0.1, 0.1))
+mcmc_lb.def <- MCMC_known_var(n.iter = n.iter_par,
+                                         X = X_pred.norm,
+                                         Y = Y_mal,
+                                         Y.var = 1, 
+                                                     mu.prior.mean = 0, 
+                                         mu.prior.var = var(Y_mal), 
+                                                     prior_list = lb.prior.def, 
+                                                     moves.prob = moves.prob_par, 
+                                         starting.tree = NULL,
+                                                     cont.unif = cont.unif_par,
+                                                     include.split = incl.split_par)
 ####################
 ## DEFAULT MODELS ##
 ####################
 
 model.list.def <- list(
-  mcmc_lb.def,
-mcmc_lb.medium.lb,
-mcmc_lb.medium.hb,
-mcmc_lb.small.lb,
-mcmc_lb.small.hb)
+  mcmc_lb.def)
 
 names(model.list.def) <- c(
-  'LB - default',
-  'LB - o = 0.30, g = 0.5',
-'LB - o = 0.30, g = 1.5',
-'LB - o = 0.42, g = 0.5',
-'LB - o = 0.42, g = 1.5')
+  'LB - default')
 
 
 # extract depth, number of terminal nodes, missing rate and loglik of all the trees
@@ -262,6 +155,7 @@ nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
                              born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par)
 
 
+ggplot(nterm.df)
 
 
 miss.rate.df <- apply_fun_models(fun_ = \(x) rapid.miss.rate(tree_top = x, X = X_pred.norm, Y = Y_mal),
@@ -271,7 +165,7 @@ miss.rate.df <- apply_fun_models(fun_ = \(x) rapid.miss.rate(tree_top = x, X = X
                                  sample.pc = n.iter_par)
 
 
-like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_binary(tree_top = x, Y = Y_mal, 
+like.df <- apply_fun_models(fun_ = \(x) cart_log_lik(tree_top = x, Y = Y_mal, 
                                                             X = X_pred.norm), 
                             mcmc.list = model.list.def, 
                             born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par)
