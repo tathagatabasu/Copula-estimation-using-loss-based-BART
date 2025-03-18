@@ -370,8 +370,6 @@ tree_step <- function(move.type, old_tree, X, Y, Y.var, mu.prior.mean, mu.prior.
                                      prior_input_list = prior_list,
                                      cont.unif = cont.unif, include.split = include.split)
     acceptance <- runif(1) <= acc.prob$alpha
-    print(acc$alpha)
-    
   }
   
   if(empty.count > 10){

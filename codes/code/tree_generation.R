@@ -688,8 +688,7 @@ sample.cond.mu <- function(tree_top = NULL,
     Y.at.node <- Y[as.numeric(rownames(obs.at.node))]
   } 
   nobs.at.node <- length(Y.at.node)
-  print(nobs.at.node)
-  Y.mean <- ifelse(nobs.at.node>0,mean(Y.at.node),0)
+  Y.mean <- mean(Y.at.node)
   mu.cond.mean = (Y.var/(Y.var + nobs.at.node*mu.prior.var))*mu.prior.mean + (nobs.at.node*mu.prior.var/(Y.var + nobs.at.node*mu.prior.var))*Y.mean
   mu.cond.var = 1/(1/mu.prior.var + nobs.at.node/Y.var)
   # print(c(mu.cond.mean, mu.cond.var))
