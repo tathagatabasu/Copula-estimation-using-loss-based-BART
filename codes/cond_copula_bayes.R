@@ -16,23 +16,19 @@ set.seed(123)
 
 # generate predictor
 n <- 500
-x_pred <- matrix(runif(2*n, min = -1), ncol = 2)
+x_pred <- matrix(runif(2*n), ncol = 2)
 
 # Define true copula parameter
-calib_true <- x_pred %*% c(.2,1)
+calib_true <- 0.6 * sin(x_pred^2 %*% c(3,5))
 
-rho_true <- (exp(2*calib_true)-1)/ (exp(2*calib_true)+1)
+rho_true <- 2/(abs(calib_true)+1) - 1
 
 # Define the Gaussian copula
-cop <- sapply(rho_true, function(x)normalCopula(param = x, dim = 2))
-
-# Generate uniform data from the copula
-u <- lapply(cop, function(x)rCopula(1, x))
-u <- matrix(unlist(u), ncol = 2, byrow = T)
+cop <- sapply(rho_true, function(x)BiCopSim(1, 1, x))
 
 # Convert to normal marginals
-y1 <- qnorm(u[,1])
-y2 <- qnorm(u[,2])
+y1 <- qnorm(cop[1,])
+y2 <- qnorm(cop[2,])
 
 # empirical cdf function
 ecdf_y1 = ecdf(y1)
@@ -54,8 +50,8 @@ gaussweight <- function(x){
   exp(-sum(x^2)/2)/(sqrt(2*pi))^length(x)
 }
 
-NW_weights <- function(x, x_obs, band = 1.2 * (1/nrow(x_obs))^.2){
-  wt <- apply(x_obs, 1, function(t)gaussweight((x-t)/band))
+NW_weights <- function(x, x_obs, band = 2.3 * (1/nrow(x_obs))^.2){
+  wt <- apply(x_obs, 1, function(t)triweight((x-t)/band))
   
   return(wt/sum(wt))
 }
@@ -87,7 +83,7 @@ rho.cond=function(uu, x, x_obs)
 
 sample_rho = apply(x_pred, 1, function(x)rho.cond(cbind(pseudo_u1,pseudo_u2), x, x_pred))
 
-plot(rho_true, sample_rho)
+plot(rho_true, sin(sample_rho * pi/6))
 
 ######################
 
