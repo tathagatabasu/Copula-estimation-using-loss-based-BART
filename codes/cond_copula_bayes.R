@@ -180,8 +180,6 @@ calib_true_new <- x_new %*% c(.2,1)
 
 rho_true_new <- (exp(2*calib_true_new)-1)/ (exp(2*calib_true_new)+1)
 
-
-
 x_new_norm <- as.data.frame(sapply(1:ncol(x_new), function(i)(x_new[,i] - min(x_pred[,i]))/(max(x_pred[,i])- min(x_pred[,i]))))
 X_new_norm <- as.matrix(x_new_norm)
 rownames(x_new_norm) <- 1:nrow(X_pred.norm)
