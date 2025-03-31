@@ -6,7 +6,9 @@ source('mclapply.R')
 library(data.tree)
 library(ggplot2)
 library(ggpubr)
-library(copula) # VineCopula
+library(CondCopulas)
+library(VineCopula)
+library(ggplot2)
 library(MASS)   # For multivariate normal functions
 library(coda)   # For MCMC diagnostics
 
@@ -16,74 +18,67 @@ set.seed(123)
 
 # generate predictor
 n <- 500
-x_pred <- matrix(runif(2*n), ncol = 2)
+x_pred <- matrix(runif(n), ncol = 1)
 
-# Define true copula parameter
-calib_true <- 0.6 * sin(x_pred^2 %*% c(3,5))
+# Define true kendall's tau
+tau_true <- 0.6 * sin(3*x_pred^2)
 
-rho_true <- 2/(abs(calib_true)+1) - 1
+copFamily12_3 <- 1
 
-# Define the Gaussian copula
-cop <- sapply(rho_true, function(x)BiCopSim(1, 1, x))
+# Simulation of Y1 and Y2
+Y1 <- rep(NA, n)
+Y2 <- rep(NA, n)
 
-# Convert to normal marginals
-y1 <- qnorm(cop[1,])
-y2 <- qnorm(cop[2,])
+for (i in 1:n) {
+  simCopula <- BiCopSim(N=1 , family = copFamily12_3, par = BiCopTau2Par(copFamily12_3 , tau_true[i]))
+  Y1[i] <- qnorm(simCopula[1])
+  Y2[i] <- qnorm(simCopula[2])
+}
 
-# empirical cdf function
-ecdf_y1 = ecdf(y1)
-ecdf_y2 = ecdf(y2)
+plot(Y1, Y2)
 
 ##################################################
-pseudo_u1 = sapply(y1, ecdf_y1)
-pseudo_u2 = sapply(y2, ecdf_y2)
+# empirical cdf function
+ecdf_y1 = ecdf(Y1)
+ecdf_y2 = ecdf(Y2)
+
+pseudo_u1 = sapply(Y1, ecdf_y1)
+pseudo_u2 = sapply(Y2, ecdf_y2)
 
 triweight <- function(u){
   35/32*(1-sum(u^2))^3 *(sum(u^2)<1)
 }
 
-epanechnikov <- function(u){
-  3/4*(1-sum(u^2)) *(sum(u^2)<1)
-}
-
-gaussweight <- function(x){
-  exp(-sum(x^2)/2)/(sqrt(2*pi))^length(x)
-}
-
-NW_weights <- function(x, x_obs, band = 2.3 * (1/nrow(x_obs))^.2){
+NW_weights <- function(x, x_obs, band = 1.5 * (1/nrow(x_obs))^.2){
   wt <- apply(x_obs, 1, function(t)triweight((x-t)/band))
   
   return(wt/sum(wt))
 }
 
-rho.cond=function(uu, x, x_obs)
+tau_cond <- function(y1_obs, y2_obs, x, x_obs)
 {
-  uu1=uu[,1]
-  uu2=uu[,2]
-  estim=c()
-  
-  n <- nrow(uu)
+  n <- length(y1_obs)
   ww <- NW_weights(x, x_obs)
   
-  # Compute uu.hat
-  uu1.hat=c()
-  uu2.hat=c()
+  sum_cop <- 0
   
-  
-  for(i in 1:n)
-  {
-    uu1.hat[i]=sum(ww*(uu1<=uu1[i]))
-    uu2.hat[i]=sum(ww*(uu2<=uu2[i]))
+  for(i in 1:n){
+    for(j in 1:n){
+      sum_cop <- sum_cop + ww[i]*ww[j]* ((y1_obs[i] < y1_obs[j]) & (y2_obs[i] < y2_obs[j]))
+    }
   }
-  estim=12*sum(ww*(1-uu1.hat)*(1-uu2.hat))-3
+  
+  estim <- (4/(1 - sum(ww^2))) * sum_cop - 1
+  
   # Return
   return(estim)
 }
 
+sample_tau <- apply(x_pred, 1, function(x)tau_cond(Y1, Y2, x, x_pred))
 
-sample_rho = apply(x_pred, 1, function(x)rho.cond(cbind(pseudo_u1,pseudo_u2), x, x_pred))
+plot(x_pred, tau_true, col = "blue")
+points(x_pred, sample_tau, col = "red")
 
-plot(rho_true, sin(sample_rho * pi/6))
 
 ######################
 
@@ -91,9 +86,7 @@ X_pred <- x_pred
 
 summary(X_pred)
 
-Y_mal <- 1/2 *log((1+sample_rho)/(1-sample_rho))
-
-plot(calib_true, Y_mal)
+Y_mal <- sample_tau
 
 ############################################################
 #
@@ -103,18 +96,15 @@ X_pred.norm <- as.matrix(X_pred.norm)
 rownames(X_pred.norm) <- 1:nrow(X_pred.norm)
 # calculate correlations
 
-Y_mal <- (Y_mal - max(Y_mal))/(max(Y_mal)-min(Y_mal))
+Y_mal <- (Y_mal - min(Y_mal))/(max(Y_mal)-min(Y_mal))
 
 cor(X_pred.norm, Y_mal)
 
-
-
-
 n.chain_par <- 5
 n.iter_par <- 500
-incl.split_par <- FALSE
+incl.split_par <- TRUE
 cont.unif_par <- TRUE
-moves.prob_par <- c(0.3, 0.3, 0.3, 0.1)
+moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
 
 #############
 ## DEFUALT ##
@@ -174,9 +164,7 @@ hist.depth <- ggplot(depth.df) +
 hist.nl
 hist.depth
 
-x_new <- matrix(runif(2*n, min = -1), ncol = 2)
-
-calib_true_new <- x_new %*% c(.2,1)
+x_new <- matrix(runif(n), ncol = 1)
 
 rho_true_new <- (exp(2*calib_true_new)-1)/ (exp(2*calib_true_new)+1)
 
@@ -184,11 +172,11 @@ x_new_norm <- as.data.frame(sapply(1:ncol(x_new), function(i)(x_new[,i] - min(x_
 X_new_norm <- as.matrix(x_new_norm)
 rownames(x_new_norm) <- 1:nrow(X_pred.norm)
 
+tau_true_new <- 0.6 * sin(3*x_new_norm^2)
 
 pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],x_new_norm))
 
-est_rho_link = rowMeans(pred_cond)
+est_tau = rowMeans(pred_cond)
 
-est_rho = (exp(2*est_rho_link)-1)/ (exp(2*est_rho_link)+1)
-
-plot(est_rho, rho_true_new)
+plot(x_new_norm$V1, as.vector(tau_true_new$V1), col = "red")
+points(x_new_norm$V1, est_tau, col = "blue")
