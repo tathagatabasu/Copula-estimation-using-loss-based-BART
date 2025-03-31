@@ -124,12 +124,24 @@ mcmc_lb.def <- multichain_MCMC_known_var(n.chain = n.chain_par,
                                          starting.tree = NULL,
                                                      cont.unif = cont.unif_par,
                                                      include.split = incl.split_par)
+
+chip.prior.def <- list(fun = chipman_prior_tree, param = c(0.95, 2))
+mcmc_chip.def <- multichain_MCMC_binary(n.iter = n.iter_par,
+                                        n.chain = n.chain_par,
+                                        X = X_pred.norm,
+                                        Y = Y_mal,
+                                        alpha.prior = 1,
+                                        beta.prior = 1,
+                                        prior_list = chip.prior.def,
+                                        include.split = incl.split_par,
+                                        cont.unif = cont.unif_par,
+                                        moves.prob = c(0.4, 0.4, 0.1, 0.1))
 ####################
 ## DEFAULT MODELS ##
 ####################
 
 model.list.def <- list(
-  mcmc_lb.def)
+  chip.prior.def)
 
 names(model.list.def) <- c(
   'LB - default')
@@ -166,17 +178,24 @@ hist.depth
 
 x_new <- matrix(runif(n), ncol = 1)
 
-rho_true_new <- (exp(2*calib_true_new)-1)/ (exp(2*calib_true_new)+1)
-
-x_new_norm <- as.data.frame(sapply(1:ncol(x_new), function(i)(x_new[,i] - min(x_pred[,i]))/(max(x_pred[,i])- min(x_pred[,i]))))
+X_new_norm <- as.data.frame(sapply(1:ncol(x_new), function(i)(x_new[,i] - min(x_pred[,i]))/(max(x_pred[,i])- min(x_pred[,i]))))
 X_new_norm <- as.matrix(x_new_norm)
-rownames(x_new_norm) <- 1:nrow(X_pred.norm)
+rownames(X_new_norm) <- 1:nrow(X_pred.norm)
 
-tau_true_new <- 0.6 * sin(3*x_new_norm^2)
+tau_true_new <- 0.6 * sin(3*X_new_norm^2)
 
-pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],x_new_norm))
+pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],X_new_norm))
 
 est_tau = rowMeans(pred_cond)
 
-plot(x_new_norm$V1, as.vector(tau_true_new$V1), col = "red")
-points(x_new_norm$V1, est_tau, col = "blue")
+plot(X_new_norm, as.vector(tau_true_new), col = "red")
+points(X_new_norm, est_tau_gp, col = "blue")
+
+##################################################################################
+install.packages("GauPro")
+
+library(GauPro)
+
+gp_tau <- GauPro(X = X_pred.norm, Z = sample_tau)
+
+est_tau_gp <- predict(gp_tau, X_new_norm)
