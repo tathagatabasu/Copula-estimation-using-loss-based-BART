@@ -16,7 +16,7 @@ transition.p.change <- function(change_move_list){
   #     prob.split <- 1
   #   } else {
   #     valid.set.extremes <- range(change_move_list$valid.split)
-  #     prob.split <- (1/(valid.set.extremes[2] - valid.set.extremes[1]))  
+  #     prob.split <- (1/(valid.set.extremes[2] - valid.set.extremes[1]))
   #   }
   # }
   # (1/n.int)*(1/length(change_move_list$valid.pred))*prob.split
@@ -30,12 +30,12 @@ transition.p.change.reverse <- function(change_move_list, X, old.tree){
   # x.sel <- get_obs_at_node(change_move_list$node.idx, X, change_move_list$tree)
   # n.left <- change_move_list$n.left
   # n.right <- change_move_list$n.right
-  # valid.pred <- get_set_valid_predictor(X.sel = x.sel, 
+  # valid.pred <- get_set_valid_predictor(X.sel = x.sel,
   #                                       n.term.left = n.left,
   #                                       n.term.right = n.right,
   #                                       obs.per.term = 1)
-  # valid.split <- get_set_valid_split(X.pred = x.sel[,old.pred], 
-  #                                    n.term.left = n.left, 
+  # valid.split <- get_set_valid_split(X.pred = x.sel[,old.pred],
+  #                                    n.term.left = n.left,
   #                                    n.term.right = n.right,
   #                                    obs.per.term = 1)
   # if(is.character(valid.split)){
@@ -46,7 +46,7 @@ transition.p.change.reverse <- function(change_move_list, X, old.tree){
   #     prob.split <- 1
   #   } else {
   #     valid.set.extremes <- range(valid.split)
-  #     prob.split <- (1/(valid.set.extremes[2] - valid.set.extremes[1]))  
+  #     prob.split <- (1/(valid.set.extremes[2] - valid.set.extremes[1]))
   #   }
   # }
   # 
@@ -328,7 +328,6 @@ tree_step <- function(move.type, old_tree, X, Y, Y.var, mu.prior.mean, mu.prior.
                              obs.per.term = obs.per.term,
                              cont.unif = cont.unif)
       cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
-      
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
                                                         tree_top = move.list$tree, X.orig = X)), 0)

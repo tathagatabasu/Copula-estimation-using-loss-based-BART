@@ -152,8 +152,8 @@ get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig){
       # evaluate condition
       cond.sel.idx <- vapply(1:nrow(X.sel), \(x) eval_cond(tree_top$cond, 
                                                            X.sel[x,]), TRUE)
-      X.sel.left <- X.sel[cond.sel.idx,]
-      X.sel.right <- X.sel[!cond.sel.idx,]
+      X.sel.left <- X.sel[cond.sel.idx,, drop = FALSE]
+      X.sel.right <- X.sel[!cond.sel.idx,, drop = FALSE]
       
       node.count.left = node.count + 1
       n.term.left <- get_num_terminal_nodes(tree_top$left)
@@ -166,6 +166,7 @@ get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig){
                                           X = X.sel.left,
                                           tree_top = tree_top$left,
                                           X.orig = X.orig)
+        
         return(X.sel.left.new)
       } else {
         X.sel.right.new <- get_obs_at_node(node.idx = node.idx,
@@ -173,6 +174,7 @@ get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig){
                                            X = X.sel.right,
                                            tree_top = tree_top$right,
                                            X.orig = X.orig)
+        
         return(X.sel.right.new)
       }
       

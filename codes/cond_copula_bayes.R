@@ -18,19 +18,17 @@ set.seed(123)
 
 # generate predictor
 n <- 500
-x_pred <- matrix(runif(n), ncol = 1)
+X_pred <- matrix(runif(n), ncol = 1)
 
 # Define true kendall's tau
-tau_true <- 0.6 * sin(3*x_pred^2)
-
-copFamily12_3 <- 1
+tau_true <- 0.6 * sin(3*X_pred) + 0.3
 
 # Simulation of Y1 and Y2
 Y1 <- rep(NA, n)
 Y2 <- rep(NA, n)
 
 for (i in 1:n) {
-  simCopula <- BiCopSim(N=1 , family = copFamily12_3, par = BiCopTau2Par(copFamily12_3 , tau_true[i]))
+  simCopula <- BiCopSim(N=1 , family = 1, par = BiCopTau2Par(1 , tau_true[i])) # gaussian
   Y1[i] <- qnorm(simCopula[1])
   Y2[i] <- qnorm(simCopula[2])
 }
@@ -49,7 +47,7 @@ triweight <- function(u){
   35/32*(1-sum(u^2))^3 *(sum(u^2)<1)
 }
 
-NW_weights <- function(x, x_obs, band = 1.5 * (1/nrow(x_obs))^.2){
+NW_weights <- function(x, x_obs, band = 1.06 * min(sd(x_obs), IQR(x_obs)/1.34) * (1/nrow(x_obs))^.2){
   wt <- apply(x_obs, 1, function(t)triweight((x-t)/band))
   
   return(wt/sum(wt))
@@ -74,48 +72,48 @@ tau_cond <- function(y1_obs, y2_obs, x, x_obs)
   return(estim)
 }
 
-sample_tau <- apply(x_pred, 1, function(x)tau_cond(Y1, Y2, x, x_pred))
+sample_tau <- apply(X_pred, 1, function(x)tau_cond(pseudo_u1, pseudo_u2, x, X_pred))
 
-plot(x_pred, tau_true, col = "blue")
-points(x_pred, sample_tau, col = "red")
+plot(X_pred, tau_true, col = "blue")
+points(X_pred, sample_tau, col = "red")
 
 
 ######################
-
-X_pred <- x_pred
 
 summary(X_pred)
 
 Y_mal <- sample_tau
 
+
+
 ############################################################
 #
 # normalise predictors 
-X_pred.norm <- as.data.frame(apply(X_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
-X_pred.norm <- as.matrix(X_pred.norm)
-rownames(X_pred.norm) <- 1:nrow(X_pred.norm)
-# calculate correlations
+# X_pred.norm <- as.data.frame(apply(X_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
+# X_pred.norm <- as.matrix(X_pred.norm)
+rownames(X_pred) <- 1:nrow(X_pred)
+# # calculate correlations
+# 
+# Y_mal <- (Y_mal - min(Y_mal))/(max(Y_mal)-min(Y_mal))
 
-Y_mal <- (Y_mal - min(Y_mal))/(max(Y_mal)-min(Y_mal))
-
-cor(X_pred.norm, Y_mal)
+cor(X_pred, Y_mal)
 
 n.chain_par <- 5
 n.iter_par <- 500
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
-moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
+moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
 #############
 ## DEFUALT ##
 #############
 
-lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.56, 0.62))
+lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
 mcmc_lb.def <- multichain_MCMC_known_var(n.chain = n.chain_par,
                                          n.iter = n.iter_par,
-                                         X = X_pred.norm,
+                                         X = X_pred,
                                          Y = Y_mal,
-                                         Y.var = 1, 
+                                         Y.var = 0.1, 
                                          n.cores = 5,
                                                      mu.prior.mean = 0, 
                                          mu.prior.var = var(Y_mal), 
@@ -125,23 +123,14 @@ mcmc_lb.def <- multichain_MCMC_known_var(n.chain = n.chain_par,
                                                      cont.unif = cont.unif_par,
                                                      include.split = incl.split_par)
 
-chip.prior.def <- list(fun = chipman_prior_tree, param = c(0.95, 2))
-mcmc_chip.def <- multichain_MCMC_binary(n.iter = n.iter_par,
-                                        n.chain = n.chain_par,
-                                        X = X_pred.norm,
-                                        Y = Y_mal,
-                                        alpha.prior = 1,
-                                        beta.prior = 1,
-                                        prior_list = chip.prior.def,
-                                        include.split = incl.split_par,
-                                        cont.unif = cont.unif_par,
-                                        moves.prob = c(0.4, 0.4, 0.1, 0.1))
 ####################
 ## DEFAULT MODELS ##
 ####################
 
 model.list.def <- list(
-  chip.prior.def)
+  mcmc_lb.def)
+
+get_tree_plot(mcmc_lb.def[[1]][[1]])
 
 names(model.list.def) <- c(
   'LB - default')
@@ -173,29 +162,74 @@ hist.depth <- ggplot(depth.df) +
   theme_classic() + 
   scale_x_continuous(breaks = seq(0,10,by = 1))
 
+trace.nl <- ggplot(nterm.df) + 
+  geom_vline(xintercept = seq(0,1250,by = 50), 
+             color = 'grey', size = 0.2, alpha=0.75)+
+  geom_line(aes(x, y)) + 
+  facet_wrap(facets = ~panel.name, ncol = 2) + 
+  xlab('Iteration') + 
+  ylab(~n[L]) + 
+  theme_classic() + 
+  scale_x_continuous(breaks = seq(0,1250,by = 50)) + 
+  theme(axis.text.x = element_text(angle = 30))
+
+trace.depth <- ggplot(depth.df) + 
+  geom_vline(xintercept = seq(0,1250,by = 50),
+             color = 'grey', size = 0.2, alpha=0.75)+
+  geom_line(aes(x, y)) +
+  facet_wrap(facets = ~panel.name, ncol = 2) + 
+  xlab('Iteration') + 
+  ylab('Depth') + 
+  theme_classic() + 
+  scale_x_continuous(breaks = seq(0,1250,by = 50)) + 
+  theme(axis.text.x = element_text(angle = 30))
+
 hist.nl
 hist.depth
 
+trace.nl
+trace.depth
+
 x_new <- matrix(runif(n), ncol = 1)
 
-X_new_norm <- as.data.frame(sapply(1:ncol(x_new), function(i)(x_new[,i] - min(x_pred[,i]))/(max(x_pred[,i])- min(x_pred[,i]))))
-X_new_norm <- as.matrix(x_new_norm)
-rownames(X_new_norm) <- 1:nrow(X_pred.norm)
+rownames(x_new) <- 1:nrow(x_new)
 
-tau_true_new <- 0.6 * sin(3*X_new_norm^2)
+tau_true_new <- 0.6 * sin(3*x_new) + 0.3
 
-pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],X_new_norm))
+pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],x_new))
 
 est_tau = rowMeans(pred_cond)
 
-plot(X_new_norm, as.vector(tau_true_new), col = "red")
-points(X_new_norm, est_tau_gp, col = "blue")
+plot(x_new, as.vector(tau_true_new), col = "red")
+points(x_new, est_tau, col = "blue")
 
 ##################################################################################
-install.packages("GauPro")
+# install.packages("GauPro")
 
 library(GauPro)
 
-gp_tau <- GauPro(X = X_pred.norm, Z = sample_tau)
+gp_tau <- GauPro(X = X_pred, Z = sample_tau)
 
-est_tau_gp <- predict(gp_tau, X_new_norm)
+est_tau_gp <- predict(gp_tau, x_new)
+
+plot(x_new, as.vector(tau_true_new), col = "red")
+points(x_new, est_tau_gp, col = "blue")
+
+
+library(rpart)
+
+tree_dat <- data.frame("Y" = Y_mal, "X" = X_pred)
+
+rtree.fit <- rpart(Y ~ X,
+                   data = tree_dat,
+                   method="anova", #for regression tree
+                   control=rpart.control(minsplit=30,cp=0.001))
+plot(rtree.fit, uniform=TRUE, 
+     main="Regression Tree for Kendall's Tau")
+text(rtree.fit, use.n=TRUE, all=TRUE, cex=.8)
+
+test_tree_dat <- data.frame("X" = x_new)
+tau_cart <- predict(rtree.fit, test_tree_dat)
+
+plot(x_new, as.vector(tau_true_new), col = "red")
+points(x_new, tau_cart, col = "blue")
