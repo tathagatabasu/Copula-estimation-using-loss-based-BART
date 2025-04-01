@@ -226,6 +226,7 @@ gen_node_condition <- function(node.idx, tree_top, X,
                                  X = X,
                                  tree_top = tree_top,
                                  X.orig = X)
+  print(obs.at.node)
   subtree.at.node <- get_offsprings(node.idx, tree_top)
   if(for.grow){
     n.term.left <- 1
@@ -685,6 +686,7 @@ sample.cond.mu <- function(tree_top = NULL,
                            Y.at.node = NULL){
   if(is.null(Y.at.node)){
     obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
+    print(obs.at.node)
     Y.at.node <- Y[as.numeric(rownames(obs.at.node))]
   } 
   nobs.at.node <- length(Y.at.node)

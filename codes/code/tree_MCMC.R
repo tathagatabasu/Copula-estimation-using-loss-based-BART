@@ -327,6 +327,7 @@ tree_step <- function(move.type, old_tree, X, Y, Y.var, mu.prior.mean, mu.prior.
                              mu.prior.var = mu.prior.var,
                              obs.per.term = obs.per.term,
                              cont.unif = cont.unif)
+      
       cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
