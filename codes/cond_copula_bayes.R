@@ -8,6 +8,7 @@ library(ggplot2)
 library(ggpubr)
 library(CondCopulas)
 library(VineCopula)
+library(latex2exp)
 library(ggplot2)
 library(MASS)   # For multivariate normal functions
 library(coda)   # For MCMC diagnostics
@@ -18,22 +19,25 @@ set.seed(123)
 
 # generate predictor
 n <- 500
-X_pred <- matrix(runif(n), ncol = 1)
+X_obs <- matrix(runif(n), ncol = 1)
 
 # Define true kendall's tau
-tau_true <- 0.6 * sin(3*X_pred) + 0.3
+tau_true <- 0.6 * sin(3*X_obs) + 0.3
 
 # Simulation of Y1 and Y2
 Y1 <- rep(NA, n)
 Y2 <- rep(NA, n)
 
+Y1_mean = 0.6 * sin(5*X_obs)
+Y2_mean = 0.6 * exp(-0.5*abs(X_obs))
+
 for (i in 1:n) {
-  simCopula <- BiCopSim(N=1 , family = 1, par = BiCopTau2Par(1 , tau_true[i])) # gaussian
-  Y1[i] <- qnorm(simCopula[1])
-  Y2[i] <- qnorm(simCopula[2])
+  simCopula <- BiCopSim(N=1 , family = 3, par = BiCopTau2Par(3 , tau_true[i])) # clayton
+  Y1[i] <- qnorm(simCopula[1], mean = Y1_mean[i])
+  Y2[i] <- qnorm(simCopula[2], mean = Y2_mean[i])
 }
 
-plot(Y1, Y2)
+plot(Y1, Y2, xlab =  TeX('$Y_1$'), ylab = TeX('$Y_2$'))
 
 ##################################################
 # empirical cdf function
@@ -72,31 +76,21 @@ tau_cond <- function(y1_obs, y2_obs, x, x_obs)
   return(estim)
 }
 
-sample_tau <- apply(X_pred, 1, function(x)tau_cond(pseudo_u1, pseudo_u2, x, X_pred))
+sample_tau <- apply(X_obs, 1, function(x)tau_cond(Y1, Y2, x, X_obs))
 
-plot(X_pred, tau_true, col = "blue")
-points(X_pred, sample_tau, col = "red")
+plot(X_obs, tau_true, col = "blue", cex = 0.2)
+points(X_obs, sample_tau, col = "red", cex = 0.2)
 
+############################################################
 
-######################
-
-summary(X_pred)
+# normalise predictors 
+X_obs.norm <- as.data.frame(apply(X_obs, 2, \(x) (x - min(x))/(max(x) - min(x))))
+X_obs.norm <- as.matrix(X_obs.norm)
+rownames(X_obs.norm) <- 1:nrow(X_obs)
 
 Y_mal <- sample_tau
 
-
-
-############################################################
-#
-# normalise predictors 
-# X_pred.norm <- as.data.frame(apply(X_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
-# X_pred.norm <- as.matrix(X_pred.norm)
-rownames(X_pred) <- 1:nrow(X_pred)
-# # calculate correlations
-# 
-# Y_mal <- (Y_mal - min(Y_mal))/(max(Y_mal)-min(Y_mal))
-
-cor(X_pred, Y_mal)
+cor(X_obs.norm, Y_mal)
 
 n.chain_par <- 5
 n.iter_par <- 500
@@ -111,7 +105,7 @@ moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
 mcmc_lb.def <- multichain_MCMC_known_var(n.chain = n.chain_par,
                                          n.iter = n.iter_par,
-                                         X = X_pred,
+                                         X = X_obs,
                                          Y = Y_mal,
                                          Y.var = 0.1, 
                                          n.cores = 5,
@@ -129,8 +123,6 @@ mcmc_lb.def <- multichain_MCMC_known_var(n.chain = n.chain_par,
 
 model.list.def <- list(
   mcmc_lb.def)
-
-get_tree_plot(mcmc_lb.def[[1]][[1]])
 
 names(model.list.def) <- c(
   'LB - default')
@@ -200,15 +192,15 @@ pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get
 
 est_tau = rowMeans(pred_cond)
 
-plot(x_new, as.vector(tau_true_new), col = "red")
-points(x_new, est_tau, col = "blue")
+plot(x_new, as.vector(tau_true_new), col = "red", cex = 0.2)
+points(x_new, est_tau, col = "blue", cex = 0.2)
 
 ##################################################################################
 # install.packages("GauPro")
 
 library(GauPro)
 
-gp_tau <- GauPro(X = X_pred, Z = sample_tau)
+gp_tau <- GauPro(X = X_obs, Z = sample_tau)
 
 est_tau_gp <- predict(gp_tau, x_new)
 
@@ -218,7 +210,7 @@ points(x_new, est_tau_gp, col = "blue")
 
 library(rpart)
 
-tree_dat <- data.frame("Y" = Y_mal, "X" = X_pred)
+tree_dat <- data.frame("Y" = Y_mal, "X" = X_obs)
 
 rtree.fit <- rpart(Y ~ X,
                    data = tree_dat,
