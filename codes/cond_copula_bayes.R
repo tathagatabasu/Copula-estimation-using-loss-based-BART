@@ -198,7 +198,7 @@ x_new <- matrix(runif(n), ncol = 1)
 
 rownames(x_new) <- 1:nrow(x_new)
 
-tau_sample_new <- apply(x_new, 1, function(x)tau_cond(Y1, Y2, x, x_new))
+tau_sample_new <- apply(x_new, 1, function(x)tau_cond(Y1, Y2, x, X_obs))
 
 pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],x_new))
 
@@ -214,7 +214,7 @@ points(x_new, est_tau, col = "blue", cex = 0.2)
 lb.prior.alt <- list(fun = joint.prior.new.tree, param = c(0.01, 0.01))
 mcmc_lb.alt <- multichain_MCMC_known_var(n.chain = n.chain_par,
                                          n.iter = n.iter_par,
-                                         X = X_obs,
+                                         X = X_obs.norm,
                                          Y = Y_mal,
                                          Y.var = 0.1, 
                                          n.cores = 5,
@@ -298,7 +298,7 @@ pred_cond_alt = sapply(1:length(model.list.alt$`LB - alt`$trees), function(i)get
 
 est_tau_alt = rowMeans(pred_cond_alt)
 
-plot(x_new, as.vector(tau_true_new), col = "red", cex = 0.2)
+plot(x_new, tau_sample_new, col = "red", cex = 0.2)
 points(x_new, est_tau, col = "blue", cex = 0.2)
 points(x_new, est_tau_alt, col = "green", cex = 0.2)
 legend(0.4, 0.6, legend = c("true", "lb - def", "lb - alt"), col = c("red", "blue", "green"), lty = rep(1,3), bg = 'transparent', box.lty = 0)
@@ -313,7 +313,7 @@ gp_tau <- GauPro(X = X_obs, Z = sample_tau)
 
 est_tau_gp <- predict(gp_tau, x_new)
 
-plot(x_new, as.vector(tau_true_new), col = "red")
+plot(x_new, as.vector(tau_sample_new), col = "red")
 points(x_new, est_tau_gp, col = "blue")
 
 
@@ -332,5 +332,5 @@ text(rtree.fit, use.n=TRUE, all=TRUE, cex=.8)
 test_tree_dat <- data.frame("X" = x_new)
 tau_cart <- predict(rtree.fit, test_tree_dat)
 
-plot(x_new, as.vector(tau_true_new), col = "red")
+plot(x_new, tau_sample_new, col = "red")
 points(x_new, tau_cart, col = "blue")
