@@ -60,7 +60,7 @@ sigmoid_ker <- function(u){
 }
 
 
-NW_weights <- function(x, x_obs, band = .2 * min(sd(x_obs), IQR(x_obs)/1.34) * (1/nrow(x_obs))^.2){
+NW_weights <- function(x, x_obs, band = .1 * min(sd(x_obs), IQR(x_obs)/1.34) * (1/nrow(x_obs))^.2){
   wt <- apply(x_obs, 1, function(t)sigmoid_ker((x-t)/band))
   
   return(wt/sum(wt))
