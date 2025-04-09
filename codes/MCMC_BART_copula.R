@@ -331,17 +331,19 @@ grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, cont.unif = TRUE, o
     idx.left <- obs.at.node[, new.cond.list$cond$x.idx] %in% new.cond.list$cond$x.val
   }
   idx.right <- !idx.left
+  
+  
   U1.at.left <- U1.at.parent[idx.left]
   U1.at.right <- U1.at.parent[idx.right]
   U2.at.left <- U2.at.parent[idx.left]
   U2.at.right <- U2.at.parent[idx.right]
   term.node.value.left <- sample.cond.mu.copula(U1.at.node = U1.at.left,
                                                 U2.at.node = U2.at.left,
-                                              mu = mu,
+                                              mu = mean(printget_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
                                               sigma = sigma)
   term.node.value.right <- sample.cond.mu.copula(U1.at.node = U1.at.right,
                                                  U2.at.node = U2.at.right,
-                                               mu = mu,
+                                               mu = mean(printget_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
                                                sigma = sigma)
   
   tree_top_grow <- grow_terminal(node.idx = grow.idx, 
@@ -444,23 +446,18 @@ set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma){
 }
 
 gaussian_copula_loglik <- function(rho, u, v) {
-  # Sanity checks
-  if (max(abs(rho)) >= 1) return(-Inf)
-  if (length(u) != length(v)) stop("u and v must be the same length")
-  if (any(u <= 0 | u >= 1 | v <= 0 | v >= 1)) {
-    stop("All values in u and v must be in (0,1)")
-  }
-  
-  # Transform to standard normal scores
-  z <- qnorm(u)
-  w <- qnorm(v)
-  
-  n <- length(u)
-  denom_log <- sum(-0.5 * log(1 - rho^2))
-  quad_term <- -1 / (2 * (1 - rho^2)) * sum(z^2 + w^2 - 2 * rho * z * w)
-  
-  log_likelihood <- denom_log + quad_term
-  return(log_likelihood)
+  z1 <- qnorm(u)
+  z2 <- qnorm(v)
+
+  # Number of observations
+  n <- length(z1)
+
+  # Compute log-likelihood
+  log_det = log(1 - rho^2)
+  quad_form = (z1^2 - 2 * rho * z1 * z2 + z2^2) / (1 - rho^2)
+
+  log_lik = -0.5 * sum(log_det + quad_form)
+  return(log_lik)
 }
 
 # Log-likelihood function to be maximized
@@ -474,4 +471,12 @@ mle_gaussian_copula <- function(u, v) {
   opt <- optimize(f = loglik_fn, interval = c(-0.99, 0.99), 
                   maximum = TRUE, u = u, v = v)
   list(rho_hat = opt$maximum, logLik = opt$objective)
+}
+
+logprior <- function(rho) {
+  return(dunif(rho, -1, 1, log = TRUE))
+}
+
+logposterior <- function(rho, u, v){
+  return (gaussian_copula_loglik(rho, u, v) + logprior(rho))
 }
