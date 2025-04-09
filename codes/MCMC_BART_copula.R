@@ -244,7 +244,7 @@ assign_term_node_values_cond_copula <- function(tree_top, mu, sigma, # check inp
     U1.at.node <- U1[as.numeric(rownames(obs.at.node))]
     U2.at.node <- U2[as.numeric(rownames(obs.at.node))]
     tree_top <- set_term_node_value_cond_copula(node.idx = node.idx, tree_top = tree_top, # check input
-                                                mu = mu,
+                                                mu = mean(get_value_tree(tree_top, obs.at.node)),
                                                 sigma = sigma,
                                                 X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node, 
                                                 U2.at.node = U2.at.node)
@@ -294,15 +294,33 @@ sample.cond.mu.copula <- function(tree_top = NULL,
     obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
     U1.at.node <- U1[as.numeric(rownames(obs.at.node))]
     U2.at.node <- U2[as.numeric(rownames(obs.at.node))]
+    mu = mean(get_value_tree(tree_top, obs.at.node))
   } 
-  nobs.at.node <- length(U1.at.node)
-  rho_hat = mle_gaussian_copula(U1.at.node, U2.at.node)$rho_hat
   
-  rho_trans <- 1/2 * log((1+rho_hat)/(1- rho_hat))
-  mu.cond.mean <- ifelse(nobs.at.node>0, (Y.var/(Y.var + nobs.at.node*sigma^2))*mu + (nobs.at.node*sigma^2/(Y.var + nobs.at.node*sigma^2))*rho_trans, mu)
-  mu.cond.var <- ifelse(nobs.at.node>0, 1/(1/sigma^2 + nobs.at.node/Y.var), sigma^2)
-  rho_trans_post <- rnorm(1, mean = mu.cond.mean, sd = sqrt(mu.cond.var))
-  return((exp(2*rho_trans_post) -1)/(exp(2*rho_trans_post) +1))
+  ##############################################################################
+  proposal = rnorm(1, mu, sigma)
+  
+  if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
+    # Hastings ratio of the proposal
+    HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal) -
+               logposterior(U1.at.node, U2.at.node, rho = mu))
+  
+  if (runif(1) < HR){ 
+    new_mu = proposal
+    # if proposal is rejected, keep the values from the previous iteration
+  }else{
+    new_mu = mu
+  }
+  ##############################################################################
+  
+  # rho_hat = mle_gaussian_copula(U1.at.node, U2.at.node)$rho_hat
+  # 
+  # rho_trans <- 1/2 * log((1+rho_hat)/(1- rho_hat))
+  # mu.cond.mean <- ifelse(nobs.at.node>0, (Y.var/(Y.var + nobs.at.node*sigma^2))*mu + (nobs.at.node*sigma^2/(Y.var + nobs.at.node*sigma^2))*rho_trans, mu)
+  # mu.cond.var <- ifelse(nobs.at.node>0, 1/(1/sigma^2 + nobs.at.node/Y.var), sigma^2)
+  # rho_trans_post <- rnorm(1, mean = mu.cond.mean, sd = sqrt(mu.cond.var))
+  # return((exp(2*rho_trans_post) -1)/(exp(2*rho_trans_post) +1))
+  return(new_mu)
 }
 
 grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, cont.unif = TRUE, obs.per.term = 1){ # check input
@@ -339,11 +357,11 @@ grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, cont.unif = TRUE, o
   U2.at.right <- U2.at.parent[idx.right]
   term.node.value.left <- sample.cond.mu.copula(U1.at.node = U1.at.left,
                                                 U2.at.node = U2.at.left,
-                                              mu = mean(printget_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
+                                              mu = mean(get_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
                                               sigma = sigma)
   term.node.value.right <- sample.cond.mu.copula(U1.at.node = U1.at.right,
                                                  U2.at.node = U2.at.right,
-                                               mu = mean(printget_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
+                                               mu = mean(get_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
                                                sigma = sigma)
   
   tree_top_grow <- grow_terminal(node.idx = grow.idx, 
@@ -431,8 +449,7 @@ cart_log_lik_copula <- function(tree_top, U1, U2, X){ # check input
 set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma){
   if(is.null(tree_top$left) & is.null(tree_top$right)){
     if(tree_top$node.idx == node.idx){
-      link_rho = rnorm(1, mean = mu, sd = sigma)
-      tree_top$value = (exp(2*link_rho) - 1) / (exp(2*link_rho) + 1)
+      tree_top$value = rnorm(1, mean = mu, sd = sigma)
       return(tree_top)
     } else {
       return(tree_top)  

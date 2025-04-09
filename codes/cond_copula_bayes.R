@@ -52,7 +52,7 @@ mcmc_lb.def <- multichain_MCMC_copula(n.chain = n.chain_par,
                                       U2 = simCopula[2,],
                                       Y.var = 0.1, 
                                       mu = 0, 
-                                      sigma = 1, 
+                                      sigma = .1, 
                                       prior_list = lb.prior.def, 
                                                      moves.prob = moves.prob_par, 
                                          starting.tree = NULL,
@@ -137,7 +137,7 @@ pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get
 est_par = rowMeans(pred_cond)
 
 plot(est_par, BiCopTau2Par(1 , tau_new), ylim = c(0,1), xlim = c(0,1), xlab = "Predicted rho", ylab = "True rho")
-
+abline(a=0, b = 1)
 simCopula2 <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
 
 plot(simCopula[1,], simCopula[2,], xlab = "U1", ylab = "U2")
@@ -155,7 +155,7 @@ mcmc_lb.alt <- multichain_MCMC_copula(n.chain = n.chain_par,
                                       U2 = simCopula[2,],
                                       Y.var = 0.1, 
                                       mu = 0, 
-                                      sigma = 1, 
+                                      sigma = .1, 
                                       prior_list = lb.prior.alt, 
                                       moves.prob = moves.prob_par, 
                                       starting.tree = NULL,
@@ -235,6 +235,7 @@ pred_cond_alt = sapply(1:length(model.list.alt$`LB - alt`$trees), function(i)get
 est_par_alt = rowMeans(pred_cond_alt)
 
 plot(est_par_alt, BiCopTau2Par(1 , tau_new), ylim = c(0,1), xlim = c(0,1), xlab = "Predicted rho", ylab = "True rho")
+abline(a=0, b =1)
 
 simCopula2_alt <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par_alt[i]))
 
