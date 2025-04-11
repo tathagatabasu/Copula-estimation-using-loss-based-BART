@@ -1,4 +1,5 @@
 library(parallel)
+library(mc2d)
 multichain_MCMC_copula <- function(n.iter, n.chain,
                                       X, U1, U2, Y.var = 1, 
                                       mu, sigma, 
@@ -236,8 +237,7 @@ assign_term_node_values_copula <- function(tree_top, mu, sigma){ # check input
 }
 
 assign_term_node_values_cond_copula <- function(tree_top, mu, sigma, # check input
-                                                X, U1, U2, U1.at.node = NULL,
-                                                U2.at.node = NULL){
+                                                X, U1, U2){
   term.node.idx <- get_terminal_nodes_idx(tree_top)
   for(node.idx in term.node.idx){
     obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
@@ -490,8 +490,10 @@ mle_gaussian_copula <- function(u, v) {
   list(rho_hat = opt$maximum, logLik = opt$objective)
 }
 
-logprior <- function(rho) {
-  return(dunif(rho, -1, 1, log = TRUE))
+logprior <- function(rho, alpha_val = 2, beta_val = 2) {
+  f_rho = 1/(2^(alpha_val + beta_val - 1) * beta(alpha_val, beta_val)) * (1 + rho)^(alpha_val - 1) * (1 - rho)^(beta_val - 1)
+  
+  return(log(f_rho))
 }
 
 logposterior <- function(rho, u, v){

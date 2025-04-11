@@ -24,7 +24,10 @@ n <- 500
 X_obs <- matrix(runif(n), ncol = 1)
 
 # Define true kendall's tau
-tau_true <- 0.6 * sin(3*X_obs) + 0.3
+# tau_true <- 0.6 + 0.1 * sin(2*X_obs) + 0.3*X_obs^2
+tau_true <- 0.6 + 0.3 * sin(3*X_obs)
+
+plot(X_obs, tau_true)
 
 simCopula <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = BiCopTau2Par(1 , tau_true[i])))
 
@@ -132,112 +135,28 @@ rownames(x_new) <- 1:nrow(x_new)
 
 tau_new <- 0.6 * sin(3*x_new) + 0.3
 
-pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],x_new))
+pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],X_obs.norm))
 
-est_par = rowMeans(pred_cond)
+est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
 
-plot(est_par, BiCopTau2Par(1 , tau_new), ylim = c(0,1), xlim = c(0,1), xlab = "Predicted rho", ylab = "True rho")
-abline(a=0, b = 1)
+est_par_95 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.95))
+est_par_05 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.05))
+
+
 simCopula2 <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
+
+df = data.frame("X" = X_obs, "rho" = BiCopTau2Par(1 , tau_true), "est_rho" = est_par, 
+                "est_rho_min" = est_par_05, "est_rho_max" = est_par_95)
+
+ggplot(data = df, aes(x = X)) + 
+  geom_line(aes(y = rho), color = 2, size = 1) + 
+  geom_line(aes(y = est_rho), color = 3, size = 1) + 
+  geom_ribbon(aes(y = est_rho, ymin = est_rho_min, ymax = est_rho_max), alpha = .2) +
+  xlab("Observations") + 
+  theme_bw() +  
+  theme(legend.key = element_blank()) + 
+  theme(legend.position = c(1.1,.6), legend.direction = "vertical") +
+  theme(legend.title = element_blank())
 
 plot(simCopula[1,], simCopula[2,], xlab = "U1", ylab = "U2")
 plot(simCopula2[1,], simCopula2[2,], xlab = "Predicted U1", ylab = "Predicted U2")
-
-###############################
-# alternate
-###############################
-
-lb.prior.alt <- list(fun = joint.prior.new.tree, param = c(0.01, 0.01))
-mcmc_lb.alt <- multichain_MCMC_copula(n.chain = n.chain_par,
-                                      n.iter = n.iter_par,
-                                      X = X_obs.norm,
-                                      U1 = simCopula[1,],
-                                      U2 = simCopula[2,],
-                                      Y.var = 0.1, 
-                                      mu = 0, 
-                                      sigma = .1, 
-                                      prior_list = lb.prior.alt, 
-                                      moves.prob = moves.prob_par, 
-                                      starting.tree = NULL,
-                                      cont.unif = cont.unif_par,
-                                      include.split = incl.split_par)
-
-####################
-## ALT MODELS ##
-####################
-
-model.list.alt <- list(
-  mcmc_lb.alt)
-
-names(model.list.alt) <- c(
-  'LB - alt')
-
-
-# extract depth, number of terminal nodes, missing rate and loglik of all the trees
-depth.df.alt <- apply_fun_models(fun_ = get_depth, 
-                             mcmc.list = model.list.alt,
-                             born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par)
-nterm.df.alt <- apply_fun_models(fun_ = get_num_terminal_nodes, 
-                             mcmc.list = model.list.alt, 
-                             born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par)
-
-hist.nl.alt <- ggplot(nterm.df.alt) + 
-  geom_histogram(aes(x = y, y = after_stat(density)), 
-                 binwidth = 1, color = 'black', fill = 'white') + 
-  facet_wrap(facets = ~panel.name) + 
-  xlab(~n[L]) + 
-  ylab('PMF') + 
-  theme_classic() + 
-  scale_x_continuous(breaks = seq(0,24,by = 3))  
-
-hist.depth.alt <- ggplot(depth.df.alt) + 
-  geom_histogram(aes(x = y, y = after_stat(density)), 
-                 binwidth = 1, color = 'black', fill = 'white') + 
-  facet_wrap(facets = ~panel.name) + 
-  xlab('Depth') + 
-  ylab('PMF') + 
-  theme_classic() + 
-  scale_x_continuous(breaks = seq(0,10,by = 1))
-
-trace.nl.alt <- ggplot(nterm.df.alt) + 
-  geom_vline(xintercept = seq(0,1250,by = 50), 
-             color = 'grey', size = 0.2, alpha=0.75)+
-  geom_line(aes(x, y)) + 
-  facet_wrap(facets = ~panel.name, ncol = 2) + 
-  xlab('Iteration') + 
-  ylab(~n[L]) + 
-  theme_classic() + 
-  scale_x_continuous(breaks = seq(0,1250,by = 50)) + 
-  theme(axis.text.x = element_text(angle = 30))
-
-trace.depth.alt <- ggplot(depth.df.alt) + 
-  geom_vline(xintercept = seq(0,1250,by = 50),
-             color = 'grey', size = 0.2, alpha=0.75)+
-  geom_line(aes(x, y)) +
-  facet_wrap(facets = ~panel.name, ncol = 2) + 
-  xlab('Iteration') + 
-  ylab('Depth') + 
-  theme_classic() + 
-  scale_x_continuous(breaks = seq(0,1250,by = 50)) + 
-  theme(axis.text.x = element_text(angle = 30))
-
-hist.nl.alt
-hist.depth.alt
-
-trace.nl.alt
-trace.depth.alt
-
-ggarrange(hist.nl.alt, hist.depth.alt, trace.nl.alt, trace.depth.alt, ncol = 2, nrow = 2)
-
-
-pred_cond_alt = sapply(1:length(model.list.alt$`LB - alt`$trees), function(i)get_value_tree(model.list.alt[[1]]$trees[[i]],x_new))
-
-est_par_alt = rowMeans(pred_cond_alt)
-
-plot(est_par_alt, BiCopTau2Par(1 , tau_new), ylim = c(0,1), xlim = c(0,1), xlab = "Predicted rho", ylab = "True rho")
-abline(a=0, b =1)
-
-simCopula2_alt <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par_alt[i]))
-
-plot(simCopula[1,], simCopula[2,], xlab = "U1", ylab = "U2")
-plot(simCopula2_alt[1,], simCopula2_alt[2,], xlab = "Predicted U1", ylab = "Predicted U2")
