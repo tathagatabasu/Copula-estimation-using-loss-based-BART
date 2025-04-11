@@ -23,13 +23,30 @@ set.seed(123)
 n <- 500
 X_obs <- matrix(runif(n), ncol = 1)
 
-# Define true kendall's tau
-# tau_true <- 0.6 + 0.1 * sin(2*X_obs) + 0.3*X_obs^2
-tau_true <- 0.6 + 0.3 * sin(3*X_obs)
+# Define gaussian copula parameter (rho)
 
-plot(X_obs, tau_true)
+# rho with tree structure
+tree_top <- generate_random_binary_tree_n_delta(8,4)
+tree_top <- assign_node_idx(tree_top)
+tree_top <- assign_split_rules(tree_top, X_obs)
+tree_top <- assign_term_node_values_binary(tree_top, 3, 1)
+rho_true <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
 
-simCopula <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = BiCopTau2Par(1 , tau_true[i])))
+# monotone
+rho_true <- 0.5 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
+# convex
+rho_true <- 0.6 + 0.3 * sin(3*X_obs)
+# concave
+rho_true <- .9 - 0.3 * sin(3*X_obs)
+# non-convex
+rho_true <- 0.7 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2
+
+
+plot(X_obs, rho_true)
+
+simCopula <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = rho_true[i]))
+
+plot(simCopula[1,], simCopula[2,], xlab = "U1", ylab = "U2")
 
 ##################################################
 # normalise predictors 
@@ -47,7 +64,7 @@ moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 ## DEFUALT ##
 #############
 
-lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
+lb.prior.def <- list(fun = joint.prior.new.tree, param = c(0.3, 1.5)) # c(1.5618883, 0.6293944)
 mcmc_lb.def <- multichain_MCMC_copula(n.chain = n.chain_par,
                                          n.iter = n.iter_par,
                                       X = X_obs.norm,
@@ -55,7 +72,7 @@ mcmc_lb.def <- multichain_MCMC_copula(n.chain = n.chain_par,
                                       U2 = simCopula[2,],
                                       Y.var = 0.1, 
                                       mu = 0, 
-                                      sigma = .1, 
+                                      sigma = .1, alpha_val = .1, beta_val = .1, 
                                       prior_list = lb.prior.def, 
                                                      moves.prob = moves.prob_par, 
                                          starting.tree = NULL,
@@ -129,12 +146,6 @@ trace.depth
 
 ggarrange(hist.nl, hist.depth, trace.nl, trace.depth, ncol = 2, nrow = 2)
 
-x_new <- matrix(runif(n), ncol = 1)
-
-rownames(x_new) <- 1:nrow(x_new)
-
-tau_new <- 0.6 * sin(3*x_new) + 0.3
-
 pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],X_obs.norm))
 
 est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
@@ -145,7 +156,7 @@ est_par_05 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.i
 
 simCopula2 <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
 
-df = data.frame("X" = X_obs, "rho" = BiCopTau2Par(1 , tau_true), "est_rho" = est_par, 
+df = data.frame("X" = X_obs, "rho" = rho_true, "est_rho" = est_par, 
                 "est_rho_min" = est_par_05, "est_rho_max" = est_par_95)
 
 ggplot(data = df, aes(x = X)) + 
