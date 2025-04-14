@@ -1,5 +1,5 @@
 library(parallel)
-library(mc2d)
+#library(mc2d)
 multichain_MCMC_copula <- function(n.iter, n.chain,
                                       X, U1, U2, 
                                       mu, sigma, alpha_val, beta_val, 
