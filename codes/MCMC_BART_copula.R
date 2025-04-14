@@ -481,9 +481,9 @@ mle_gaussian_copula <- function(u, v) {
 }
 
 logprior <- function(rho, alpha_val, beta_val) {
-  f_rho = 1/(2^(alpha_val + beta_val - 1) * beta(alpha_val, beta_val)) * (1 + rho)^(alpha_val - 1) * (1 - rho)^(beta_val - 1)
+  f_rho = (alpha_val - 1)*log(1 + rho) + (beta_val - 1)*log(1 - rho)
   
-  return(log(f_rho))
+  return(f_rho)
 }
 
 logposterior <- function(rho, u, v, alpha_val, beta_val){
