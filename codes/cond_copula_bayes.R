@@ -7,7 +7,7 @@ source('MCMC_BART_copula.R')
 library(data.tree)
 library(dplyr)
 library(ggplot2)
-# library(ggpubr)
+library(ggpubr)
 library(CondCopulas)
 library(VineCopula)
 library(latex2exp)
@@ -32,7 +32,7 @@ tree_top <- assign_node_idx(tree_top)
 tree_top <- assign_split_rules(tree_top, X_obs)
 tree_top <- assign_term_node_values_binary(tree_top, 7, 2)
 rho_true_1 <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
-
+rm(tree_top)
 # monotone
 rho_true_2 <- 0.5 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
 # convex
@@ -143,10 +143,16 @@ for (i in 1:5) {
 ####################
 
 model.list.def <- list(
+  mcmc_lb.def_unif_5,
+  mcmc_lb.def_half_5,
+  mcmc_lb.def_jeff_5,
   mcmc_lb.def_two_5)
 
 names(model.list.def) <- c(
-  'LB - default')
+  'LB - default - unif',
+  'LB - default - half',
+  'LB - default - jeff',
+  'LB - default - two')
 
 
 # extract depth, number of terminal nodes, missing rate and loglik of all the trees
@@ -205,8 +211,33 @@ trace.depth
 
 # ggarrange(hist.nl, hist.depth, trace.nl, trace.depth, ncol = 2, nrow = 2)
 
-pred_cond = sapply(1:length(model.list.def$`LB - default`$trees), function(i)get_value_tree(model.list.def[[1]]$trees[[i]],X_obs.norm))
+list_get_value = function(tree_list, X_obs.norm){
+  value_pred = get_value_tree(tree_list,X_obs.norm)
+  
+}
 
+pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs.norm[i,,drop = FALSE]),
+                                                                   mcmc.list = model.list.def,
+                                                                   born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par))
+
+
+pred_cond = do.call(rbind,pred_cond)
+
+p = ggplot() +
+  geom_point(aes(X_obs.norm[1,], mean(y)), data = pred_cond[[1]]) +
+  facet_wrap(facets = ~panel.name, ncol = 2) +
+  xlab('Iteration') +
+  ylab('Depth') +
+  theme_classic() +
+  # scale_x_continuous(breaks = seq(0,1250,by = 50)) +
+  theme(axis.text.x = element_text(angle = 30))
+
+
+for (i in 2:length(pred_cond)) {
+  p = p + geom_point(aes(X_obs.norm[i,], mean(y)), data = pred_cond[[i]])
+}
+
+p
 est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
 
 est_par_95 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.95))
