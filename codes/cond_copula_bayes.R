@@ -32,6 +32,7 @@ tree_top <- assign_node_idx(tree_top)
 tree_top <- assign_split_rules(tree_top, X_obs)
 tree_top <- assign_term_node_values_binary(tree_top, 7, 2)
 rho_true_1 <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
+rho_true_1 <- matrix(rho_true_1, ncol = 1)
 rm(tree_top)
 # monotone
 rho_true_2 <- 0.5 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
@@ -99,7 +100,7 @@ for (i in 1:5) {
                                                                U1 = get(paste0("copula_uu_",i))[1,],
                                                                U2 = get(paste0("copula_uu_",i))[2,],
                                                                mu = 0, 
-                                                               sigma = .1, alpha_val = .01, beta_val = .01, 
+                                                               sigma = .1, alpha_val = 0, beta_val = 0, 
                                                                prior_list = lb.prior.def, 
                                                                moves.prob = moves.prob_par, 
                                                                starting.tree = NULL,
@@ -143,10 +144,10 @@ for (i in 1:5) {
 ####################
 
 model.list.def <- list(
-  mcmc_lb.def_unif_5,
-  mcmc_lb.def_half_5,
-  mcmc_lb.def_jeff_5,
-  mcmc_lb.def_two_5)
+  mcmc_lb.def_unif_4,
+  mcmc_lb.def_half_4,
+  mcmc_lb.def_jeff_4,
+  mcmc_lb.def_two_4)
 
 names(model.list.def) <- c(
   'LB - default - unif',
@@ -209,13 +210,6 @@ hist.depth
 trace.nl
 trace.depth
 
-# ggarrange(hist.nl, hist.depth, trace.nl, trace.depth, ncol = 2, nrow = 2)
-
-list_get_value = function(tree_list, X_obs.norm){
-  value_pred = get_value_tree(tree_list,X_obs.norm)
-  
-}
-
 pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs.norm[i,,drop = FALSE]),
                                                                    mcmc.list = model.list.def,
                                                                    born.out.pc = 250, n.chain = n.chain_par, sample.pc = n.iter_par))
@@ -223,41 +217,45 @@ pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = functi
 
 pred_cond = do.call(rbind,pred_cond)
 
-p = ggplot() +
-  geom_point(aes(X_obs.norm[1,], mean(y)), data = pred_cond[[1]]) +
+pred_cond$obs = as.vector(apply(X_obs.norm, 1, function(x)rep(x, 5000)))
+pred_cond$rho_true = as.vector(apply(rho_true_4, 1, function(x)rep(x, 5000)))
+
+
+ggplot(pred_cond) +
+  geom_line(aes(obs, y)) +
+  geom_line(aes(obs, rho_true), col = 2) +
   facet_wrap(facets = ~panel.name, ncol = 2) +
-  xlab('Iteration') +
-  ylab('Depth') +
+  xlab('X') +
+  ylab('estimated rho') +
   theme_classic() +
-  # scale_x_continuous(breaks = seq(0,1250,by = 50)) +
   theme(axis.text.x = element_text(angle = 30))
-
-
-for (i in 2:length(pred_cond)) {
-  p = p + geom_point(aes(X_obs.norm[i,], mean(y)), data = pred_cond[[i]])
-}
-
-p
-est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
-
-est_par_95 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.95))
-est_par_05 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.05))
-
-
-copula_uu_pred <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
-
-df = data.frame("X" = X_obs, "rho" = rho_true_5, "est_rho" = est_par,
-                "est_rho_min" = est_par_05, "est_rho_max" = est_par_95)
-
-ggplot(data = df, aes(x = X)) +
-  geom_line(aes(y = rho), color = 2, size = 1) +
-  geom_line(aes(y = est_rho), color = 3, size = 1) +
-  geom_ribbon(aes(y = est_rho, ymin = est_rho_min, ymax = est_rho_max), alpha = .2) +
-  xlab("Observations") +
-  theme_bw() +
-  theme(legend.key = element_blank()) +
-  theme(legend.position = c(1.1,.6), legend.direction = "vertical") +
-  theme(legend.title = element_blank())
-
-plot(copula_uu_5[1,], copula_uu_5[2,], xlab = "U1", ylab = "U2")
-plot(copula_uu_pred[1,], copula_uu_pred[2,], xlab = "Predicted U1", ylab = "Predicted U2")
+# 
+# for (i in 2:5) {
+#   p = p + geom_point(aes(x = X_obs.norm[i,], y = mean(y)), data = pred_cond[[i]])+
+#     facet_wrap(facets = ~panel.name, ncol = 2) 
+# }
+# 
+# p
+# est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
+# 
+# est_par_95 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.95))
+# est_par_05 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.05))
+# 
+# 
+# copula_uu_pred <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
+# 
+# df = data.frame("X" = X_obs, "rho" = rho_true_5, "est_rho" = est_par,
+#                 "est_rho_min" = est_par_05, "est_rho_max" = est_par_95)
+# 
+# ggplot(data = df, aes(x = X)) +
+#   geom_line(aes(y = rho), color = 2, size = 1) +
+#   geom_line(aes(y = est_rho), color = 3, size = 1) +
+#   geom_ribbon(aes(y = est_rho, ymin = est_rho_min, ymax = est_rho_max), alpha = .2) +
+#   xlab("Observations") +
+#   theme_bw() +
+#   theme(legend.key = element_blank()) +
+#   theme(legend.position = c(1.1,.6), legend.direction = "vertical") +
+#   theme(legend.title = element_blank())
+# 
+# plot(copula_uu_5[1,], copula_uu_5[2,], xlab = "U1", ylab = "U2")
+# plot(copula_uu_pred[1,], copula_uu_pred[2,], xlab = "Predicted U1", ylab = "Predicted U2")
