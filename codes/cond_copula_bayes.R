@@ -44,11 +44,11 @@ rho_true_4 <- .9 - 0.3 * sin(3*X_obs)
 rho_true_5 <- 0.7 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2
 
 
-plot(X_obs, rho_true_1)
-plot(X_obs, rho_true_2)
-plot(X_obs, rho_true_3)
-plot(X_obs, rho_true_4)
-plot(X_obs, rho_true_5)
+plot(X_obs, rho_true_1, xlab = "Observations", ylab = "rho")
+plot(X_obs, rho_true_2, xlab = "Observations", ylab = "rho")
+plot(X_obs, rho_true_3, xlab = "Observations", ylab = "rho")
+plot(X_obs, rho_true_4, xlab = "Observations", ylab = "rho")
+plot(X_obs, rho_true_5, xlab = "Observations", ylab = "rho")
 
 for (i in 1:5) {
   assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
@@ -214,20 +214,20 @@ for (i in 1:5) {
 test_case = 1
 
 model.list.def <- list(
-  # get(paste0("mcmc_lb.def_unif_",test_case)),
+  get(paste0("mcmc_lb.def_unif_",test_case)),
   get(paste0("mcmc_lb.def_half_",test_case)),
   get(paste0("mcmc_lb.def_jeff_",test_case)),
-  # get(paste0("mcmc_lb.def_two_",test_case)),
+  get(paste0("mcmc_lb.def_two_",test_case)),
   get(paste0("mcmc_lb.def_LN0.8_",test_case)),
   get(paste0("mcmc_lb.def_LN1_",test_case)),
   get(paste0("mcmc_lb.def_IG22_",test_case)),
   get(paste0("mcmc_lb.def_IG11_",test_case)))
 
 names(model.list.def) <- c(
-  # 'LB - default - unif',
+  'LB - default - unif',
   'LB - default - half',
   'LB - default - jeff',
-  # 'LB - default - two',
+  'LB - default - two',
   'LB - default - LN0.8',
   'LB - default - LN1',
   'LB - default - IG11',
@@ -335,3 +335,36 @@ ggplot(pred_cond_mod) +
   ylab('U2') +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 30))
+
+
+data_plot_prior = data.frame(p = seq(-0.999, 0.999, length.out = 1000))
+
+data_plot_prior = data_plot_prior %>% 
+  mutate(unif = sapply(p, function(x)exp(logprior_unif(x, 1, 1)))) %>%
+  mutate(jeff = sapply(p, function(x)exp(logprior_unif(x, 0, 0)))) %>%
+  mutate(two = sapply(p, function(x)exp(logprior_unif(x, 2, 2)))) %>%
+  mutate(half = sapply(p, function(x)exp(logprior_unif(x, 0.5, 0.5)))) %>%
+  mutate(IG11 = sapply(p, function(x)exp(logprior_inv_gamma(x, 1, 1)))) %>%
+  mutate(IG22 = sapply(p, function(x)exp(logprior_inv_gamma(x, 2, 2)))) %>%
+  mutate(LN0.8 = sapply(p, function(x)exp(logprior_log_normal(x, 0, 0.8)))) %>%
+  mutate(LN1 = sapply(p, function(x)exp(logprior_log_normal(x, 0, 1))))
+
+p_prior = ggplot(data_plot_prior) +
+  geom_line(aes(p, unif)) +
+  geom_line(aes(p, jeff), col = "red") +
+  geom_line(aes(p, two), col = "grey") +
+  geom_line(aes(p, half), col = "orange") +
+  geom_line(aes(p, IG11), col = "green") +
+  geom_line(aes(p, IG22), col = "darkgreen") +
+  geom_line(aes(p, LN1), col = "blue") +
+  geom_line(aes(p, LN0.8), col = "darkblue") +
+  xlab('X') +
+  ylab('estimated rho') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 30))
+
+p_prior_zoom = p_prior +
+  # xlim(c(0.95, 0.99)) +
+  ylim(c(0, 20))
+
+p_prior_zoom
