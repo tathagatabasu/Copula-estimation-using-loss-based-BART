@@ -1,25 +1,27 @@
 library(parallel)
-#library(mc2d)
+library(mc2d)
 multichain_MCMC_copula <- function(n.iter, n.chain,
-                                      X, U1, U2, 
-                                      mu, sigma, alpha_val, beta_val, 
-                                      prior_list, 
-                                      moves.prob = NULL, starting.tree = NULL,
-                                      n.cores = 5,
-                                      cont.unif = TRUE,
-                                      include.split){
+                                   X, U1, U2, 
+                                   mu, sigma, alpha_val, beta_val,
+                                   log_nor_mu, log_nor_sigma, prior_type,
+                                   prior_list, 
+                                   moves.prob = NULL, starting.tree = NULL,
+                                   n.cores = 5,
+                                   cont.unif = TRUE,
+                                   include.split){
   chain.list <- mclapply(1:n.chain, 
                          \(x) MCMC_copula(n.iter = n.iter, 
-                                             X = X, 
-                                             U1 = U1,
+                                          X = X, 
+                                          U1 = U1,
                                           U2 = U2, 
-                                             mu = mu, 
-                                             sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
-                                             prior_list = prior_list, 
-                                             moves.prob = moves.prob, 
-                                             starting.tree = starting.tree,
-                                             cont.unif = cont.unif,
-                                             include.split = include.split),
+                                          mu = mu, 
+                                          sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                          log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
+                                          prior_list = prior_list, 
+                                          moves.prob = moves.prob, 
+                                          starting.tree = starting.tree,
+                                          cont.unif = cont.unif,
+                                          include.split = include.split),
                          mc.cores = n.cores)
   tree_list <- lapply(chain.list, function(x) x$trees)
   tree_list_comb <- Reduce(c, tree_list)
@@ -31,6 +33,7 @@ multichain_MCMC_copula <- function(n.iter, n.chain,
 }
 
 MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior_list,
+                        log_nor_mu, log_nor_sigma, prior_type,
                         moves.prob = NULL, starting.tree = NULL, 
                         diag = FALSE, cont.unif = TRUE, include.split){
   if(is.null(starting.tree)){
@@ -78,6 +81,7 @@ MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior
                                         X = X, U1 = U1, U2 = U2, 
                                         mu = mu, 
                                         sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                        log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type, 
                                         prior_list = prior_list, 
                                         cont.unif = cont.unif, 
                                         include.split = include.split)
@@ -106,6 +110,7 @@ MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior
     new.tree <- assign_term_node_values_cond_copula(tree_top = new.tree, 
                                                     mu = mu,
                                                     sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
+                                                    log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
                                                     X = X, U1 = U1, U2 = U2)
     
     
@@ -119,7 +124,8 @@ MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior
   return(list(trees = tree_list, df.res = data.frame(matrix.res)))
 }
 
-tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_val, beta_val, # check input
+tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_val, beta_val, 
+                             log_nor_mu, log_nor_sigma, prior_type, # check input
                              prior_list, cont.unif = TRUE, include.split,
                              obs.per.term = 1, empty.count.lim = 10){
   empty.flag = TRUE
@@ -160,7 +166,8 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_va
     while(empty.flag& (empty.count <= empty.count.lim)){
       move.list <- grow_move_copula(tree_top = old_tree, X = X, U1 = U1, U2 = U2, # check input
                                     mu = mu,
-                                    sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
+                                    sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                    log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
                                     obs.per.term = obs.per.term,
                                     cont.unif = cont.unif)
       cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
@@ -179,6 +186,7 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_va
       move.list <- prune_move_copula(tree_top = old_tree, # check input 
                                      mu = mu,
                                      sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                     log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type, 
                                      X = X, U1 = U1, U2 = U2)
       cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
       
@@ -235,7 +243,8 @@ assign_term_node_values_copula <- function(tree_top, mu, sigma){ # check input
   return(tree_top)
 }
 
-assign_term_node_values_cond_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, # check input
+assign_term_node_values_cond_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, 
+                                                log_nor_mu, log_nor_sigma, prior_type, # check input
                                                 X, U1, U2){
   term.node.idx <- get_terminal_nodes_idx(tree_top)
   for(node.idx in term.node.idx){
@@ -244,33 +253,38 @@ assign_term_node_values_cond_copula <- function(tree_top, mu, sigma, alpha_val, 
     U2.at.node <- U2[as.numeric(rownames(obs.at.node))]
     tree_top <- set_term_node_value_cond_copula(node.idx = node.idx, tree_top = tree_top, # check input
                                                 mu = mean(get_value_tree(tree_top, obs.at.node)),
-                                                sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
+                                                sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                                log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
                                                 X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node, 
                                                 U2.at.node = U2.at.node)
   }
   return(tree_top)
 }
 
-set_term_node_value_cond_copula <- function(node.idx, tree_top, mu, sigma, alpha_val, beta_val, # check input
+set_term_node_value_cond_copula <- function(node.idx, tree_top, mu, sigma, alpha_val, beta_val, 
+                                            log_nor_mu, log_nor_sigma, prior_type, # check input
                                             X, U1, U2, 
                                             U1.at.node=NULL, U2.at.node=NULL, binary = FALSE){
   if(is.null(tree_top$left) & is.null(tree_top$right)){
     if(tree_top$node.idx == node.idx){
       tree_top$value = sample.cond.mu.copula(tree_top = tree_top, # check input
-                                           node.idx = node.idx, 
-                                           mu = mu,
-                                           sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
-                                           X = X, 
-                                           U1 = U1, U2 = U2, U1.at.node=U1.at.node, 
-                                           U2.at.node=U2.at.node)
+                                             node.idx = node.idx, 
+                                             mu = mu,
+                                             sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                             log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
+                                             X = X, 
+                                             U1 = U1, U2 = U2, U1.at.node=U1.at.node, 
+                                             U2.at.node=U2.at.node)
       return(tree_top)
     } else {
       return(tree_top)  
     }
   }  else {
-    tree.left <- set_term_node_value_cond_copula(node.idx, tree_top$left, mu, sigma, alpha_val = alpha_val, beta_val = beta_val, X, U1, U2, 
+    tree.left <- set_term_node_value_cond_copula(node.idx, tree_top$left, mu, sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                                 log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type, X, U1, U2, 
                                                  U1.at.node, U2.at.node)
-    tree.right <- set_term_node_value_cond_copula(node.idx, tree_top$right, mu, sigma, alpha_val = alpha_val, beta_val = beta_val, X, U1, U2, 
+    tree.right <- set_term_node_value_cond_copula(node.idx, tree_top$right, mu, sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                                  log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type, X, U1, U2, 
                                                   U1.at.node, U2.at.node)
     
     return(list(left = tree.left, right = tree.right, node.idx = tree_top$node.idx,
@@ -280,14 +294,15 @@ set_term_node_value_cond_copula <- function(node.idx, tree_top, mu, sigma, alpha
 
 # sample conditional mu assuming binary observations and beta prior
 sample.cond.mu.copula <- function(tree_top = NULL, 
-                                node.idx = NULL, 
-                                mu, 
-                                sigma, alpha_val, beta_val, 
-                                X = NULL, 
-                                U1 = NULL, 
-                                U2 = NULL, 
-                                U1.at.node = NULL,
-                                U2.at.node = NULL){
+                                  node.idx = NULL, 
+                                  mu, 
+                                  sigma, alpha_val, beta_val, 
+                                  log_nor_mu, log_nor_sigma, prior_type, 
+                                  X = NULL, 
+                                  U1 = NULL, 
+                                  U2 = NULL, 
+                                  U1.at.node = NULL,
+                                  U2.at.node = NULL){
   if(is.null(U1.at.node)){
     obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
     U1.at.node <- U1[as.numeric(rownames(obs.at.node))]
@@ -300,8 +315,10 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   
   if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
     # Hastings ratio of the proposal
-    HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, beta_val = beta_val) -
-               logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, beta_val = beta_val))
+    HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, 
+                          beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
+               logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, 
+                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   
   if (runif(1) < HR){ 
     new_mu = proposal
@@ -313,7 +330,7 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   return(new_mu)
 }
 
-grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, alpha_val, beta_val, cont.unif = TRUE, obs.per.term = 1){ # check input
+grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, alpha_val, beta_val, log_nor_mu, log_nor_sigma, prior_type, cont.unif = TRUE, obs.per.term = 1){ # check input
   term.node.idx <- get_terminal_nodes_idx(tree_top)
   # this is because if a terminal node has only 1 obs associated cannot be grow
   nobs.at.nodes <- vapply(term.node.idx, \(x) nrow(get_obs_at_node(node.idx = x, X = X, tree_top = tree_top, X.orig = X)),0)
@@ -347,12 +364,12 @@ grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, alpha_val, beta_val
   U2.at.right <- U2.at.parent[idx.right]
   term.node.value.left <- sample.cond.mu.copula(U1.at.node = U1.at.left,
                                                 U2.at.node = U2.at.left,
-                                              mu = mean(get_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
-                                              sigma = sigma, alpha_val = alpha_val, beta_val = beta_val)
+                                                mu = mean(get_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
+                                                sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type)
   term.node.value.right <- sample.cond.mu.copula(U1.at.node = U1.at.right,
                                                  U2.at.node = U2.at.right,
-                                               mu = mean(get_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
-                                               sigma = sigma, alpha_val = alpha_val, beta_val = beta_val)
+                                                 mu = mean(get_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
+                                                 sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type)
   
   tree_top_grow <- grow_terminal(node.idx = grow.idx, 
                                  tree_top = tree_top, 
@@ -365,7 +382,7 @@ grow_move_copula <- function(tree_top, X, U1, U2, mu, sigma, alpha_val, beta_val
               valid.split = new.cond.list$valid.split))
 }
 
-prune_move_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, X, U1, U2){ # check input
+prune_move_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, log_nor_mu, log_nor_sigma, prior_type, X, U1, U2){ # check input
   prune.node.idx <- get_prune_idx(tree_top)
   if(length(prune.node.idx) == 1){
     prune.idx <- prune.node.idx
@@ -373,12 +390,13 @@ prune_move_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, X, U1, U
     prune.idx <- sample(prune.node.idx, 1, replace = FALSE)
   }
   prune.value <- sample.cond.mu.copula(tree_top = tree_top, # check input
-                                     node.idx = prune.idx,
-                                     mu = mu,
-                                     sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
-                                     X = X,
-                                     U1 = U1,
-                                     U2 = U2)
+                                       node.idx = prune.idx,
+                                       mu = mu,
+                                       sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
+                                       log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
+                                       X = X,
+                                       U1 = U1,
+                                       U2 = U2)
   tree_top_prune <- prune_terminal(node.idx = prune.idx, 
                                    tree_top = tree_top, 
                                    value.node = prune.value)
@@ -452,40 +470,46 @@ set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma){
   }
 }
 
-gaussian_copula_loglik <- function(rho, u, v) {
-  z1 <- qnorm(u)
-  z2 <- qnorm(v)
-
-  # Number of observations
-  n <- length(z1)
-
-  # Compute log-likelihood
-  log_det = log(1 - rho^2)
-  quad_form = (z1^2 - 2 * rho * z1 * z2 + z2^2) / (1 - rho^2)
-
-  log_lik = -0.5 * sum(log_det + quad_form)
-  return(log_lik)
+logprior_unif <- function(rho, alpha_val, beta_val) {
+  return((alpha_val - 1)*log(1 + rho) + (beta_val - 1)*log(1 - rho))
 }
 
-# Log-likelihood function to be maximized
-loglik_fn <- function(rho, u, v) {
-  if (abs(rho) >= 1) return(-Inf)  # Ensure rho is in (-1,1)
-  gaussian_copula_loglik(rho, u, v)
-}
-
-# MLE estimation function
-mle_gaussian_copula <- function(u, v) {
-  opt <- optimize(f = loglik_fn, interval = c(-0.99, 0.99), 
-                  maximum = TRUE, u = u, v = v)
-  list(rho_hat = opt$maximum, logLik = opt$objective)
-}
-
-logprior <- function(rho, alpha_val, beta_val) {
-  f_rho = (alpha_val - 1)*log(1 + rho) + (beta_val - 1)*log(1 - rho)
+logprior_inv_gamma <- function(p, alpha_val, beta_val) {
+  # Ensure p is within (-1, 1)
+  if (any(abs(p) >= 1)) {
+    return(rep(0, length(p)))
+  }
   
-  return(f_rho)
+  y <- -log(1 - p^2)
+  
+  dens <- (alpha_val * log(beta_val) + log(abs(p)) + (-alpha_val - 1) * log(y) - 
+             beta_val / y - log(1 - p^2) - log(gamma(alpha_val))) 
+  
+  return(dens)
 }
 
-logposterior <- function(rho, u, v, alpha_val, beta_val){
-  return (gaussian_copula_loglik(rho, u, v) + logprior(rho, alpha_val = alpha_val, beta_val = beta_val))
+logprior_log_normal <- function(p, log_nor_mu, log_nor_sigma) {
+  if (any(abs(p) >= 1)) {
+    return(rep(0, length(p)))
+  }
+  
+  y <- -log(1 - p^2)
+  log_y <- log(y)
+  
+  # Density of p
+  density <- log(2 * abs(p)) - (log(1 - p^2) + log(y)) +(-((log_y - log_nor_mu)^2) / (2 * log_nor_sigma^2))
+  
+  return(density)
+}
+
+logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sigma, prior_type = "B"){
+  if(prior_type == "B"){
+    return(gaussian_copula_loglik(rho, u, v) + logprior_unif(rho, alpha_val = alpha_val, beta_val = beta_val))
+  }else{
+    if(prior_type == "LN"){
+      return(gaussian_copula_loglik(rho, u, v) + logprior_log_normal(rho, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))
+    }else{
+      return(gaussian_copula_loglik(rho, u, v) + logprior_inv_gamma(rho, alpha_val = alpha_val, beta_val = beta_val))
+    }
+  }
 }
