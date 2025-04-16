@@ -86,6 +86,7 @@ for (i in 1:5) {
                                                           U2 = get(paste0("copula_uu_",i))[2,],
                                                           mu = 0, 
                                                           sigma = .1, alpha_val = 1, beta_val = 1, 
+                                                          log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                           prior_list = lb.prior.def, 
                                                           moves.prob = moves.prob_par, 
                                                           starting.tree = NULL,
@@ -101,6 +102,7 @@ for (i in 1:5) {
                                                                U2 = get(paste0("copula_uu_",i))[2,],
                                                                mu = 0, 
                                                                sigma = .1, alpha_val = 0, beta_val = 0, 
+                                                               log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                prior_list = lb.prior.def, 
                                                                moves.prob = moves.prob_par, 
                                                                starting.tree = NULL,
@@ -117,6 +119,7 @@ for (i in 1:5) {
                                                                U2 = get(paste0("copula_uu_",i))[2,],
                                                                mu = 0, 
                                                                sigma = .1, alpha_val = .5, beta_val = .5, 
+                                                               log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                prior_list = lb.prior.def, 
                                                                moves.prob = moves.prob_par, 
                                                                starting.tree = NULL,
@@ -132,6 +135,7 @@ for (i in 1:5) {
                                                                U2 = get(paste0("copula_uu_",i))[2,],
                                                                mu = 0, 
                                                                sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                              log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                prior_list = lb.prior.def, 
                                                                moves.prob = moves.prob_par, 
                                                                starting.tree = NULL,
@@ -139,21 +143,95 @@ for (i in 1:5) {
                                                                include.split = incl.split_par))
 }
 
+for (i in 1:5) {
+  assign(paste0("mcmc_lb.def_LN0.8_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+                                                              n.iter = n.iter_par,
+                                                              X = X_obs.norm,
+                                                              U1 = get(paste0("copula_uu_",i))[1,],
+                                                              U2 = get(paste0("copula_uu_",i))[2,],
+                                                              mu = 0, 
+                                                              sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                              log_nor_mu = 0, log_nor_sigma = 0.8, prior_type = "LN",
+                                                              prior_list = lb.prior.def, 
+                                                              moves.prob = moves.prob_par, 
+                                                              starting.tree = NULL,
+                                                              cont.unif = cont.unif_par,
+                                                              include.split = incl.split_par))
+}
+
+for (i in 1:5) {
+  assign(paste0("mcmc_lb.def_LN1_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+                                                                n.iter = n.iter_par,
+                                                                X = X_obs.norm,
+                                                                U1 = get(paste0("copula_uu_",i))[1,],
+                                                                U2 = get(paste0("copula_uu_",i))[2,],
+                                                                mu = 0, 
+                                                                sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                                log_nor_mu = 0, log_nor_sigma = 1, prior_type = "LN",
+                                                                prior_list = lb.prior.def, 
+                                                                moves.prob = moves.prob_par, 
+                                                                starting.tree = NULL,
+                                                                cont.unif = cont.unif_par,
+                                                                include.split = incl.split_par))
+}
+
+for (i in 1:5) {
+  assign(paste0("mcmc_lb.def_IG11_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+                                                                n.iter = n.iter_par,
+                                                                X = X_obs.norm,
+                                                                U1 = get(paste0("copula_uu_",i))[1,],
+                                                                U2 = get(paste0("copula_uu_",i))[2,],
+                                                                mu = 0, 
+                                                                sigma = .1, alpha_val = 1, beta_val = 1, 
+                                                                log_nor_mu = 0, log_nor_sigma = 0.8, prior_type = "IG",
+                                                                prior_list = lb.prior.def, 
+                                                                moves.prob = moves.prob_par, 
+                                                                starting.tree = NULL,
+                                                                cont.unif = cont.unif_par,
+                                                                include.split = incl.split_par))
+}
+
+for (i in 1:5) {
+  assign(paste0("mcmc_lb.def_IG22_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+                                                              n.iter = n.iter_par,
+                                                              X = X_obs.norm,
+                                                              U1 = get(paste0("copula_uu_",i))[1,],
+                                                              U2 = get(paste0("copula_uu_",i))[2,],
+                                                              mu = 0, 
+                                                              sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                              log_nor_mu = 0, log_nor_sigma = 1, prior_type = "IG",
+                                                              prior_list = lb.prior.def, 
+                                                              moves.prob = moves.prob_par, 
+                                                              starting.tree = NULL,
+                                                              cont.unif = cont.unif_par,
+                                                              include.split = incl.split_par))
+}
+
 ####################
 ## DEFAULT MODELS ##
 ####################
 
+test_case = 1
+
 model.list.def <- list(
-  mcmc_lb.def_unif_4,
-  mcmc_lb.def_half_4,
-  mcmc_lb.def_jeff_4,
-  mcmc_lb.def_two_4)
+  # get(paste0("mcmc_lb.def_unif_",test_case)),
+  get(paste0("mcmc_lb.def_half_",test_case)),
+  get(paste0("mcmc_lb.def_jeff_",test_case)),
+  # get(paste0("mcmc_lb.def_two_",test_case)),
+  get(paste0("mcmc_lb.def_LN0.8_",test_case)),
+  get(paste0("mcmc_lb.def_LN1_",test_case)),
+  get(paste0("mcmc_lb.def_IG22_",test_case)),
+  get(paste0("mcmc_lb.def_IG11_",test_case)))
 
 names(model.list.def) <- c(
-  'LB - default - unif',
+  # 'LB - default - unif',
   'LB - default - half',
   'LB - default - jeff',
-  'LB - default - two')
+  # 'LB - default - two',
+  'LB - default - LN0.8',
+  'LB - default - LN1',
+  'LB - default - IG11',
+  'LB - default - IG22')
 
 
 # extract depth, number of terminal nodes, missing rate and loglik of all the trees
@@ -167,7 +245,7 @@ nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
 hist.nl <- ggplot(nterm.df) +
   geom_histogram(aes(x = y, y = after_stat(density)),
                  binwidth = 1, color = 'black', fill = 'white') +
-  facet_wrap(facets = ~panel.name) +
+  facet_wrap(facets = ~panel.name, ncol = 2) +
   xlab(~n[L]) +
   ylab('PMF') +
   theme_classic() +
@@ -176,7 +254,7 @@ hist.nl <- ggplot(nterm.df) +
 hist.depth <- ggplot(depth.df) +
   geom_histogram(aes(x = y, y = after_stat(density)),
                  binwidth = 1, color = 'black', fill = 'white') +
-  facet_wrap(facets = ~panel.name) +
+  facet_wrap(facets = ~panel.name, ncol = 2) +
   xlab('Depth') +
   ylab('PMF') +
   theme_classic() +
@@ -217,9 +295,8 @@ pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = functi
 
 pred_cond = do.call(rbind,pred_cond)
 
-pred_cond$obs = as.vector(apply(X_obs.norm, 1, function(x)rep(x, 5000)))
-pred_cond$rho_true = as.vector(apply(rho_true_4, 1, function(x)rep(x, 5000)))
-
+pred_cond$obs = as.vector(apply(X_obs.norm, 1, function(x)rep(x, (length(model.list.def) * 1250))))
+pred_cond$rho_true = as.vector(apply(get(paste0("rho_true_",test_case)), 1, function(x)rep(x, (length(model.list.def) * 1250))))
 
 ggplot(pred_cond) +
   geom_line(aes(obs, y)) +
@@ -229,33 +306,32 @@ ggplot(pred_cond) +
   ylab('estimated rho') +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 30))
-# 
-# for (i in 2:5) {
-#   p = p + geom_point(aes(x = X_obs.norm[i,], y = mean(y)), data = pred_cond[[i]])+
-#     facet_wrap(facets = ~panel.name, ncol = 2) 
-# }
-# 
-# p
-# est_par = apply(pred_cond[,-c(as.vector(sapply(0:(n.chain_par-1), function(i) 1:250 + i*n.iter_par)))], 1, mean)
-# 
-# est_par_95 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.95))
-# est_par_05 = apply(pred_cond[,-c(as.vector(sapply(0:4, function(i) 1:250 + i*n.iter_par)))], 1, function(x)quantile(x, probs = 0.05))
-# 
-# 
-# copula_uu_pred <- sapply(1:n, function(i)BiCopSim(N=1 , family = 1, par = est_par[i]))
-# 
-# df = data.frame("X" = X_obs, "rho" = rho_true_5, "est_rho" = est_par,
-#                 "est_rho_min" = est_par_05, "est_rho_max" = est_par_95)
-# 
-# ggplot(data = df, aes(x = X)) +
-#   geom_line(aes(y = rho), color = 2, size = 1) +
-#   geom_line(aes(y = est_rho), color = 3, size = 1) +
-#   geom_ribbon(aes(y = est_rho, ymin = est_rho_min, ymax = est_rho_max), alpha = .2) +
-#   xlab("Observations") +
-#   theme_bw() +
-#   theme(legend.key = element_blank()) +
-#   theme(legend.position = c(1.1,.6), legend.direction = "vertical") +
-#   theme(legend.title = element_blank())
-# 
-# plot(copula_uu_5[1,], copula_uu_5[2,], xlab = "U1", ylab = "U2")
-# plot(copula_uu_pred[1,], copula_uu_pred[2,], xlab = "Predicted U1", ylab = "Predicted U2")
+
+
+pred_cond_mod = pred_cond %>%
+  group_by(panel.name, obs, rho_true) %>%
+  summarise(rho_mean = mean(y), rho_q95 = quantile(y, .95), rho_q05 = quantile(y, .05)) 
+
+ggplot(pred_cond_mod) +
+  geom_line(aes(obs, rho_mean)) +
+  geom_line(aes(obs, rho_true), col = 2) +
+  geom_line(aes(obs, rho_q95), col = 3) +
+  geom_line(aes(obs, rho_q05), col = 3) +
+  facet_wrap(facets = ~panel.name, ncol = 2) +
+  xlab('X') +
+  ylab('estimated rho') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 30))
+
+copula_uu_pred <- sapply(1:nrow(pred_cond_mod), function(i)BiCopSim(N=1 , family = 1, par = pred_cond_mod$rho_mean[i]))
+
+pred_cond_mod$U1 = copula_uu_pred[1,]
+pred_cond_mod$U2 = copula_uu_pred[2,]
+
+ggplot(pred_cond_mod) +
+  geom_point(aes(U1, U2), size = 0.7) +
+  facet_wrap(facets = ~panel.name, ncol = 2) +
+  xlab('U1') +
+  ylab('U2') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 30))
