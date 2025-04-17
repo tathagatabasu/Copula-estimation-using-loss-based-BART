@@ -470,6 +470,21 @@ set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma){
   }
 }
 
+gaussian_copula_loglik <- function(rho, u, v) {
+  z1 <- qnorm(u)
+  z2 <- qnorm(v)
+  
+  # Number of observations
+  n <- length(z1)
+  
+  # Compute log-likelihood
+  log_det = log(1 - rho^2)
+  quad_form = (z1^2 - 2 * rho * z1 * z2 + z2^2) / (1 - rho^2)
+  
+  log_lik = -0.5 * sum(log_det + quad_form)
+  return(log_lik)
+}
+
 logprior_unif <- function(rho, alpha_val, beta_val) {
   return((alpha_val - 1)*log(1 + rho) + (beta_val - 1)*log(1 - rho))
 }
