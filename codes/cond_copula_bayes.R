@@ -358,8 +358,8 @@ p_prior = ggplot(data_plot_prior) +
   geom_line(aes(p, IG22), col = "darkgreen") +
   geom_line(aes(p, LN1), col = "blue") +
   geom_line(aes(p, LN0.8), col = "darkblue") +
-  xlab('X') +
-  ylab('estimated rho') +
+  xlab('rho') +
+  ylab('p.d.f.') +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 30))
 

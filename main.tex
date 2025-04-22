@@ -128,6 +128,106 @@ and $B \coloneqq \left[\Phi^{-1}(u_{1i})^2 + \Phi^{-1}(u_{2i})^2\right]$.
 Note that for the first three choices, we only work with transformed beta distribution by 
 selecting suitable hyper-parameters.
 
+\subsection{Density of $\rho$}
+
+Let $\kappa = -\log(1-p^2)$, then for $\rho \ge 0$
+\begin{align}
+	\rho & = \sqrt{1-\exp(-\kappa)}\coloneqq g(\kappa)
+\end{align}
+
+Now, let $0\le\kappa_1 < \kappa_2<\infty$, then
+
+\begin{align}
+	&g(\kappa_2) - g(\kappa_1)\\
+	&=\sqrt{1-\exp(-\kappa_2)} - \sqrt{1-\exp(-\kappa_1)}\\
+	&= \frac{(\sqrt{1-\exp(-\kappa_2)} - \sqrt{1-\exp(-\kappa_1)})(\sqrt{1-\exp(-\kappa_2)} + \sqrt{1-\exp(-\kappa_1)})}{(\sqrt{1-\exp(-\kappa_2)} + \sqrt{1-\exp(-\kappa_1)})}\\
+	&= \frac{(1-\exp(-\kappa_2) - 1+\exp(-\kappa_1))}{(\sqrt{1-\exp(-\kappa_2)} + \sqrt{1-\exp(-\kappa_1)})}\\
+	&= \frac{(\exp(-\kappa_1)-\exp(-\kappa_2))}{(\sqrt{1-\exp(-\kappa_2)} + \sqrt{1-\exp(-\kappa_1)})}\\
+	&= \frac{(\exp(\kappa_2)-\exp(-\kappa_1))}
+	{(\exp(\kappa_2)\exp(-\kappa_1))(\sqrt{1-\exp(-\kappa_2)} + \sqrt{1-\exp(-\kappa_1)})} >0.
+\end{align}
+Therefore it is monotone and increasing.
+
+Now, for $\rho \ge 0$ the density is given by
+\begin{align}
+	f_{\rho}(\rho)&=f_{\kappa}(\kappa)\left|\frac{d \kappa}{d \rho}\right|\\
+	&=f_{\kappa}\left(-\log(1-p^2)\right)\frac{2\rho}{1-\rho^2}
+\end{align}
+Therefore for log-normal distribution
+\begin{equation}
+	f_{\rho}(\rho)
+	= \frac{1}{\sqrt{2\pi\sigma^2}(-\log(1-\rho^2))} 
+	\exp\left(-\frac{(\log(-\log(1-\rho^2))-\mu)^2}{2\sigma^2}\right)
+	\cdot \frac{2\rho}{1-\rho^2}
+\end{equation}
+Similarly, we can derive the expression $\rho<0$ using the relation
+$\rho = -\sqrt{1-\exp(-\kappa)}$. This gives us the following
+symmetric density function
+\begin{equation}
+	f_{\rho}(\rho)
+	= \frac{\sqrt{2}|\rho|}{\sqrt{\pi}\sigma(1-\rho^2)(-\log(1-\rho^2))} 
+	\exp\left(-\frac{(\log(-\log(1-\rho^2))-\mu)^2}{2\sigma^2}\right)
+\end{equation}
+
+\paragraph{Continuity at 0} To show the continuity of the density function at 0 we first need to show that the limit $f_{\rho}(0)$
+exists.
+
+Since,
+
+\begin{align}
+	\lim_{\rho\to 0}f_{\rho}(\rho)
+	&= \lim_{\rho\to 0}\left[\frac{\sqrt{2}|\rho|}{\sqrt{\pi}\sigma(1-\rho^2)(-\log(1-\rho^2))} 
+	\exp\left(-\frac{(\log(-\log(1-\rho^2))-\mu)^2}{2\sigma^2}\right)\right]\\
+	&= \frac{\sqrt{2}}{\sqrt{\pi}\sigma}\lim_{\rho\to 0}\left[\frac{|\rho|}{(1-\rho^2)} \right]
+	\lim_{\rho\to 0}\left[\frac{1}{(-\log(1-\rho^2))} 
+	\exp\left(-\frac{(\log(-\log(1-\rho^2))-\mu)^2}{2\sigma^2}\right)\right]
+\end{align}
+The limit $\lim_{\rho\to 0}\left[\frac{|\rho|}{(1-\rho^2)} \right]$ exists and equal to zero. For the remaining part we use change of variables.
+
+\begin{align}
+	&\lim_{\rho\to 0}\left[\frac{1}{(-\log(1-\rho^2))} 
+	\exp\left(-\frac{(\log(-\log(1-\rho^2))-\mu)^2}{2\sigma^2}\right)\right]\\
+	& = \lim_{\kappa\to 0}\left[\frac{1}{\kappa} 
+	\exp\left(-\frac{(\log(\kappa)-\mu)^2}{2\sigma^2}\right)\right]\\
+	& = \lim_{\eta\to -\infty}\left[\frac{1}{\exp(\eta)} 
+	\exp\left(-\frac{(\eta-\mu)^2}{2\sigma^2}\right)\right]\\
+	& = \lim_{\eta\to -\infty}\left[\frac{1}{\exp(\eta)} 
+	\exp\left(-\frac{(\eta-\mu)^2}{2\sigma^2}\right)\right]\quad \text{TB: this holds for finite limits need to verify infinite}\\
+	& = \lim_{\eta\to -\infty}\left[ 
+	\exp\left(-\frac{(\eta-\mu)^2}{2\sigma^2}-\eta\right)\right] = 0
+\end{align}
+Since the density function is symmetric around 0, proceeding like before we can show that
+\begin{equation}
+	\lim_{\rho\to 0+}f_{\rho}(\rho) = \lim_{\rho\to 0-}f_{\rho}(\rho) = 0
+\end{equation}
+
+Now, for inverse-gamma distribution, the density of $\kappa$ is given by:
+\begin{equation}
+	f_{\kappa}(\kappa)= \frac{b^{a}}{\Gamma(a)}
+	\kappa^{-a-1}\exp(-b/\kappa)
+\end{equation}
+Therefore, the density of $\rho$ is given by:
+\begin{equation}
+	f_{\rho}(\rho) = \frac{2b^{a}|\rho|}{\Gamma(a)(1-\rho^2)}
+	(-\log(1-p^2))^{-a-1}\exp\left(-\frac{b}{-\log(1-p^2)}\right)
+\end{equation}
+Like before, we can show that the function is continuous at 0.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{prior_comparison.pdf}
+	\caption{Different probability density functions for $\mu_{ij}$ a)black for uniform distribution,
+	b)grey for Beta(2,2),
+	c)red for Jeffrey's prior,
+	d)orange for Beta(0.5,0.5),
+	e)green for inverse-gamma (1,1),
+	f)dark green for inverse-gamma (2,2),
+	g)blue for log-normal (0,1) and
+	h)dark blue for log-normal (0, 0.8)}
+	\label{fig:sim-prior}
+\end{figure}
+
+
 \section{Simulation Studies}
 
 We consider 5 different test cases so that
@@ -151,11 +251,261 @@ We consider 5 different test cases so that
     \end{equation}
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.95\linewidth]{true_rho_copula.pdf}
     \caption{Simulated $\rho$ and corresponding copula}
     \label{fig:sim-dat}
 \end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_depth_1.pdf}
+	\caption{Histogram of depth}
+	\label{fig:hist:depth:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_depth_1.pdf}
+	\caption{Trace of depth}
+	\label{fig:trace:depth:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_nl_1.pdf}
+	\caption{Histogram of $n_L$}
+	\label{fig:hist:nl:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_nl_1.pdf}
+	\caption{Trace of $n_L$}
+	\label{fig:trace:nl:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{mcmc_rho_1.pdf}
+	\caption{MCMC of $\rho$}
+	\label{fig:mcmc:rho:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{predicted_rho_1.pdf}
+	\caption{Estimated $\rho$ and credible intervals}
+	\label{fig:pred:rho:1}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{simulated_copula_1.pdf}
+	\caption{Predicted copula with estimated $\rho$}
+	\label{fig:sim:copula:1}
+\end{figure}
+
+%
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_depth_2.pdf}
+	\caption{Histogram of depth}
+	\label{fig:hist:depth:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_depth_2.pdf}
+	\caption{Trace of depth}
+	\label{fig:trace:depth:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_nl_2.pdf}
+	\caption{Histogram of $n_L$}
+	\label{fig:hist:nl:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_nl_2.pdf}
+	\caption{Trace of $n_L$}
+	\label{fig:trace:nl:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{mcmc_rho_2.pdf}
+	\caption{MCMC of $\rho$}
+	\label{fig:mcmc:rho:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{predicted_rho_2.pdf}
+	\caption{Estimated $\rho$ and credible intervals}
+	\label{fig:pred:rho:2}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{simulated_copula_2.pdf}
+	\caption{Predicted copula with estimated $\rho$}
+	\label{fig:sim:copula:2}
+\end{figure}
+
+%
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_depth_3.pdf}
+	\caption{Histogram of depth}
+	\label{fig:hist:depth:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_depth_3.pdf}
+	\caption{Trace of depth}
+	\label{fig:trace:depth:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_nl_3.pdf}
+	\caption{Histogram of $n_L$}
+	\label{fig:hist:nl:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_nl_3.pdf}
+	\caption{Trace of $n_L$}
+	\label{fig:trace:nl:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{mcmc_rho_3.pdf}
+	\caption{MCMC of $\rho$}
+	\label{fig:mcmc:rho:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{predicted_rho_3.pdf}
+	\caption{Estimated $\rho$ and credible intervals}
+	\label{fig:pred:rho:3}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{simulated_copula_3.pdf}
+	\caption{Predicted copula with estimated $\rho$}
+	\label{fig:sim:copula:3}
+\end{figure}
+
+%
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_depth_4.pdf}
+	\caption{Histogram of depth}
+	\label{fig:hist:depth:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_depth_4.pdf}
+	\caption{Trace of depth}
+	\label{fig:trace:depth:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_nl_4.pdf}
+	\caption{Histogram of $n_L$}
+	\label{fig:hist:nl:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_nl_4.pdf}
+	\caption{Trace of $n_L$}
+	\label{fig:trace:nl:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{mcmc_rho_4.pdf}
+	\caption{MCMC of $\rho$}
+	\label{fig:mcmc:rho:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{predicted_rho_4.pdf}
+	\caption{Estimated $\rho$ and credible intervals}
+	\label{fig:pred:rho:4}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{simulated_copula_4.pdf}
+	\caption{Predicted copula with estimated $\rho$}
+	\label{fig:sim:copula:4}
+\end{figure}
+
+%
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_depth_5.pdf}
+	\caption{Histogram of depth}
+	\label{fig:hist:depth:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_depth_5.pdf}
+	\caption{Trace of depth}
+	\label{fig:trace:depth:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{hist_nl_5.pdf}
+	\caption{Histogram of $n_L$}
+	\label{fig:hist:nl:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{trace_nl_5.pdf}
+	\caption{Trace of $n_L$}
+	\label{fig:trace:nl:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{mcmc_rho_5.pdf}
+	\caption{MCMC of $\rho$}
+	\label{fig:mcmc:rho:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{predicted_rho_5.pdf}
+	\caption{Estimated $\rho$ and credible intervals}
+	\label{fig:pred:rho:5}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.95\linewidth]{simulated_copula_5.pdf}
+	\caption{Predicted copula with estimated $\rho$}
+	\label{fig:sim:copula:5}
+\end{figure}
+
 
 \end{document}
