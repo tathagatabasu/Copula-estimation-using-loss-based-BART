@@ -50,8 +50,14 @@ plot(X_obs, rho_true_3, xlab = "Observations", ylab = "rho")
 plot(X_obs, rho_true_4, xlab = "Observations", ylab = "rho")
 plot(X_obs, rho_true_5, xlab = "Observations", ylab = "rho")
 
+# gaussian case
+# for (i in 1:5) {
+#   assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
+# }
+
+# frank copula
 for (i in 1:5) {
-  assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
+  assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 5, par = BiCopTau2Par(5,get(paste0("rho_true_",i))[k]))))
 }
 
 plot(copula_uu_1[1,], copula_uu_1[2,], xlab = "U1", ylab = "U2")
@@ -211,7 +217,7 @@ for (i in 1:5) {
 ## DEFAULT MODELS ##
 ####################
 
-test_case = 1
+test_case = 5
 
 model.list.def <- list(
   get(paste0("mcmc_lb.def_unif_",test_case)),
@@ -368,3 +374,19 @@ p_prior_zoom = p_prior +
   ylim(c(0, 20))
 
 p_prior_zoom
+
+
+pred_cond_stat = pred_cond_mod %>%
+  group_by(panel.name)%>%
+  mutate(RMSE = mean((rho_true - rho_mean)^2)) %>%
+  mutate(CI.length = mean(rho_q95 - rho_q05)) %>%
+  mutate(CI.cov = mean((rho_true < rho_q95) & (rho_true > rho_q05))) %>%
+  dplyr::select(c(RMSE, CI.length, CI.cov))
+
+pred_cond_summary = pred_cond_stat %>%
+  group_by(panel.name)%>%
+  summarise_all(mean)
+
+library(xtable)
+
+xtable(pred_cond_summary , digits = 4)
