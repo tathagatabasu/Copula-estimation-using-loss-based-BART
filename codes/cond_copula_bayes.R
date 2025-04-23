@@ -33,16 +33,16 @@ tree_top <- assign_node_idx(tree_top)
 tree_top <- assign_split_rules(tree_top, X_obs)
 tree_top <- assign_term_node_values_binary(tree_top, 7, 2)
 rho_true_1 <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
-rho_true_1 <- matrix(rho_true_1, ncol = 1) - 0.5
+rho_true_1 <- matrix(rho_true_1, ncol = 1)
 rm(tree_top)
 # monotone
-rho_true_2 <-  + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
+rho_true_2 <- 0.5 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
 # convex
-rho_true_3 <- 0.1 + 0.3 * sin(3*X_obs)
+rho_true_3 <- 0.6 + 0.3 * sin(3*X_obs)
 # concave
-rho_true_4 <- .4 - 0.3 * sin(3*X_obs)
+rho_true_4 <- 0.9 - 0.3 * sin(3*X_obs)
 # non-convex
-rho_true_5 <- 0.2 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2
+rho_true_5 <- 0.7 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2
 
 
 plot(X_obs, rho_true_1, xlab = "Observations", ylab = "rho")
@@ -51,8 +51,14 @@ plot(X_obs, rho_true_3, xlab = "Observations", ylab = "rho")
 plot(X_obs, rho_true_4, xlab = "Observations", ylab = "rho")
 plot(X_obs, rho_true_5, xlab = "Observations", ylab = "rho")
 
+# gaussian
+# for (i in 1:5) {
+#   assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
+# }
+
+# Frank
 for (i in 1:5) {
-  assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
+  assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 5, par = BiCopTau2Par(family = 5, get(paste0("rho_true_",i))[k]))))
 }
 
 # Create 2D histogram (bins only)
@@ -64,7 +70,7 @@ hist_5 <- hist2d(copula_uu_5[1,], copula_uu_5[2,], nbins = c(10,10), show = FALS
 
 # Plot 3D histogram
 
-par(mar = c(0,0,0,0))
+par(mar = c(2,2,1,1))
 
 plot(copula_uu_1[1,], copula_uu_1[2,], xlab = "U1", ylab = "U2")
 
