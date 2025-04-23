@@ -15,6 +15,7 @@ library(ggplot2)
 library(MASS)   # For multivariate normal functions
 library(coda)   # For MCMC diagnostics
 library(plot3D)
+library(gplots)
 
 # data generation
 
@@ -54,11 +55,96 @@ for (i in 1:5) {
   assign(paste0("copula_uu_",i), sapply(1:n, function(k)BiCopSim(N=1 , family = 1, par = get(paste0("rho_true_",i))[k])))
 }
 
+# Create 2D histogram (bins only)
+hist_1 <- hist2d(copula_uu_1[1,], copula_uu_1[2,], nbins = c(10,10), show = FALSE)
+hist_2 <- hist2d(copula_uu_2[1,], copula_uu_2[2,], nbins = c(10,10), show = FALSE)
+hist_3 <- hist2d(copula_uu_3[1,], copula_uu_3[2,], nbins = c(10,10), show = FALSE)
+hist_4 <- hist2d(copula_uu_4[1,], copula_uu_4[2,], nbins = c(10,10), show = FALSE)
+hist_5 <- hist2d(copula_uu_5[1,], copula_uu_5[2,], nbins = c(10,10), show = FALSE)
+
+# Plot 3D histogram
+
+par(mar = c(0,0,0,0))
+
 plot(copula_uu_1[1,], copula_uu_1[2,], xlab = "U1", ylab = "U2")
+
+hist3D(
+  x = hist_1$x,
+  y = hist_1$y,
+  z = hist_1$counts,
+  colvar = NULL,  # disables color mapping
+  col = "lightblue",  # solid monochrome color
+  border = "black",
+  theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  lighting = TRUE,
+  ltheta = 120, ticktype = "detailed",
+  xlab = "", ylab = "", zlab = "",
+  main = ""
+)
+
 plot(copula_uu_2[1,], copula_uu_2[2,], xlab = "U1", ylab = "U2")
+
+hist3D(
+  x = hist_2$x,
+  y = hist_2$y,
+  z = hist_2$counts,
+  colvar = NULL,  # disables color mapping
+  col = "lightblue",  # solid monochrome color
+  border = "black",
+  theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  lighting = TRUE,
+  ltheta = 120, ticktype = "detailed",
+  xlab = "", ylab = "", zlab = "",
+  main = ""
+)
+
 plot(copula_uu_3[1,], copula_uu_3[2,], xlab = "U1", ylab = "U2")
+
+hist3D(
+  x = hist_3$x,
+  y = hist_3$y,
+  z = hist_3$counts,
+  colvar = NULL,  # disables color mapping
+  col = "lightblue",  # solid monochrome color
+  border = "black",
+  theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  lighting = TRUE,
+  ltheta = 120, ticktype = "detailed",
+  xlab = "", ylab = "", zlab = "",
+  main = ""
+)
+
 plot(copula_uu_4[1,], copula_uu_4[2,], xlab = "U1", ylab = "U2")
+
+hist3D(
+  x = hist_4$x,
+  y = hist_4$y,
+  z = hist_4$counts,
+  colvar = NULL,  # disables color mapping
+  col = "lightblue",  # solid monochrome color
+  border = "black",
+  theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  lighting = TRUE,
+  ltheta = 120, ticktype = "detailed",
+  xlab = "", ylab = "", zlab = "",
+  main = ""
+)
+
 plot(copula_uu_5[1,], copula_uu_5[2,], xlab = "U1", ylab = "U2")
+
+hist3D(
+  x = hist_5$x,
+  y = hist_5$y,
+  z = hist_5$counts,
+  colvar = NULL,  # disables color mapping
+  col = "lightblue",  # solid monochrome color
+  border = "black",
+  theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  lighting = TRUE,
+  ltheta = 120, ticktype = "detailed",
+  xlab = "", ylab = "", zlab = "",
+  main = ""
+)
 
 ##################################################
 # normalise predictors 
