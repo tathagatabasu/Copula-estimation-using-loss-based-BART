@@ -325,6 +325,11 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
+  }else if(cop_type == "Clayton"){
+    HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
+                          beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
+               logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
+                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }
   
   
@@ -464,6 +469,8 @@ cart_log_lik_copula <- function(tree_top, U1, U2, X, cop_type){ # check input
     log.prob.obs <- gaussian_copula_loglik(tree.at.obs, U1, U2)
   }else if(cop_type == "Frank"){
     log.prob.obs <- loglik_frank(tree.at.obs, U1, U2)
+  }else if(cop_type == "Clayton"){
+    log.prob.obs <- loglik_clayton(tree.at.obs, U1, U2)
   }
   
   return(sum(log.prob.obs))
@@ -501,18 +508,24 @@ gaussian_copula_loglik <- function(rho, u, v) {
 }
 
 loglik_frank <- function(theta, u, v) {
-  # if(any(theta>35)){
-  #   theta[theta>35] = 35
-  # } else if(any(theta<-35)){
-  #   theta[theta< -35] = -35
-  # }
+  
+  theta = pmin(theta, 35)
+  theta = pmax(theta, -35)
   densty = BiCopPDF(u, v, par = theta, family = 5)
   return(sum(log(densty)))
 }
 
+loglik_clayton <- function(theta, u, v) {
+  
+  theta = pmin(theta, 28)
+  theta = pmax(theta, 1e-10)
+  densty = BiCopPDF(u, v, par = theta, family = 3)
+  return(sum(log(densty)))
+}
 
-logprior_unif <- function(rho, alpha_val, beta_val) {
-  return((alpha_val - 1)*log(1 + rho) + (beta_val - 1)*log(1 - rho))
+
+logprior_unif <- function(rho, bound = 1, alpha_val, beta_val) {
+  return((alpha_val - 1)*log(bound + rho) + (beta_val - 1)*log(bound - rho))
 }
 
 logprior_inv_gamma <- function(p, alpha_val, beta_val) {
@@ -557,6 +570,24 @@ logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sig
   }else if(cop_type == "Frank"){
     if(prior_type == "Normal"){
       return(loglik_frank(rho, u, v) + log(dnorm(rho, mean = log_nor_mu, sd = log_nor_sigma)))
+    }else{
+      if(prior_type == "T"){
+        return(loglik_frank(rho, u, v) + log(dt(rho, ncp = log_nor_mu, df = 1/log_nor_sigma)))
+      }else{
+        if(prior_type == "Unif"){
+          return(loglik_frank(rho, u, v) + log(dunif(rho, min = -35, max = 35)))
+        }else{
+          return(loglik_frank(rho, u, v) + logprior_unif(rho, bound = 35+1e-3, alpha_val, beta_val))
+        }
+      }
+    }
+  }else if(cop_type == "Clayton"){
+    if(prior_type == "IG"){
+      return(loglik_clayton(rho, u, v) + log(dgamma(rho, shape = alpha_val, rate = beta_val)))
+    }else{
+      if(prior_type == "LN"){
+        return(loglik_clayton(rho, u, v) + log(dlnorm(rho, meanlog = log_nor_mu, sdlog = log_nor_sigma)))
+      }
     }
   }
 }
