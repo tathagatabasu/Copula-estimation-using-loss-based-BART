@@ -312,7 +312,7 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   
   ##############################################################################
   proposal = rnorm(1, mu, sigma)
-  
+  print(proposal)
   if(cop_type == "Gauss"){
     if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
       # Hastings ratio of the proposal
@@ -326,10 +326,12 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }else if(cop_type == "Clayton"){
-    HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-                          beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-               logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
+    if(proposal<=0) HR = 0 else{
+      HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
+                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
+                 logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
+                              beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
+    }
   }
   
   

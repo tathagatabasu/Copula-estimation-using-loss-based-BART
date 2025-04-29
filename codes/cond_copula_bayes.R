@@ -95,7 +95,7 @@ plot(X_obs, tau_true_5, xlab = "Observations", ylab = "tau")
 # gaussian
 if(T){
   for (i in 1:5) {
-    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = get(paste0("tau_true_",i))))
+    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = BiCopTau2Par(family = 1, get(paste0("tau_true_",i)))))
   }
   
   
@@ -338,7 +338,7 @@ if(T){
 # frank
 if(T){
   for (i in 1:5) {
-    assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = get(paste0("tau_true_",i))))
+    assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = BiCopTau2Par(family = 5, get(paste0("tau_true_",i)))))
   }
   
   
@@ -585,7 +585,7 @@ if(T){
 # clayton
 if(T){
   for (i in 1:5) {
-    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = get(paste0("tau_true_",i))))
+    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = BiCopTau2Par(family = 3, get(paste0("tau_true_",i)))))
   }
   
   
@@ -838,14 +838,14 @@ if(F){
   n.born.out.par = 250
   
   model.list.def <- list(
-    get(paste0("mcmc_lb.def_unif_",test_case)),
-    get(paste0("mcmc_lb.def_half_",test_case)),
-    get(paste0("mcmc_lb.def_jeff_",test_case)),
-    get(paste0("mcmc_lb.def_two_",test_case)),
-    get(paste0("mcmc_lb.def_LN0.8_",test_case)),
-    get(paste0("mcmc_lb.def_LN1_",test_case)),
-    get(paste0("mcmc_lb.def_IG22_",test_case)),
-    get(paste0("mcmc_lb.def_IG11_",test_case)))
+    get(paste0("gauss_mcmc_lb.def_unif_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_half_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_jeff_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_two_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_LN0.8_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_LN1_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_IG22_",test_case)),
+    get(paste0("gauss_mcmc_lb.def_IG11_",test_case)))
   
   names(model.list.def) <- c(
     'LB - default - unif',
@@ -951,6 +951,416 @@ if(F){
   
   pred_cond_mod$U1 = copula_uu_gauss_pred[,1]
   pred_cond_mod$U2 = copula_uu_gauss_pred[,2]
+  
+  pred_cond_mod_p1 = pred_cond_mod %>% filter(panel.name == "LB - default - unif")
+  pred_cond_mod_p2 = pred_cond_mod %>% filter(panel.name == "LB - default - half")
+  pred_cond_mod_p3 = pred_cond_mod %>% filter(panel.name == "LB - default - jeff")
+  pred_cond_mod_p4 = pred_cond_mod %>% filter(panel.name == "LB - default - two")
+  pred_cond_mod_p5 = pred_cond_mod %>% filter(panel.name == "LB - default - LN0.8")
+  pred_cond_mod_p6 = pred_cond_mod %>% filter(panel.name == "LB - default - LN1")
+  pred_cond_mod_p7 = pred_cond_mod %>% filter(panel.name == "LB - default - IG11")
+  pred_cond_mod_p8 = pred_cond_mod %>% filter(panel.name == "LB - default - IG22")
+  
+  hist_pred1 <- hist2d(pred_cond_mod_p1$U1, pred_cond_mod_p1$U2, nbins = c(10,10), show = FALSE)
+  hist_pred2 <- hist2d(pred_cond_mod_p2$U1, pred_cond_mod_p2$U2, nbins = c(10,10), show = FALSE)
+  hist_pred3 <- hist2d(pred_cond_mod_p3$U1, pred_cond_mod_p3$U2, nbins = c(10,10), show = FALSE)
+  hist_pred4 <- hist2d(pred_cond_mod_p4$U1, pred_cond_mod_p4$U2, nbins = c(10,10), show = FALSE)
+  hist_pred5 <- hist2d(pred_cond_mod_p5$U1, pred_cond_mod_p5$U2, nbins = c(10,10), show = FALSE)
+  hist_pred6 <- hist2d(pred_cond_mod_p6$U1, pred_cond_mod_p6$U2, nbins = c(10,10), show = FALSE)
+  hist_pred7 <- hist2d(pred_cond_mod_p7$U1, pred_cond_mod_p7$U2, nbins = c(10,10), show = FALSE)
+  hist_pred8 <- hist2d(pred_cond_mod_p8$U1, pred_cond_mod_p8$U2, nbins = c(10,10), show = FALSE)
+  
+  hist3D(
+    x = hist_pred1$x,
+    y = hist_pred1$y,
+    z = hist_pred1$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p1$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred2$x,
+    y = hist_pred2$y,
+    z = hist_pred2$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p2$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred3$x,
+    y = hist_pred3$y,
+    z = hist_pred3$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p3$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred4$x,
+    y = hist_pred4$y,
+    z = hist_pred4$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p4$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred5$x,
+    y = hist_pred5$y,
+    z = hist_pred5$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p5$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred6$x,
+    y = hist_pred6$y,
+    z = hist_pred6$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p6$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred7$x,
+    y = hist_pred7$y,
+    z = hist_pred7$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p7$panel.name)
+  )
+  
+  hist3D(
+    x = hist_pred8$x,
+    y = hist_pred8$y,
+    z = hist_pred8$counts,
+    colvar = NULL,  # disables color mapping
+    col = "lightblue",  # solid monochrome color
+    border = "black",
+    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    lighting = TRUE,
+    ltheta = 120, ticktype = "detailed",
+    xlab = "", ylab = "", zlab = "",
+    main = unique(pred_cond_mod_p8$panel.name)
+  )
+  
+  pred_cond_stat = pred_cond_mod %>%
+    group_by(panel.name)%>%
+    mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
+    mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
+    mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
+    dplyr::select(c(RMSE, CI.length, CI.cov))
+  
+  pred_cond_summary = pred_cond_stat %>%
+    group_by(panel.name)%>%
+    summarise_all(mean)
+  
+  xtable(pred_cond_summary , digits = 4)
+}
+
+# frank
+
+if(F){
+  test_case = 2
+  
+  n.born.out.par = 250
+  
+  model.list.def <- list(
+    get(paste0("frank_mcmc_lb.def_unif_",test_case)),
+    get(paste0("frank_mcmc_lb.def_jeff_",test_case)),
+    get(paste0("frank_mcmc_lb.def_normal_",test_case)),
+    get(paste0("frank_mcmc_lb.def_t_",test_case)),
+    get(paste0("frank_mcmc_lossb.prior.high.gam_unif_",test_case)),
+    get(paste0("frank_mcmc_lossb.prior.high.gam_jeff_",test_case)),
+    get(paste0("frank_mcmc_lossb.prior.high.gam_normal_",test_case)),
+    get(paste0("frank_mcmc_lossb.prior.high.gam_t_",test_case)))
+  
+  names(model.list.def) <- c(
+    'LB - default - unif',
+    'LB - default - jeff',
+    'LB - default - normal',
+    'LB - default - t',
+    'LB - high.gam - unif',
+    'LB - high.gam - jeff',
+    'LB - high.gam - normal',
+    'LB - high.gam - t')
+  
+  
+  # extract depth, number of terminal nodes, missing rate and loglik of all the trees
+  depth.df <- apply_fun_models(fun_ = get_depth,
+                               mcmc.list = model.list.def,
+                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
+                               mcmc.list = model.list.def,
+                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  
+  hist.nl <- ggplot(nterm.df) +
+    geom_histogram(aes(x = y, y = after_stat(density)),
+                   binwidth = 1, color = 'black', fill = 'white') +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab(~n[L]) +
+    ylab('PMF') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,24,by = 3))
+  
+  hist.depth <- ggplot(depth.df) +
+    geom_histogram(aes(x = y, y = after_stat(density)),
+                   binwidth = 1, color = 'black', fill = 'white') +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Depth') +
+    ylab('PMF') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,10,by = 1))
+  
+  trace.nl <- ggplot(nterm.df) +
+    geom_vline(xintercept = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50),
+               color = 'grey', size = 0.2, alpha=0.75)+
+    geom_line(aes(x, y)) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Iteration') +
+    ylab(~n[L]) +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50)) +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  trace.depth <- ggplot(depth.df) +
+    geom_vline(xintercept = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50),
+               color = 'grey', size = 0.2, alpha=0.75)+
+    geom_line(aes(x, y)) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Iteration') +
+    ylab('Depth') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50)) +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  hist.nl
+  hist.depth
+  
+  trace.nl
+  trace.depth
+  
+  pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs.norm[i,,drop = FALSE]),
+                                                                     mcmc.list = model.list.def,
+                                                                     born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
+  
+  
+  pred_cond = do.call(rbind,pred_cond)
+  
+  pred_cond$obs = as.vector(apply(X_obs.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(BiCopTau2Par(family = 5, get(paste0("tau_true_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  
+  ggplot(pred_cond) +
+    geom_line(aes(obs, y)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated theta') +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  
+  pred_cond_mod = pred_cond %>%
+    group_by(panel.name, obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .95), theta_q025 = quantile(y, .05)) 
+  
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated theta') +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  copula_uu_frank_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 5, par = pred_cond_mod$theta_mean)
+  
+  pred_cond_mod$U1 = copula_uu_frank_pred[,1]
+  pred_cond_mod$U2 = copula_uu_frank_pred[,2]
+  
+  ggplot(pred_cond_mod) +
+    geom_point(aes(U1, U2), size = 0.7) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('U1') +
+    ylab('U2') +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  pred_cond_stat = pred_cond_mod %>%
+    group_by(panel.name)%>%
+    mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
+    mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
+    mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
+    dplyr::select(c(RMSE, CI.length, CI.cov))
+  
+  pred_cond_summary = pred_cond_stat %>%
+    group_by(panel.name)%>%
+    summarise_all(mean)
+  
+  xtable(pred_cond_summary , digits = 4)
+}
+
+# clayton
+
+if(F){
+  test_case = 1
+  
+  n.born.out.par = 250
+  
+  model.list.def <- list(
+    get(paste0("clayton_mcmc_lb.def_IG22_",test_case)),
+    get(paste0("clayton_mcmc_lb.def_IG11_",test_case)),
+    get(paste0("clayton_mcmc_lb.def_LN01_",test_case)),
+    get(paste0("clayton_mcmc_lb.def_LN05_",test_case)),
+    get(paste0("clayton_mcmc_lossb.prior.high.gam_IG11_",test_case)),
+    get(paste0("clayton_mcmc_lossb.prior.high.gam_IG22_",test_case)),
+    get(paste0("clayton_mcmc_lossb.prior.high.gam_LN01_",test_case)),
+    get(paste0("clayton_mcmc_lossb.prior.high.gam_LN05_",test_case)))
+  
+  names(model.list.def) <- c(
+    'LB - default - IG22',
+    'LB - default - IG11',
+    'LB - default - LN01',
+    'LB - default - LN05',
+    'LB - high.gam - IG11',
+    'LB - high.gam - IG22',
+    'LB - high.gam - LN01',
+    'LB - high.gam - LN05')
+  
+  
+  # extract depth, number of terminal nodes, missing rate and loglik of all the trees
+  depth.df <- apply_fun_models(fun_ = get_depth,
+                               mcmc.list = model.list.def,
+                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
+                               mcmc.list = model.list.def,
+                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  
+  hist.nl <- ggplot(nterm.df) +
+    geom_histogram(aes(x = y, y = after_stat(density)),
+                   binwidth = 1, color = 'black', fill = 'white') +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab(~n[L]) +
+    ylab('PMF') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,24,by = 3))
+  
+  hist.depth <- ggplot(depth.df) +
+    geom_histogram(aes(x = y, y = after_stat(density)),
+                   binwidth = 1, color = 'black', fill = 'white') +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Depth') +
+    ylab('PMF') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,10,by = 1))
+  
+  trace.nl <- ggplot(nterm.df) +
+    geom_vline(xintercept = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50),
+               color = 'grey', size = 0.2, alpha=0.75)+
+    geom_line(aes(x, y)) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Iteration') +
+    ylab(~n[L]) +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50)) +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  trace.depth <- ggplot(depth.df) +
+    geom_vline(xintercept = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50),
+               color = 'grey', size = 0.2, alpha=0.75)+
+    geom_line(aes(x, y)) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('Iteration') +
+    ylab('Depth') +
+    theme_classic() +
+    scale_x_continuous(breaks = seq(0,n.chain_par * (n.iter_par - n.born.out.par),by = 50)) +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  hist.nl
+  hist.depth
+  
+  trace.nl
+  trace.depth
+  
+  pred_cond = lapply(1:nrow(X_obs.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs.norm[i,,drop = FALSE]),
+                                                                     mcmc.list = model.list.def,
+                                                                     born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
+  
+  
+  pred_cond = do.call(rbind,pred_cond)
+  
+  pred_cond$obs = as.vector(apply(X_obs.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(BiCopTau2Par(family = 3, get(paste0("tau_true_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  
+  ggplot(pred_cond) +
+    geom_line(aes(obs, y)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated theta') +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  
+  pred_cond_mod = pred_cond %>%
+    group_by(panel.name, obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .95), theta_q025 = quantile(y, .05)) 
+  
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated theta') +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30))
+  
+  copula_uu_clayton_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 3, par = pred_cond_mod$theta_mean)
+  
+  pred_cond_mod$U1 = copula_uu_clayton_pred[,1]
+  pred_cond_mod$U2 = copula_uu_clayton_pred[,2]
   
   ggplot(pred_cond_mod) +
     geom_point(aes(U1, U2), size = 0.7) +
