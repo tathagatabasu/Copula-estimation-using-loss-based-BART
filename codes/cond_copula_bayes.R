@@ -197,7 +197,7 @@ if(T){
   rownames(X_obs.norm) <- 1:nrow(X_obs)
   
   n.chain_par <- 5
-  n.iter_par <- 500
+  n.iter_par <- 50000
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
   moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
@@ -205,7 +205,7 @@ if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) # c(1.5618883, 0.6293944)
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_unif_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                  n.iter = n.iter_par,
                                                                  X = X_obs.norm,
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -221,7 +221,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_jeff_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_jeff_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                  n.iter = n.iter_par,
                                                                  X = X_obs.norm,
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -238,7 +238,7 @@ if(T){
   
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_half_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_half_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                  n.iter = n.iter_par,
                                                                  X = X_obs.norm,
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -254,7 +254,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_two_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_two_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                 n.iter = n.iter_par,
                                                                 X = X_obs.norm,
                                                                 U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -270,7 +270,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_LN0.8_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_LN0.8_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                   n.iter = n.iter_par,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -286,7 +286,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_LN1_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_LN1_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                 n.iter = n.iter_par,
                                                                 X = X_obs.norm,
                                                                 U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -302,7 +302,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_IG11_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_IG11_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                  n.iter = n.iter_par,
                                                                  X = X_obs.norm,
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -318,7 +318,7 @@ if(T){
   }
   
   for (i in 1:5) {
-    assign(paste0("gauss_mcmc_lb.def_IG22_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gauss_mcmc_lb.def_IG22_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                  n.iter = n.iter_par,
                                                                  X = X_obs.norm,
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -1099,7 +1099,7 @@ if(F){
 # frank
 
 if(F){
-  test_case = 2
+  test_case = 5
   
   n.born.out.par = 250
   
@@ -1243,7 +1243,7 @@ if(F){
 # clayton
 
 if(F){
-  test_case = 1
+  test_case = 5
   
   n.born.out.par = 250
   
