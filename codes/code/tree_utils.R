@@ -453,6 +453,34 @@ apply_fun_models <- function(fun_, mcmc.list, born.out.pc = 100, n.chain = 10, s
 }
 
 
+# apply a fun to a list of models
+apply_fun_models_res <- function(fun_, mcmc.list, born.out.pc = 100, n.chain = 10, sample.pc = 1000){
+  if(born.out.pc == 0){
+    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$df.res$acceptance, fun_, 1))
+    names(fun.list) <- names(mcmc.list)
+    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees),
+                                                              y = fun.list[[x]],
+                                                              panel.name = names(fun.list)[x]))
+    fun.df <- Reduce(rbind, fun.df.list)
+  }
+  else{
+    idx.bornout <- sort(unlist(outer(1:born.out.pc, sample.pc*(0:(n.chain - 1)), '+')))
+    ntrees.per.model <- vapply(mcmc.list, \(model.res) length(model.res$trees), 0)
+    if(sum(born.out.pc > ntrees.per.model) > 0){
+      stop('Born out greater than number of samples')
+    }
+    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$df.res$acceptance[-idx.bornout], fun_, 1))
+    names(fun.list) <- names(mcmc.list)
+    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees[-idx.bornout]),
+                                                              y = fun.list[[x]],
+                                                              panel.name = names(fun.list)[x]))
+    fun.df <- Reduce(rbind, fun.df.list)
+  }
+  
+  fun.df
+}
+
+
 # fun to predict
 binary.pred.tree <- function(tree_top, X){
   get_value_tree(tree_top, X) >= 0.5

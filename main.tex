@@ -2,9 +2,9 @@
 \usepackage[foot]{amsaddr} % put addresses on first page
 
 \usepackage{geometry}
+\usepackage{booktabs}
 \usepackage{graphicx,psfrag,epsf}
 \usepackage{enumerate}
-\usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{amsfonts}
 \usepackage{mathtools}
@@ -40,6 +40,9 @@
 \section{Introduction}
 
 \section{Model}
+
+\subsection{Conditional copula}
+
 Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable 
 that might affect the relationship between $Y_1$ and $Y_2$. 
 Then according to Sklar’s theorem there exists a unique copula such that:
@@ -56,67 +59,23 @@ where
 \end{equation}
 and $c(u_1,u_2\mid x;\theta)$ is conditional copula density function.
 
-\subsection{Copula parameter estimation}
+\subsection{Loss-based BART}
 
-Let $\Phi_{\theta\mid x}(y_1, y_2)$ denote the standard bivariate normal distribution with correlation coefficient $\theta$ conditional on $X$. Then
-the corresponding copula density function is given by:
-
+Let $T$ denote a tree and $M$ denote the vector of terminal node values $M = \{\mu_1,\mu_2, \cdots, \mu_{n_L}\}$. Let $\theta_i$ denote the copula parameter conditional on $x_i$ such that:
 \begin{equation}
-    c(u_1,u_2\mid x;\theta) \coloneqq c_{\theta_x}(u_1, u_2) 
-    = \frac{1}{\sqrt{|\Sigma|}} \exp\left( -\frac{1}{2}
-    \begin{bmatrix}
-    \Phi^{-1}(u_1) \\
-    \Phi^{-1}(u_2)
-    \end{bmatrix}^\top
-    (\Sigma^{-1} - I)
-    \begin{bmatrix}
-    \Phi^{-1}(u_1) \\
-    \Phi^{-1}(u_2)
-    \end{bmatrix}
-    \right)
+	\theta_i = g(x_i, T, M).
 \end{equation}
-
-where
-
-\[
-\Sigma = \begin{bmatrix}
-1 & \theta_x \\
-\theta_x & 1
-\end{bmatrix}
-\]
-
-and \( \Phi^{-1} \) is the inverse of the standard normal cumulative distribution function. Simplifying we get:
-
-\begin{equation}
-    c_{\theta_X}(u_1, u_2) = \frac{1}{\sqrt{1 - \theta_x^2}} \exp \left( -\frac{2\theta_x \Phi^{-1}(u_1) \Phi^{-1}(u_2) - \theta_x^2\left[\Phi^{-1}(u_1)^2 + \Phi^{-1}(u_2)^2\right]}{2(1 - \theta_x^2)} \right)
-\end{equation}
-
-Now, let $u_1 \coloneqq (u_{11}, u_{12}, \cdots, u_{1n})$ and $u_2 \coloneqq (u_{21}, u_{22}, \cdots, u_{2n})$ be a set of $n$ observations from a bivariate
-Gaussian copula.
-
-
-Then, the likelihood is given by:
-
+For, $T,M$ a loss-based prior is proposed by \citet{serafini2024lossbasedpriortreetopologies} in the following way:
 \begin{align}
-    \pi(U_1, U_2\mid X;\theta_x) &=\prod_{i=1}^n  
-    \frac{1}{\sqrt{1 - \theta_{x_i}^2}} \exp \left( -\frac{2\theta_{x_i} \Phi^{-1}(u_{1i}) \Phi^{-1}(u_{2i}) - \theta_{x_i}^2\left[\Phi^{-1}(u_{1i})^2 + \Phi^{-1}(u_{2i})^2\right]}{2(1 - \theta_{x_i}^2)} \right)
+	T, M &\sim \pi(T)\pi(M\mid T)\\
+	T &\propto \exp\left(\omega n_L(T)-\gamma\Delta(T)\right)\\
+	\pi(M\mid T) & = \prod_{j=1}^{n_L}\pi(\mu_j\mid T)
 \end{align}
-where for a tree $T$ with terminal node values $M$
-\begin{equation}
-    \theta_{x_i} = g(x_i, T, M)
-\end{equation}
-Now, terminal node values $M \coloneqq (\mu_1, \mu_2, \cdots \mu_{n_L})$ has to
-satisfy $\mu_j \in (-1,1)$. This leads to the issue of finding a suitable prior 
-for $\mu_j$.
 
-Note that the likelihood structure for a partition $\Omega_j$ of $x\coloneqq (x_1, x_2, \cdots, x_n)$
+For the choice of prior on $\mu_j\mid T$ a conjugate prior is suggested by \citet{chipman_BART,serafini2024lossbasedpriortreetopologies}. However, finding a conjugate prior for copula parameter may not be possible always. Instead, we use a flat-prior on the support of the copula parameter and use a Metropolis-Hastings algorithm for obtaining posterior estimates.
 
-\begin{align}
-    \pi(U_1, U_2\mid X;\theta_x) 
-    &=(1 - \theta_{x}^2)^{-\frac{\#\Omega_j}{2}} \exp \left( -\frac{2A \theta_{x} - B\theta_{x}^2}{2(1 - \theta_{x}^2)} \right)
-\end{align}
-where $A \coloneqq \sum_{i\in \Omega_j}\Phi^{-1}(u_{1i}) \Phi^{-1}(u_{2i})$
-and $B \coloneqq \left[\Phi^{-1}(u_{1i})^2 + \Phi^{-1}(u_{2i})^2\right]$. 
+
+\iffalse
 
 \subsubsection{Choice for $\mu_j$}
 \begin{itemize}
@@ -214,11 +173,10 @@ Therefore, the density of $\rho$ is given by:
 \end{equation}
 Like before, we can show that the function is continuous at 0.
 
-\iffalse
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.85\linewidth]{prior_comparison.pdf}
-	\caption{Different probability density functions for $\mu_{ij}$ a)black for uniform distribution,
+	\caption{Different probability density functions for $\mu_j$ a)black for uniform distribution,
 	b)grey for Beta(2,2),
 	c)red for Jeffrey's prior,
 	d)orange for Beta(0.5,0.5),
@@ -232,527 +190,370 @@ Like before, we can show that the function is continuous at 0.
 
 \section{Simulation Studies}
 
-We consider 5 different test cases so that 
+\subsection{Data generation}
+
+To generate the true copula parameter, we first consider 4 different test cases to simulate Kendall's tau conditional on $x$. Such that
+ 
 \begin{itemize}
-    \item True $\tau_x$ has a tree structure with respect to $x$
-    \item True $\tau_x$ is monotone with respect to $x$ such that 
-    \begin{equation}
-        \tau_x = 0.3 + 0.2 \sin(3x) + 0.3x^2
+    \item Case 1: True $\tau_x$ has a tree structure with respect to $x$.
+    \item Case 2: True $\tau_x$ is monotone with respect to $x$ such that 
+    \begin{equation}\label{eq:synth:tau_x:case2}
+        \tau_x = 0.3 + 0.2 \sin(3x) + 0.3x^2.
     \end{equation}
-    \item True $\tau_x$ is convex with respect to $x$ such that 
-    \begin{equation}
-        \tau_x = 0.5 + 0.3 \sin(3x)
+    \item Case 3: True $\tau_x$ is convex with respect to $x$ such that 
+    \begin{equation}\label{eq:synth:tau_x:case3}
+        \tau_x = 0.5 + 0.3 \sin(3x).
     \end{equation}
-    \item True $\tau_x$ is concave with respect to $x$ such that 
-    \begin{equation}
-        \tau_x = 0.8 - 0.3 \sin(3x)
-    \end{equation}
-    \item True $\tau_x$ non-convex and non-monotone with respect to $x$ such that 
-    \begin{equation}
-        \tau_x = 0.6 - 0.3 \sin(2x) + 0.2 \sin(4x) + 0.3 x^2
+    \item Case 4: True $\tau_x$ non-convex and non-monotone with respect to $x$ such that 
+    \begin{equation}\label{eq:synth:tau_x:case4}
+        \tau_x = 0.6 - 0.3 \sin(2x) + 0.2 \sin(4x) + 0.3 x^2.
     \end{equation}
 \end{itemize}
 
+Then using this value of conditional dependence, we can generate the copula parameters summarised in \cref{tab:cop:link}.
 
 \begin{table}
     \centering
-    \begin{tabular}{c|l|c}
+    \begin{tabular}{l|c|c}
     \toprule
-         & Family & Link \\
+        Family & Support & Relation with $\tau$ \\
          \midrule
-        1 & Gaussian & $\sin(\tau_x\pi/2)$ \\
-        2 & Clayton & $2\tau_x/(1-\tau_x)$ \\
-        3 & Frank & Numerical methods (using \texttt{VineCopula})\\
+        Gaussian & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ \\
+        Student-t & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ \\
+        Clayton & $\theta \in (0,\infty)$ & $2\tau/(1-\tau)$; $\tau>0$ \\
+        Gumbel & $\theta\in [1,\infty)$ & $1/(1-\tau)$ \\
         \bottomrule
     \end{tabular}
-    \caption{Link function for generating copula parameter}
+    \caption{Copula family used for analysis, along with parameter support and relation with Kendall's $\tau$.}
     \label{tab:cop:link}
 \end{table}
 
-% Frank and Clayton with right likelihood
-% with Gaussian likelihood
-% weak dependence - added
+\subsection{Results}
 
+\subsubsection{Gaussian Copula} For the Gaussian copula, the copula parameter $\rho$ lies within the open interval $(-1,1)$. So a natural choice for prior on $\mu_j$ is transformed beta as suggested by \citet{gokhale_prior_cor}. 
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{l|l|ccc}
-  \toprule
- & Prior on $\mu_{ij}$ & RMSE & CI length & CI coverage \\ 
-  \midrule
-Case 1 & IG(1,1) & 0.0036 & 0.1163 & 0.622 \\ 
-  & IG(2,2) & 0.0051 & \textbf{0.0921} & 0.488 \\ 
-  & LN(0,0.8) & \textbf{0.0029} & 0.1037 & 0.626 \\ 
-  & LN(0,1) & 0.0046 & 0.1673 & \textbf{0.950} \\ 
-  & Jeffrey & 0.0034 & 0.1265 & 0.704 \\ 
-  & Beta(0.5,0.5) & 0.0037 & 0.1359 & 0.652 \\ 
-  & Beta(2,2) & 0.0041 & 0.1214 & 0.508 \\ 
-  & Uniform & 0.0072 & 0.1394 & 0.658 \\ 
-   \midrule
-Case 2 & IG(1,1) & 0.0024 & \textbf{0.1396} & 0.586 \\ 
-  & IG(2,2) & \textbf{0.0012} & 0.1696 & \textbf{0.996} \\ 
-  & LN(0,0.8) & 0.0017 & 0.1670 & 0.882 \\ 
-  & LN(0,1) & 0.0019 & 0.1524 & 0.906 \\ 
-  & Jeffrey & 0.0034 & 0.1561 & 0.900 \\ 
-  & Beta(0.5,0.5) & 0.0031 & 0.1496 & 0.740 \\ 
-  & Beta(2,2) & 0.0031 & 0.1696 & 0.810 \\ 
-  & Uniform & 0.0020 & 0.1510 & 0.986 \\ 
-   \midrule
-Case 3 & IG(1,1) & 0.0014 & 0.1134 & \textbf{0.884} \\ 
-  & IG(2,2) & 0.0017 & 0.1062 & 0.772 \\ 
-  & LN(0,0.8) & \textbf{0.0013} & 0.1137 & 0.792 \\ 
-  & LN(0,1) & 0.0021 & \textbf{0.0992} & 0.736 \\ 
-  & Jeffrey & 0.0019 & 0.1153 & 0.754 \\ 
-  & Beta(0.5,0.5) & \textbf{0.0013} & 0.1167 & 0.826 \\ 
-  & Beta(2,2) & 0.0022 & 0.1048 & 0.640 \\ 
-  & Uniform & 0.0017 & 0.1221 & 0.738 \\ 
-   \midrule
-Case 4 & IG(1,1) & \textbf{0.0013} & \textbf{0.1393} & 0.856 \\ 
-  & IG(2,2) & 0.0015 & 0.1583 & 0.920 \\ 
-  & LN(0,0.8) & 0.0017 & 0.1690 & 0.934 \\ 
-  & LN(0,1) & 0.0028 & 0.1519 & 0.930 \\ 
-  & Jeffrey & 0.0027 & 0.1520 & 0.892 \\ 
-  & Beta(0.5,0.5) & 0.0024 & 0.1568 & \textbf{0.938} \\ 
-  & Beta(2,2) & 0.0019 & 0.1642 & 0.900 \\ 
-  & Uniform & 0.0021 & 0.1832 & 0.930 \\ 
-   \midrule
-Case 5 & IG(1,1) & 0.0007 & 0.1167 & \textbf{1.000} \\ 
-  & IG(2,2) & 0.0007 & 0.1111 & 0.834 \\ 
-  & LN(0,0.8) & \textbf{0.0006} & 0.1371 & \textbf{1.000} \\ 
-  & LN(0,1) & 0.0007 & \textbf{0.1045} & \textbf{1.000} \\ 
-  & Jeffrey & 0.0007 & 0.1265 & \textbf{1.000} \\ 
-  & Beta(0.5,0.5) & 0.0011 & 0.1284 & 0.808 \\ 
-  & Beta(2,2) & 0.0009 & 0.1434 & 0.894 \\ 
-  & Uniform & 0.0059 & 0.1573 & 0.932 \\ 
-   \bottomrule
-\end{tabular}
-\caption{Strong dependence with Gaussian copula}
-\end{table}
+\begin{equation}
+	\text{TBeta}(a, b) = \frac{1}{2^{a+b-1}\mathcal{B}(a,b)}(1+\rho)^{a-1}(1-\rho)^{b-1},
+\end{equation}
+for $a,b>0$ and $\mathcal{B}$ denotes beta function. Note that, for $a=b=0$, this leads to an improper prior. 
 
-For analyses with weak dependence, we consider $\tau_x^w = \tau_x - 0.5$.
+We present the summary of our analyses with Gaussian copula in \cref{tab:gauss:summary}. 
 
 \begin{table}[ht]
-\centering
-\begin{tabular}{l|l|ccc}
-  \toprule
- & Prior on $\mu_{ij}$ & RMSE & CI length & CI coverage \\ 
-  \midrule
-Case 1 & IG(1,1) & 0.0688 & 0.1304 & 0.2020 \\ 
-   & IG(2,2) & 0.0679 & 0.1291 & 0.3720 \\ 
-   & LN(0,0.8) & 0.0557 & 0.1520 & 0.2260 \\ 
-   & LN(0,1) & 0.0245 & \textbf{0.1212} & 0.5620 \\ 
-   & Beta(0.5,0.5) & 0.0206 & 0.2872 & 0.7180 \\ 
-   & Jeffrey & 0.0202 & 0.2353 & 0.7380 \\ 
-   & Beta(2,2) & 0.0210 & 0.2427 & 0.7580 \\ 
-   & Uniform & \textbf{0.0197} & 0.2081 & \textbf{0.7820} \\ 
-   \midrule
-Case 2 & IG(1,1) & 0.0263 & \textbf{0.0742} & 0.2980 \\ 
-   & IG(2,2) & 0.0153 & 0.1512 & 0.5360 \\ 
-   & LN(0,0.8) & 0.0173 & 0.1541 & 0.5640 \\ 
-   & LN(0,1) & 0.0133 & 0.2199 & 0.7340 \\ 
-   & Beta(0.5,0.5) & 0.0021 & 0.2300 & \textbf{1.0000} \\ 
-   & Jeffrey & \textbf{0.0010} & 0.2813 & \textbf{1.0000} \\ 
-   & Beta(2,2) & 0.0012 & 0.2572 & \textbf{1.0000} \\ 
-   & Uniform & \textbf{0.0010} & 0.2634 & \textbf{1.0000} \\ 
-   \midrule
-Case 3 & IG(1,1) & 0.0204 & 0.1223 & 0.3680 \\ 
-   & IG(2,2) & 0.0202 & 0.1172 & 0.4720 \\ 
-   & LN(0,0.8) & 0.0112 & \textbf{0.0996} & 0.4540 \\ 
-   & LN(0,1) & 0.0082 & 0.2548 & 0.7960 \\ 
-   & Beta(0.5,0.5) & 0.0075 & 0.2245 & 0.8860 \\ 
-   & Jeffrey & \textbf{0.0030} & 0.2516 & \textbf{1.0000} \\ 
-   & Beta(2,2) & 0.0056 & 0.2205 & 0.8620 \\ 
-   & Uniform & 0.0073 & 0.2426 & 0.8520 \\ 
-   \midrule
-Case 4 & IG(1,1) & 0.0396 & \textbf{0.1024} & 0.1100 \\ 
-   & IG(2,2) & 0.0291 & 0.1097 & 0.1820 \\ 
-   & LN(0,0.8) & 0.0211 & 0.1340 & 0.3020 \\ 
-   & LN(0,1) & 0.0138 & 0.1868 & 0.4000 \\ 
-   & Beta(0.5,0.5) & \textbf{0.0081} & 0.2123 & 0.6200 \\ 
-   & Jeffrey & 0.0095 & 0.2097 & 0.4960 \\ 
-   & Beta(2,2) & 0.0090 & 0.2362 & \textbf{0.6680} \\ 
-   & Uniform & 0.0094 & 0.2086 & 0.5100 \\ 
-   \midrule
-Case 5 & IG(1,1) & 0.0363 & \textbf{0.0834} & 0.0000 \\ 
-   & IG(2,2) & 0.0237 & 0.1061 & 0.0060 \\ 
-   & LN(0,0.8) & 0.0164 & 0.1126 & 0.4840 \\ 
-   & LN(0,1) & 0.0120 & 0.1580 & 0.5900 \\ 
-   & Beta(0.5,0.5) & \textbf{0.0017} & 0.2544 & \textbf{1.0000} \\ 
-   & Jeffrey & 0.0031 & 0.2382 & \textbf{1.0000} \\ 
-   & Beta(2,2) & 0.0056 & 0.2656 & 0.8220 \\ 
-   & Uniform & 0.0047 & 0.2707 & 0.9080 \\ 
-   \bottomrule
-\end{tabular}
-\caption{Weak dependence with Gaussian copula}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\begin{tabular}{l|l|ccc}
-  \toprule
- & Prior on $\mu_{ij}$ & RMSE & CI length & CI coverage \\ 
-  \midrule
-1 & LB - default - jeff & 3.9783 & 1.3350 & 0.0200 \\ 
-  2 & LB - default - normal & 1.7651 & 3.2220 & 0.8540 \\ 
-  3 & LB - default - t & 2.4994 & 2.9020 & 0.7020 \\ 
-  4 & LB - default - unif & 3.1653 & 2.4374 & 0.4220 \\ 
-  5 & LB - high.gam - jeff & 3.0017 & 1.9259 & 0.3280 \\ 
-  6 & LB - high.gam - normal & 4.7854 & 3.4399 & 0.8320 \\ 
-  7 & LB - high.gam - t & 3.6088 & 3.5605 & 0.8160 \\ 
-  8 & LB - high.gam - unif & 4.4319 & 3.7786 & \textbf{0.8600} \\ 
-   \midrule
-1 & LB - default - jeff & 2.1092 & 2.2504 & 0.4360 \\ 
-  2 & LB - default - normal & 0.9597 & 3.0208 & 0.9060 \\ 
-  3 & LB - default - t & 0.9405 & 3.0375 & 0.9280 \\ 
-  4 & LB - default - unif & 0.8860 & 3.3873 & 0.8880 \\ 
-  5 & LB - high.gam - jeff & 1.8546 & 2.3359 & 0.6500 \\ 
-  6 & LB - high.gam - normal & 1.8757 & 3.4554 & 0.7300 \\ 
-  7 & LB - high.gam - t & 0.5917 & 3.0748 & \textbf{0.9600} \\ 
-  8 & LB - high.gam - unif & 0.8944 & 3.1064 & 0.9140 \\ 
-   \midrule
-1 & LB - default - jeff & 14.8447 & 2.1194 & 0.1520 \\ 
-  2 & LB - default - normal & 4.0150 & 3.3360 & 0.5200 \\ 
-  3 & LB - default - t & 4.0812 & 3.2777 & 0.5020 \\ 
-  4 & LB - default - unif & 5.3374 & 2.8840 & 0.4320 \\ 
-  5 & LB - high.gam - jeff & 7.5366 & 3.6538 & 0.4240 \\ 
-  6 & LB - high.gam - normal & 4.4465 & 3.9882 & 0.5680 \\ 
-  7 & LB - high.gam - t & 3.3405 & 4.6206 & \textbf{0.7240} \\ 
-  8 & LB - high.gam - unif & 4.5478 & 4.1478 & 0.5860 \\  
-   \midrule
-1 & LB - default - jeff & 9.5983 & 1.0996 & 0.1360 \\ 
-  2 & LB - default - normal & 9.0461 & 2.0283 & 0.2260 \\ 
-  3 & LB - default - t & 8.5274 & 1.7832 & 0.2060 \\ 
-  4 & LB - default - unif & 6.5751 & 2.4319 & 0.3280 \\ 
-  5 & LB - high.gam - jeff & 7.9204 & 1.6317 & 0.1660 \\ 
-  6 & LB - high.gam - normal & 3.2081 & 3.8246 & \textbf{0.7060} \\ 
-  7 & LB - high.gam - t & 2.9472 & 3.2927 & 0.5040 \\ 
-  8 & LB - high.gam - unif & 4.1423 & 4.2543 & 0.6440 \\
-   \midrule
-1 & LB - default - jeff & 0.7030 & 2.9246 & \textbf{1.0000} \\ 
-  2 & LB - default - normal & 0.6397 & 3.0198 & 0.9580 \\ 
-  3 & LB - default - t & 0.3139 & 2.0753 & 0.9160 \\ 
-  4 & LB - default - unif & 0.2147 & 2.4862 & 0.9880 \\ 
-  5 & LB - high.gam - jeff & 3.0301 & 1.1576 & 0.1200 \\ 
-  6 & LB - high.gam - normal & 0.3802 & 2.0173 & 0.9100 \\ 
-  7 & LB - high.gam - t & 0.6146 & 3.2973 & \textbf{1.0000} \\ 
-  8 & LB - high.gam - unif & 0.5337 & 2.5265 & 0.9220 \\ 
-   \bottomrule
-\end{tabular}
-\caption{Frank copula}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\begin{tabular}{l|l|ccc}
-  \toprule
- & Prior on $\mu_{ij}$ & RMSE & CI length & CI coverage \\ 
-  \midrule
-1 & LB - default - IG11 & 0.7632 & 0.9425 & 0.3080 \\ 
-  2 & LB - default - IG22 & 0.5308 & 1.4102 & 0.8580 \\ 
-  3 & LB - default - LN01 & 0.5589 & 1.1750 & 0.5780 \\ 
-  4 & LB - default - LN05 & 0.6350 & 1.2834 & 0.6460 \\ 
-  5 & LB - high.gam - IG11 & 0.4842 & 1.3418 & 0.5900 \\ 
-  6 & LB - high.gam - IG22 & 0.6255 & 1.0025 & 0.5660 \\ 
-  7 & LB - high.gam - LN01 & 0.3770 & 1.3212 & \textbf{0.8620} \\ 
-  8 & LB - high.gam - LN05 & 0.6838 & 1.6783 & 0.6320 \\ 
-   \midrule
-1 & LB - default - IG11 & 0.2252 & 0.8303 & 0.4560 \\ 
-  2 & LB - default - IG22 & 0.1307 & 0.7511 & 0.4740 \\ 
-  3 & LB - default - LN01 & 0.1555 & 0.7126 & 0.6000 \\ 
-  4 & LB - default - LN05 & 0.1271 & 0.9206 & 0.7220 \\ 
-  5 & LB - high.gam - IG11 & 0.0739 & 1.3269 & \textbf{1.0000} \\ 
-  6 & LB - high.gam - IG22 & 0.1708 & 0.9078 & 0.5880 \\ 
-  7 & LB - high.gam - LN01 & 0.2000 & 1.0859 & 0.8200 \\ 
-  8 & LB - high.gam - LN05 & 0.1307 & 1.2793 & 0.8240 \\ 
-   \midrule
-1 & LB - default - IG11 & 2.6335 & 1.0153 & 0.1960 \\ 
-  2 & LB - default - IG22 & 1.9787 & 1.2229 & 0.3480 \\ 
-  3 & LB - default - LN01 & 0.6392 & 2.5220 & \textbf{0.9460} \\ 
-  4 & LB - default - LN05 & 0.7484 & 2.1600 & 0.6800 \\ 
-  5 & LB - high.gam - IG11 & 1.9544 & 1.8764 & 0.4120 \\ 
-  6 & LB - high.gam - IG22 & 2.9221 & 1.1516 & 0.3040 \\ 
-  7 & LB - high.gam - LN01 & 0.7896 & 2.6237 & 0.8640 \\ 
-  8 & LB - high.gam - LN05 & 0.7820 & 2.0447 & 0.7380 \\ 
-   \midrule
-1 & LB - default - IG11 & 0.7513 & 1.8624 & \textbf{0.8660} \\ 
-  2 & LB - default - IG22 & 0.6532 & 1.6433 & 0.7600 \\ 
-  3 & LB - default - LN01 & 1.2944 & 1.4516 & 0.6560 \\ 
-  4 & LB - default - LN05 & 1.5717 & 1.3059 & 0.6200 \\ 
-  5 & LB - high.gam - IG11 & 0.6679 & 1.7934 & 0.8380 \\ 
-  6 & LB - high.gam - IG22 & 1.2853 & 1.0285 & 0.5680 \\ 
-  7 & LB - high.gam - LN01 & 0.8264 & 1.7605 & 0.7980 \\ 
-  8 & LB - high.gam - LN05 & 1.2517 & 1.7834 & 0.7160 \\
-   \midrule
-1 & LB - default - IG11 & 0.0693 & 0.9545 & 0.7120 \\ 
-  2 & LB - default - IG22 & 0.0584 & 1.2658 & \textbf{1.0000} \\ 
-  3 & LB - default - LN01 & 0.1734 & 0.9590 & 0.8360 \\ 
-  4 & LB - default - LN05 & 0.1755 & 0.8660 & 0.7640 \\ 
-  5 & LB - high.gam - IG11 & 0.1136 & 1.0938 & 0.8660 \\ 
-  6 & LB - high.gam - IG22 & 0.0818 & 1.0943 & 0.9880 \\ 
-  7 & LB - high.gam - LN01 & 0.0710 & 1.2637 & 0.9780 \\ 
-  8 & LB - high.gam - LN05 & 0.1154 & 1.2756 & 0.9200 \\ 
-   \bottomrule
-\end{tabular}
-\caption{Clayton copula}
+	\centering
+	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\label{tab:gauss:summary}
+	\scriptsize{
+	\begin{tabular}{ll|cccccc}
+		\toprule
+		& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
+		\midrule
+		Case 1 & TBeta(0.5,0.5) & 4.538 & 2.403 & 0.2390 & 0.0096 & 0.1771 & 0.836 \\ 
+		(Tree) & TBeta(0,0) & 4.862 & 2.607 & 0.2560 & 0.0089 & 0.1907 & 0.840 \\ 
+		& TBeta(2,2) & 4.563 & 2.424 & 0.2420 & 0.0098 & 0.1948 & \textbf{0.908} \\ 
+		& TBeta(1,1) & 4.608 & 2.484 & 0.2510 & 0.0092 & 0.1963 & 0.844 \\ 
+		\midrule
+		Case 2 & TBeta(0.5,0.5) & 3.176 & 1.814 & 0.2290 & 0.0021 & 0.1891 & 0.960 \\ 
+		(\cref{eq:synth:tau_x:case2}) & TBeta(0,0) & 2.371 & 1.300 & 0.2130 & 0.0020 & 0.1592 & 0.968 \\ 
+		& TBeta(2,2) & 2.522 & 1.390 & 0.2150 & 0.0020 & 0.1823 & \textbf{1.000} \\ 
+		& TBeta(1,1) & 2.397 & 1.306 & 0.1900 & 0.0020 & 0.1625 & 0.930 \\ 
+		\midrule
+		Case 3 & TBeta(0.5,0.5) & 3.495 & 2.079 & 0.2410 & 0.0010 & 0.0743 & 0.760 \\ 
+		(\cref{eq:synth:tau_x:case3}) & TBeta(0,0) & 3.863 & 2.165 & 0.2620 & 0.0009 & 0.0790 & \textbf{0.866} \\ 
+		& TBeta(2,2) & 3.596 & 2.142 & 0.2460 & 0.0008 & 0.0808 & 0.790 \\ 
+		& TBeta(1,1) & 5.374 & 2.966 & 0.3510 & 0.0009 & 0.0863 & 0.776 \\ 
+		\midrule
+		Case 4 & TBeta(0.5,0.5) & 2.558 & 1.402 & 0.2190 & 0.0005 & 0.1197 & \textbf{1.000} \\ 
+		(\cref{eq:synth:tau_x:case4}) & TBeta(0,0) & 2.934 & 1.632 & 0.2520 & 0.0006 & 0.1227 & 0.972 \\ 
+		& TBeta(2,2) & 2.398 & 1.308 & 0.2390 & 0.0005 & 0.1160 & 0.998 \\ 
+		& TBeta(1,1) & 2.848 & 1.571 & 0.2120 & 0.0006 & 0.1296 & \textbf{1.000} \\ 
+		\end{tabular}}
 \end{table}
 
 
+\paragraph{Trace-plots}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.95\linewidth]{true_rho_copula.pdf}
-    \caption{Simulated $\rho$ and corresponding copula}
-    \label{fig:sim-dat}
-\end{figure}
-
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_depth_1.pdf}
-	\caption{Histogram of depth}
-	\label{fig:hist:depth:1}
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:gauss:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_depth_1.pdf}
-	\caption{Trace of depth}
-	\label{fig:trace:depth:1}
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_depth.pdf}
+	\caption{Trace plot of depth for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:gauss:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_nl_1.pdf}
-	\caption{Histogram of $n_L$}
-	\label{fig:hist:nl:1}
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_like.pdf}
+	\caption{Trace plot of likelihood for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:gauss:like}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_nl_1.pdf}
-	\caption{Trace of $n_L$}
-	\label{fig:trace:nl:1}
-\end{figure}
-\iffalse
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{mcmc_rho_1.pdf}
-	\caption{MCMC of $\rho$}
-	\label{fig:mcmc:rho:1}
-\end{figure}
-\fi
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{predicted_rho_1.pdf}
-	\caption{Estimated $\rho$ and credible intervals}
-	\label{fig:pred:rho:1}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:gauss:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{simulated_copula_1.pdf}
-	\caption{Predicted copula with estimated $\rho$}
-	\label{fig:sim:copula:1}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_depth.pdf}
+	\caption{Trace plot of depth for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:gauss:depth}
 \end{figure}
 
-%
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_depth_2.pdf}
-	\caption{Histogram of depth}
-	\label{fig:hist:depth:2}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_like.pdf}
+	\caption{Trace plot of likelihood for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:gauss:like}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_depth_2.pdf}
-	\caption{Trace of depth}
-	\label{fig:trace:depth:2}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:gauss:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_nl_2.pdf}
-	\caption{Histogram of $n_L$}
-	\label{fig:hist:nl:2}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_depth.pdf}
+	\caption{Trace plot of depth for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:gauss:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_nl_2.pdf}
-	\caption{Trace of $n_L$}
-	\label{fig:trace:nl:2}
-\end{figure}
-\iffalse
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{mcmc_rho_2.pdf}
-	\caption{MCMC of $\rho$}
-	\label{fig:mcmc:rho:2}
-\end{figure}
-\fi
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{predicted_rho_2.pdf}
-	\caption{Estimated $\rho$ and credible intervals}
-	\label{fig:pred:rho:2}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_like.pdf}
+	\caption{Trace plot of likelihood for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:gauss:like}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{simulated_copula_2.pdf}
-	\caption{Predicted copula with estimated $\rho$}
-	\label{fig:sim:copula:2}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:gauss:nterm}
 \end{figure}
 
-%
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_depth_3.pdf}
-	\caption{Histogram of depth}
-	\label{fig:hist:depth:3}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_depth.pdf}
+	\caption{Trace plot of depth for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:gauss:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_depth_3.pdf}
-	\caption{Trace of depth}
-	\label{fig:trace:depth:3}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_like.pdf}
+	\caption{Trace plot of likelihood for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:gauss:like}
 \end{figure}
 
-\begin{figure}[ht]
+\subsubsection{Student-t copula} For the student-t copula we are only interested in estimating $\rho$ which lies within $(-1,1)$. Therefore, similar to Gaussian copula, we use a transformed beta distribution as a prior on $\mu_j$ with four different sets of parameters.
+
+We present the summary of our analyses with student-t copula in \cref{tab:student-t:summary}. 
+
+
+\begin{table}[ht]
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_nl_3.pdf}
-	\caption{Histogram of $n_L$}
-	\label{fig:hist:nl:3}
+	\caption{Summary of analyses with student-t copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\label{tab:student-t:summary}
+	\scriptsize{
+	\begin{tabular}{ll|cccccc}
+		\toprule
+		& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
+		\midrule
+		Case 1 & TBeta(0.5,0.5) & 3.370 & 1.884 & 0.251 & 0.0079 & 0.2277 & 0.860 \\ 
+		(Tree) & TBeta(0,0) & 4.089 & 2.228 & 0.268 & 0.0072 & 0.2445 & 0.850 \\ 
+		& TBeta(2,2) & 3.620 & 2.041 & 0.260 & 0.0080 & 0.2420 & \textbf{0.862} \\ 
+		& TBeta(1,1) & 3.604 & 1.996 & 0.232 & 0.0080 & 0.2308 & 0.854 \\ 
+		\midrule
+		Case 2 & TBeta(0.5,0.5) & 2.394 & 1.311 & 0.246 & 0.0019 & 0.1980 & \textbf{1.000} \\ 
+		(\cref{eq:synth:tau_x:case2}) & TBeta(0,0) & 2.326 & 1.255 & 0.203 & 0.0018 & 0.2000 & \textbf{1.000} \\ 
+		& TBeta(2,2) & 2.470 & 1.351 & 0.236 & 0.0019 & 0.2115 & \textbf{1.000} \\ 
+		& TBeta(1,1) & 2.354 & 1.289 & 0.213 & 0.0018 & 0.1950 & \textbf{1.000} \\ 
+		\midrule
+		Case 3 & TBeta(0.5,0.5) & 3.499 & 2.102 & 0.261 & 0.0008 & 0.0997 & 0.916 \\ 
+		(\cref{eq:synth:tau_x:case3}) & TBeta(0,0) & 3.727 & 2.170 & 0.261 & 0.0007 & 0.0992 & 0.928 \\ 
+		& TBeta(2,2) & 3.545 & 2.127 & 0.238 & 0.0007 & 0.1127 & 0.896 \\ 
+		& TBeta(1,1) & 3.847 & 2.234 & 0.243 & 0.0008 & 0.0971 & \textbf{0.950} \\ 
+		\midrule
+		Case 4 & TBeta(0.5,0.5) & 2.560 & 1.431 & 0.241 & 0.0003 & 0.1552 & \textbf{1.000} \\ 
+		(\cref{eq:synth:tau_x:case4}) & TBeta(0,0) & 2.387 & 1.311 & 0.275 & 0.0003 & 0.1406 & \textbf{1.000} \\ 
+		& TBeta(2,2) & 2.689 & 1.488 & 0.266 & 0.0003 & 0.1648 & \textbf{1.000} \\ 
+		& TBeta(1,1) & 2.824 & 1.568 & 0.259 & 0.0003 & 0.1482 & \textbf{1.000} \\ 
+		\end{tabular}}
+\end{table}
+
+\paragraph{Trace-plots}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_t_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:t:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_nl_3.pdf}
-	\caption{Trace of $n_L$}
-	\label{fig:trace:nl:3}
-\end{figure}
-\iffalse
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{mcmc_rho_3.pdf}
-	\caption{MCMC of $\rho$}
-	\label{fig:mcmc:rho:3}
-\end{figure}
-\fi
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{predicted_rho_3.pdf}
-	\caption{Estimated $\rho$ and credible intervals}
-	\label{fig:pred:rho:3}
+	\includegraphics[width = 0.75\linewidth]{trace_case1_t_depth.pdf}
+	\caption{Trace plot of depth for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:t:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{simulated_copula_3.pdf}
-	\caption{Predicted copula with estimated $\rho$}
-	\label{fig:sim:copula:3}
+	\includegraphics[width = 0.75\linewidth]{trace_case1_t_like.pdf}
+	\caption{Trace plot of likelihood for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case1:t:like}
 \end{figure}
 
-%
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_depth_4.pdf}
-	\caption{Histogram of depth}
-	\label{fig:hist:depth:4}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_t_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:t:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_depth_4.pdf}
-	\caption{Trace of depth}
-	\label{fig:trace:depth:4}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_t_depth.pdf}
+	\caption{Trace plot of depth for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:t:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_nl_4.pdf}
-	\caption{Histogram of $n_L$}
-	\label{fig:hist:nl:4}
+	\includegraphics[width = 0.75\linewidth]{trace_case2_t_like.pdf}
+	\caption{Trace plot of likelihood for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case2:t:like}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_nl_4.pdf}
-	\caption{Trace of $n_L$}
-	\label{fig:trace:nl:4}
-\end{figure}
-\iffalse
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{mcmc_rho_4.pdf}
-	\caption{MCMC of $\rho$}
-	\label{fig:mcmc:rho:4}
-\end{figure}
-\fi
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{predicted_rho_4.pdf}
-	\caption{Estimated $\rho$ and credible intervals}
-	\label{fig:pred:rho:4}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_t_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:t:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{simulated_copula_4.pdf}
-	\caption{Predicted copula with estimated $\rho$}
-	\label{fig:sim:copula:4}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_t_depth.pdf}
+	\caption{Trace plot of depth for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:t:depth}
 \end{figure}
 
-%
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_depth_5.pdf}
-	\caption{Histogram of depth}
-	\label{fig:hist:depth:5}
+	\includegraphics[width = 0.75\linewidth]{trace_case3_t_like.pdf}
+	\caption{Trace plot of likelihood for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case3:t:like}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_depth_5.pdf}
-	\caption{Trace of depth}
-	\label{fig:trace:depth:5}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_t_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:t:nterm}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{hist_nl_5.pdf}
-	\caption{Histogram of $n_L$}
-	\label{fig:hist:nl:5}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_t_depth.pdf}
+	\caption{Trace plot of depth for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:t:depth}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}
 	\centering
-	\includegraphics[width=0.95\linewidth]{trace_nl_5.pdf}
-	\caption{Trace of $n_L$}
-	\label{fig:trace:nl:5}
-\end{figure}
-\iffalse
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{mcmc_rho_5.pdf}
-	\caption{MCMC of $\rho$}
-	\label{fig:mcmc:rho:5}
-\end{figure}
-\fi
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{predicted_rho_5.pdf}
-	\caption{Estimated $\rho$ and credible intervals}
-	\label{fig:pred:rho:5}
+	\includegraphics[width = 0.75\linewidth]{trace_case4_t_like.pdf}
+	\caption{Trace plot of likelihood for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\label{fig:case4:t:like}
 \end{figure}
 
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.95\linewidth]{simulated_copula_5.pdf}
-	\caption{Predicted copula with estimated $\rho$}
-	\label{fig:sim:copula:5}
-\end{figure}
+\subsubsection{Clayton copula} The copula parameter of the Gumbel copula lies in the open interval $(0,\infty)$. So we consider log-normal and gamma distribution for $\mu_j$
 
+We present the summary of our analyses with Clayton copula in \cref{tab:clayton:summary}. 
+
+
+\begin{table}[ht]
+	\centering
+	\caption{Summary of analyses with Clayton copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\label{tab:clayton:summary}
+	\scriptsize{
+		\begin{tabular}{ll|cccccc}
+			\toprule
+			& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
+			\midrule
+			Case 1 & Gamma(1,1) & 2.867 & 1.662 & 0.232 & 0.5097 & 1.3417 & 0.764 \\ 
+			(Tree) & Gamma(2,2) & 4.246 & 2.416 & 0.300 & 0.3705 & 1.5866 & \textbf{0.924} \\ 
+			& LogNorm(0,1) & 3.629 & 2.095 & 0.285 & 0.4099 & 1.5664 & 0.824 \\ 
+			& LogNorm(0,5) & 3.876 & 2.178 & 0.246 & 0.3598 & 1.7381 & 0.842 \\ 
+			\midrule
+			Case 2 & Gamma(1,1) & 2.291 & 1.228 & 0.202 & 0.1254 & 0.9802 & 0.880 \\ 
+			(\cref{eq:synth:tau_x:case2}) & Gamma(2,2) & 2.703 & 1.513 & 0.245 & 0.0902 & 1.2297 & \textbf{1.000} \\ 
+			& LogNorm(0,1) & 2.799 & 1.581 & 0.249 & 0.0757 & 1.2844 & \textbf{1.000} \\ 
+			& LogNorm(0,5) & 2.625 & 1.467 & 0.213 & 0.0834 & 1.2934 & \textbf{1.000} \\ 
+			\midrule
+			Case 3 & Gamma(1,1) & 3.388 & 2.060 & 0.229 & 0.6166 & 2.2269 & 0.754 \\ 
+			(\cref{eq:synth:tau_x:case3}) & Gamma(2,2) & 3.588 & 2.125 & 0.259 & 0.5407 & 2.5436 & 0.822 \\ 
+			& LogNorm(0,1) & 3.679 & 2.147 & 0.232 & 0.5492 & 2.4543 & \textbf{0.902} \\ 
+			& LogNorm(0,5) & 3.516 & 2.111 & 0.265 & 0.5881 & 2.4645 & 0.884 \\ 
+			\midrule
+			Case 4 & Gamma(1,1) & 2.205 & 1.183 & 0.207 & 0.0492 & 1.0143 & \textbf{0.978} \\ 
+			(\cref{eq:synth:tau_x:case4}) & Gamma(2,2) & 2.318 & 1.260 & 0.214 & 0.0527 & 1.0409 & 0.974 \\ 
+			& LogNorm(0,1) & 2.377 & 1.301 & 0.241 & 0.0531 & 1.0920 & 0.972 \\ 
+			& LogNorm(0,5) & 2.407 & 1.320 & 0.204 & 0.0561 & 1.1192 & 0.974 \\ 
+	\end{tabular}}
+\end{table}
+
+
+\subsubsection{Gumbel copula} The copula parameter of the Gumbel copula lies in the open interval $[1,\infty)$. So we consider log-normal and gamma distribution for $\mu_j$.
+
+We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:summary}. 
+
+
+\begin{table}[ht]
+	\centering
+	\caption{Summary of analyses with Gumbel copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\label{tab:gumbel:summary}
+	\scriptsize{
+	\begin{tabular}{ll|cccccc}
+		\toprule
+		& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
+		\hline
+		Case 1 & Gamma(1,1) & 4.513 & 2.397 & 0.246 & 0.1292 & 0.9088 & 0.908 \\ 
+		(Tree) & Gamma(2,2) & 4.714 & 2.532 & 0.256 & 0.1407 & 0.8179 & 0.858 \\ 
+		& LogNorm(0,1) & 4.626 & 2.525 & 0.260 & 0.1321 & 0.9956 & \textbf{0.916} \\ 
+		& LogNorm(0,5) & 4.389 & 2.335 & 0.227 & 0.1353 & 0.8653 & 0.856 \\ 
+		\midrule
+		Case 2 & Gamma(1,1) & 2.373 & 1.289 & 0.202 & 0.0277 & 0.6032 & 0.998 \\ 
+		(\cref{eq:synth:tau_x:case2}) & Gamma(2,2) & 2.605 & 1.455 & 0.209 & 0.0262 & 0.6956 & \textbf{1.000} \\ 
+		& LogNorm(0,1) & 2.349 & 1.268 & 0.214 & 0.0273 & 0.6049 & 0.994 \\ 
+		& LogNorm(0,5) & 2.408 & 1.314 & 0.212 & 0.0277 & 0.6025 & 0.974 \\ 
+		\midrule
+		Case 3 & Gamma(1,1) & 3.421 & 2.086 & 0.241 & 0.1523 & 1.1744 & 0.764 \\ 
+		(\cref{eq:synth:tau_x:case3}) & Gamma(2,2) & 3.429 & 2.077 & 0.252 & 0.1509 & 1.2093 & 0.788 \\ 
+		& LogNorm(0,1) & 3.631 & 2.173 & 0.267 & 0.1566 & 1.1954 & 0.792 \\ 
+		& LogNorm(0,5) & 3.590 & 2.119 & 0.262 & 0.1575 & 1.2772 & \textbf{0.854} \\ 
+		\midrule
+		Case 4 & Gamma(1,1) & 2.706 & 1.517 & 0.247 & 0.0152 & 0.7585 & 0.974 \\ 
+		(\cref{eq:synth:tau_x:case4}) & Gamma(2,2) & 2.602 & 1.466 & 0.252 & 0.0140 & 0.7451 & 0.974 \\ 
+		& LogNorm(0,1) & 2.527 & 1.405 & 0.224 & 0.0161 & 0.7377 & 0.988 \\ 
+		& LogNorm(0,5) & 2.445 & 1.353 & 0.217 & 0.0148 & 0.7090 & \textbf{0.990} \\ 
+		\end{tabular}}
+\end{table}
+
+
+\bibliographystyle{plainnat}
+\bibliography{example}
 
 \end{document}

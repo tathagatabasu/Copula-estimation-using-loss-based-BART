@@ -6,7 +6,7 @@ multichain_MCMC_copula <- function(n.iter, n.chain,
                                    log_nor_mu, log_nor_sigma, prior_type, cop_type,
                                    prior_list, 
                                    moves.prob = NULL, starting.tree = NULL,
-                                   n.cores = 5,
+                                   n.cores = min(n.chain, 5),
                                    cont.unif = TRUE,
                                    include.split){
   chain.list <- mclapply(1:n.chain, 
@@ -332,6 +332,20 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                  logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                               beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
     }
+  }else if(cop_type == "gumbel"){
+    if(proposal<1) HR = 0 else{
+      HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
+                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
+                 logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
+                              beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
+    }
+  }else if(cop_type == "t"){
+    if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
+      # Hastings ratio of the proposal
+      HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
+                            beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
+                 logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
+                              beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }
   
   
@@ -466,13 +480,16 @@ acceptance.prob.list_copula <- function(move_list, old.tree, X, U1, U2, prior_in
 
 cart_log_lik_copula <- function(tree_top, U1, U2, X, cop_type){ # check input
   tree.at.obs <- get_value_tree(tree_top, X)
-  print(length(tree.at.obs))
   if(cop_type == "Gauss"){
     log.prob.obs <- gaussian_copula_loglik(tree.at.obs, U1, U2)
   }else if(cop_type == "Frank"){
     log.prob.obs <- loglik_frank(tree.at.obs, U1, U2)
   }else if(cop_type == "Clayton"){
     log.prob.obs <- loglik_clayton(tree.at.obs, U1, U2)
+  }else if(cop_type == "gumbel"){
+    log.prob.obs <- loglik_gumbel(tree.at.obs, U1, U2)
+  }else if(cop_type == "t"){
+    log.prob.obs <- loglik_t(tree.at.obs, U1, U2)
   }
   
   return(sum(log.prob.obs))
@@ -517,6 +534,12 @@ loglik_frank <- function(theta, u, v) {
   return(sum(log(densty)))
 }
 
+loglik_t <- function(theta, u, v) {
+  
+  densty = BiCopPDF(u, v, par = theta, family = 2, par2 = 3)
+  return(sum(log(densty)))
+}
+
 loglik_clayton <- function(theta, u, v) {
   
   theta = pmin(theta, 28)
@@ -525,6 +548,13 @@ loglik_clayton <- function(theta, u, v) {
   return(sum(log(densty)))
 }
 
+loglik_gumbel <- function(theta, u, v) {
+  
+  theta = pmin(theta, 17)
+  theta = pmax(theta, 1)
+  densty = BiCopPDF(u, v, par = theta, family = 4)
+  return(sum(log(densty)))
+}
 
 logprior_unif <- function(rho, bound = 1, alpha_val, beta_val) {
   return((alpha_val - 1)*log(bound + rho) + (beta_val - 1)*log(bound - rho))
@@ -589,6 +619,24 @@ logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sig
     }else{
       if(prior_type == "LN"){
         return(loglik_clayton(rho, u, v) + log(dlnorm(rho, meanlog = log_nor_mu, sdlog = log_nor_sigma)))
+      }
+    }
+  }else if(cop_type == "gumbel"){
+    if(prior_type == "IG"){
+      return(loglik_gumbel(rho, u, v) + log(dgamma(rho, shape = alpha_val, rate = beta_val)))
+    }else{
+      if(prior_type == "LN"){
+        return(loglik_gumbel(rho, u, v) + log(dlnorm(rho, meanlog = log_nor_mu, sdlog = log_nor_sigma)))
+      }
+    }
+  }else if(cop_type == "t"){
+    if(prior_type == "B"){
+      return(loglik_t(rho, u, v) + logprior_unif(rho, alpha_val = alpha_val, beta_val = beta_val))
+    }else{
+      if(prior_type == "LN"){
+        return(loglik_t(rho, u, v) + logprior_log_normal(rho, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))
+      }else{
+        return(loglik_t(rho, u, v) + logprior_inv_gamma(rho, alpha_val = alpha_val, beta_val = beta_val))
       }
     }
   }
