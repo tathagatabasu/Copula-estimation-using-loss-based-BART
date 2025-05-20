@@ -72,7 +72,7 @@ For, $T,M$ a loss-based prior is proposed by \citet{serafini2024lossbasedpriortr
 	\pi(M\mid T) & = \prod_{j=1}^{n_L}\pi(\mu_j\mid T)
 \end{align}
 
-For the choice of prior on $\mu_j\mid T$ a conjugate prior is suggested by \citet{chipman_BART,serafini2024lossbasedpriortreetopologies}. However, finding a conjugate prior for copula parameter may not be possible always. Instead, we use a flat-prior on the support of the copula parameter and use a Metropolis-Hastings algorithm for obtaining posterior estimates.
+For the choice of prior on $\mu_j\mid T$ a conjugate prior is suggested by \citet{chipman_BART,serafini2024lossbasedpriortreetopologies}. However, finding a conjugate prior for copula parameter may not be possible always. Instead, we use a flat-prior on the support of the copula parameter and employ Metropolis-Hastings algorithm for obtaining posterior estimates.
 
 
 \iffalse
@@ -210,7 +210,16 @@ To generate the true copula parameter, we first consider 4 different test cases 
     \end{equation}
 \end{itemize}
 
-Then using this value of conditional dependence, we can generate the copula parameters summarised in \cref{tab:cop:link}.
+We present the plot of true values of Kendall's $\tau$ with respect to $x$ in \cref{fig:true:tau}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.95\linewidth]{true_tau.pdf}
+    \caption{True values of Kendall's $\tau$ with respect to $x$. The top left plot shows case with tree structure; top right plot shows case defined by \cref{eq:synth:tau_x:case2}; bottom left shows case defined by \cref{eq:synth:tau_x:case3}; and bottom right shows case defined by \cref{eq:synth:tau_x:case4}.}
+    \label{fig:true:tau}
+\end{figure}
+
+Then using these values of conditional Kendall's $\tau$, we generate the copula parameters using the link functions summarised in \cref{tab:cop:link}. Afterwards, we simulate from the copula density functions to obtain our synthetic dataset.
 
 \begin{table}
     \centering
@@ -224,7 +233,7 @@ Then using this value of conditional dependence, we can generate the copula para
         Gumbel & $\theta\in [1,\infty)$ & $1/(1-\tau)$ \\
         \bottomrule
     \end{tabular}
-    \caption{Copula family used for analysis, along with parameter support and relation with Kendall's $\tau$.}
+    \caption{Copula families used for analyses, along with parameter support and relation with Kendall's $\tau$.}
     \label{tab:cop:link}
 \end{table}
 
@@ -241,7 +250,7 @@ We present the summary of our analyses with Gaussian copula in \cref{tab:gauss:s
 
 \begin{table}[ht]
 	\centering
-	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then it is thinned by 10.}
 	\label{tab:gauss:summary}
 	\scriptsize{
 	\begin{tabular}{ll|cccccc}
@@ -271,89 +280,92 @@ We present the summary of our analyses with Gaussian copula in \cref{tab:gauss:s
 \end{table}
 
 
-\paragraph{Trace-plots}
+\paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:gauss:nterm,fig:case1:gauss:depth,fig:case1:gauss:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:gauss:nterm,fig:case2:gauss:depth,fig:case2:gauss:like}; for case 3 the trace-plots are provided in \cref{fig:case3:gauss:nterm,fig:case3:gauss:depth,fig:case3:gauss:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:gauss:nterm,fig:case4:gauss:depth,fig:case4:gauss:like}.
+
+% Tbeta(2,2) seems to be good, acceptance rate is high and likelihood seems to be more consistent
+
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:gauss:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_depth.pdf}
-	\caption{Trace plot of depth for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 1 (tree structure) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:gauss:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gauss_like.pdf}
-	\caption{Trace plot of likelihood for case 1 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:gauss:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:gauss:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_depth.pdf}
-	\caption{Trace plot of depth for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:gauss:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gauss_like.pdf}
-	\caption{Trace plot of likelihood for case 2 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:gauss:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:gauss:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_depth.pdf}
-	\caption{Trace plot of depth for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:gauss:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gauss_like.pdf}
-	\caption{Trace plot of likelihood for case 3 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:gauss:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:gauss:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_depth.pdf}
-	\caption{Trace plot of depth for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:gauss:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gauss_like.pdf}
-	\caption{Trace plot of likelihood for case 4 with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Gaussian copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:gauss:like}
 \end{figure}
 
@@ -364,7 +376,7 @@ We present the summary of our analyses with student-t copula in \cref{tab:studen
 
 \begin{table}[ht]
 	\centering
-	\caption{Summary of analyses with student-t copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\caption{Summary of analyses with student-t copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then it is thinned by 10.}
 	\label{tab:student-t:summary}
 	\scriptsize{
 	\begin{tabular}{ll|cccccc}
@@ -393,100 +405,102 @@ We present the summary of our analyses with student-t copula in \cref{tab:studen
 		\end{tabular}}
 \end{table}
 
-\paragraph{Trace-plots}
+\paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:t:nterm,fig:case1:t:depth,fig:case1:t:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:t:nterm,fig:case2:t:depth,fig:case2:t:like}; for case 3 the trace-plots are provided in \cref{fig:case3:t:nterm,fig:case3:t:depth,fig:case3:t:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:t:nterm,fig:case4:t:depth,fig:case4:t:like}.
+
+% Tbeta(0,0) seems to be good, acceptance rate is high and likelihood seems to be more consistent
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_t_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:t:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_t_depth.pdf}
-	\caption{Trace plot of depth for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 1 (tree structure) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:t:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_t_like.pdf}
-	\caption{Trace plot of likelihood for case 1 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case1:t:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_t_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:t:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_t_depth.pdf}
-	\caption{Trace plot of depth for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:t:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_t_like.pdf}
-	\caption{Trace plot of likelihood for case 2 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case2:t:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_t_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:t:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_t_depth.pdf}
-	\caption{Trace plot of depth for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:t:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_t_like.pdf}
-	\caption{Trace plot of likelihood for case 3 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case3:t:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_t_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:t:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_t_depth.pdf}
-	\caption{Trace plot of depth for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:t:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_t_like.pdf}
-	\caption{Trace plot of likelihood for case 4 with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with t copula. The top left denotes analysis with TBeta(0.5,0.5), top right denotes analysis with TBeta(0,0), bottom left denotes analysis with TBeta(2,2) and bottom right denotes analysis with TBeta(1,1).}
 	\label{fig:case4:t:like}
 \end{figure}
 
-\subsubsection{Clayton copula} The copula parameter of the Gumbel copula lies in the open interval $(0,\infty)$. So we consider log-normal and gamma distribution for $\mu_j$
+\subsubsection{Clayton copula} The copula parameter of the Gumbel copula lies in the open interval $(0,\infty)$. So we consider log-normal and inverse-gamma distribution for $\mu_j$
 
 We present the summary of our analyses with Clayton copula in \cref{tab:clayton:summary}. 
 
 
 \begin{table}[ht]
 	\centering
-	\caption{Summary of analyses with Clayton copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\caption{Summary of analyses with Clayton copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then it is thinned by 10.}
 	\label{tab:clayton:summary}
 	\scriptsize{
 		\begin{tabular}{ll|cccccc}
@@ -516,14 +530,102 @@ We present the summary of our analyses with Clayton copula in \cref{tab:clayton:
 \end{table}
 
 
-\subsubsection{Gumbel copula} The copula parameter of the Gumbel copula lies in the open interval $[1,\infty)$. So we consider log-normal and gamma distribution for $\mu_j$.
+\paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:clayton:nterm,fig:case1:clayton:depth,fig:case1:clayton:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:clayton:nterm,fig:case2:clayton:depth,fig:case2:clayton:like}; for case 3 the trace-plots are provided in \cref{fig:case3:clayton:nterm,fig:case3:clayton:depth,fig:case3:clayton:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:clayton:nterm,fig:case4:clayton:depth,fig:case4:clayton:like}.
+
+% LogNorm(0,1) seems nice, acceptance rate is over-all better than others and likelihood seems more consistent
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:clayton:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_depth.pdf}
+	\caption{Trace plot of depth for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:clayton:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_like.pdf}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:clayton:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:clayton:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_depth.pdf}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:clayton:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_like.pdf}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:clayton:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:clayton:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_depth.pdf}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:clayton:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_like.pdf}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:clayton:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:clayton:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_depth.pdf}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:clayton:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_like.pdf}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:clayton:like}
+\end{figure}
+
+\subsubsection{Gumbel copula} The copula parameter of the Gumbel copula lies in the open interval $[1,\infty)$. So we consider log-normal and inverse-gamma distribution for $\mu_j$.
 
 We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:summary}. 
 
 
 \begin{table}[ht]
 	\centering
-	\caption{Summary of analyses with Gumbel copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then by thinned by 10.}
+	\caption{Summary of analyses with Gumbel copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\theta$ against true $\theta$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 15000 samples in a single chain, after that we remove 5000 samples and then it is thinned by 10.}
 	\label{tab:gumbel:summary}
 	\scriptsize{
 	\begin{tabular}{ll|cccccc}
@@ -551,6 +653,95 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 		& LogNorm(0,5) & 2.445 & 1.353 & 0.217 & 0.0148 & 0.7090 & \textbf{0.990} \\ 
 		\end{tabular}}
 \end{table}
+
+\paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:gumbel:nterm,fig:case1:gumbel:depth,fig:case1:gumbel:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:gumbel:nterm,fig:case2:gumbel:depth,fig:case2:gumbel:like}; for case 3 the trace-plots are provided in \cref{fig:case3:gumbel:nterm,fig:case3:gumbel:depth,fig:case3:gumbel:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:gumbel:nterm,fig:case4:gumbel:depth,fig:case4:gumbel:like}.
+
+% LogNorm(0,1) seems nice, acceptance rate is over-all better than others and likelihood seems more consistent
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:gumbel:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_depth.pdf}
+	\caption{Trace plot of depth for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:gumbel:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_like.pdf}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case1:gumbel:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:gumbel:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_depth.pdf}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:gumbel:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_like.pdf}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case2:gumbel:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:gumbel:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_depth.pdf}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:gumbel:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_like.pdf}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case3:gumbel:like}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_nterm.pdf}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:gumbel:nterm}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_depth.pdf}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:gumbel:depth}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_like.pdf}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\label{fig:case4:gumbel:like}
+\end{figure}
+
 
 
 \bibliographystyle{plainnat}
