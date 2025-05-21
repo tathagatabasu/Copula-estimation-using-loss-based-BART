@@ -534,27 +534,59 @@ loglik_frank <- function(theta, u, v) {
   return(sum(log(densty)))
 }
 
-loglik_t <- function(theta, u, v) {
+loglik_t <- function(rho, u, v, df = 3) {
+  # Check input
+  if (any(c(u, v) <= 0 | c(u, v) >= 1)) return(NA)
   
-  densty = BiCopPDF(u, v, par = theta, family = 2, par2 = 3)
-  return(sum(log(densty)))
+  # Transform u, v to t quantiles
+  x <- qt(u, df)
+  y <- qt(v, df)
+  
+  # Univariate t densities
+  fx <- dt(x, df)
+  fy <- dt(y, df)
+  
+  # Bivariate t density
+  denom <- sqrt(1 - rho^2)
+  z <- (x^2 - 2 * rho * x * y + y^2) / (df * (1 - rho^2))
+  A <- gamma((df + 2) / 2) / (gamma(df / 2) * df * pi * denom)
+  B <- (1 + z)^(-(df + 2) / 2)
+  f_biv <- A * B
+  
+  # Copula log-density
+  c_uv <- log(f_biv) - log(fx * fy)
+  return(c_uv)
 }
 
 loglik_clayton <- function(theta, u, v) {
-  
-  theta = pmin(theta, 28)
-  theta = pmax(theta, 1e-10)
-  densty = BiCopPDF(u, v, par = theta, family = 3)
-  return(sum(log(densty)))
+  A <- u^(-theta) + v^(-theta) - 1
+  return(log(1 + theta) + (-2 - 1/theta)* log(A) + (-1 - theta) * log(u) + (-1 - theta)*log(v))
 }
+
 
 loglik_gumbel <- function(theta, u, v) {
   
-  theta = pmin(theta, 17)
-  theta = pmax(theta, 1)
-  densty = BiCopPDF(u, v, par = theta, family = 4)
-  return(sum(log(densty)))
+  # Transformations
+  log_u <- -log(u)
+  log_v <- -log(v)
+  log_u_theta <- log_u^theta
+  log_v_theta <- log_v^theta
+  sum_theta <- log_u_theta + log_v_theta
+  A <- sum_theta^(1 / theta)
+  
+  # Copula value
+  C_uv <- exp(-A)
+  
+  # Partial derivatives
+  part1 <- (log_u * log_v)^(theta - 1)
+  part2 <- sum_theta^(2 - 2/theta)
+  part3 <- (theta - 1 + A) / (u * v * log_u * log_v)
+  
+  # Density
+  density <- C_uv * theta * part1 / part2 * part3
+  return(log(density))
 }
+
 
 logprior_unif <- function(rho, bound = 1, alpha_val, beta_val) {
   return((alpha_val - 1)*log(bound + rho) + (beta_val - 1)*log(bound - rho))
@@ -641,3 +673,7 @@ logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sig
     }
   }
 }
+
+param_gauss = function(tau) return(sin(tau*pi/2))
+param_gumbel = function(tau) return(1/(1-tau))
+param_clayton = function(tau) return((2*tau)/(1-tau))
