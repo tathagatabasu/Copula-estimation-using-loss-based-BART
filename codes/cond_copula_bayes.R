@@ -23,7 +23,7 @@ require(doParallel)
 # data generation
 ################################################################################
 
-if(T){
+if(F){
   set.seed(123)
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
@@ -53,6 +53,33 @@ if(T){
   plot(X_obs, tau_true_2, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_3, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_4, xlab = "Observations", ylab = "tau")
+  
+  # gauss
+  
+  for (i in 1:4) {
+    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = param_gauss(get(paste0("tau_true_",i)))))
+  }
+  
+  
+  # t
+  
+  for (i in 1:4) {
+    assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = param_gauss(get(paste0("tau_true_",i))), par2 = 3))
+  }
+  
+  # gumbel 
+  
+  for (i in 1:4) {
+    assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = param_gumbel(get(paste0("tau_true_",i)))))
+  }
+  
+  # clayton
+  
+  for (i in 1:4) {
+    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = param_clayton(get(paste0("tau_true_",i)))))
+  }
+  
+  # dataset for prediction
   
   X_obs_pred = matrix(runif(n), ncol = 1)
   
@@ -89,11 +116,7 @@ if(T){
 ################################################################################
 # gaussian
 ################################################################################
-if(F){
-  for (i in 1:4) {
-    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = param_gauss(get(paste0("tau_true_",i)))))
-  }
-  
+if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
   for (i in 1:4) {
@@ -396,10 +419,6 @@ if(F){
 # t
 ################################################################################
 if(F){
-  for (i in 1:4) {
-    assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = param_gauss(get(paste0("tau_true_",i))), par2 = 3))
-  }
-  
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) # c(1.5618883, 0.6293944)
   
   for (i in 1:4) {
@@ -711,10 +730,6 @@ if(F){
 # Gumbel
 ################################################################################
 if(F){
-  for (i in 1:4) {
-    assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = param_gumbel(get(paste0("tau_true_",i)))))
-  }
-  
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
   for (i in 1:4) {
@@ -1011,10 +1026,6 @@ if(F){
 # clayton
 ################################################################################
 if(F){
-  for (i in 1:4) {
-    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = param_clayton(get(paste0("tau_true_",i)))))
-  }
-  
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
   for (i in 1:4) {
