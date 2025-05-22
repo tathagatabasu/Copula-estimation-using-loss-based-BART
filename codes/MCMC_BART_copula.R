@@ -348,7 +348,7 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                               beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }
   
-  
+  print(HR)
   
   
   if (runif(1) < HR){ 
@@ -535,10 +535,8 @@ loglik_frank <- function(theta, u, v) {
 }
 
 loglik_t <- function(rho, u, v, df = 3) {
-  # Check input
-  if (any(c(u, v) <= 0 | c(u, v) >= 1)) return(NA)
   
-  # Transform u, v to t quantiles
+  # Inverse t CDF (quantiles)
   x <- qt(u, df)
   y <- qt(v, df)
   
@@ -546,21 +544,25 @@ loglik_t <- function(rho, u, v, df = 3) {
   fx <- dt(x, df)
   fy <- dt(y, df)
   
-  # Bivariate t density
+  # Bivariate t density (manual formula)
   denom <- sqrt(1 - rho^2)
   z <- (x^2 - 2 * rho * x * y + y^2) / (df * (1 - rho^2))
+  
   A <- gamma((df + 2) / 2) / (gamma(df / 2) * df * pi * denom)
   B <- (1 + z)^(-(df + 2) / 2)
   f_biv <- A * B
   
-  # Copula log-density
-  c_uv <- log(f_biv) - log(fx * fy)
-  return(c_uv)
+  # Copula density
+  copula_density <- f_biv / (fx * fy)
+  
+  # Log-likelihood
+  log_lik <- sum(log(copula_density))
+  return(log_lik)
 }
 
 loglik_clayton <- function(theta, u, v) {
   A <- u^(-theta) + v^(-theta) - 1
-  return(log(1 + theta) + (-2 - 1/theta)* log(A) + (-1 - theta) * log(u) + (-1 - theta)*log(v))
+  return(sum(log(1 + theta) + (-2 - 1/theta)* log(A) + (-1 - theta) * log(u) + (-1 - theta)*log(v)))
 }
 
 
@@ -584,7 +586,7 @@ loglik_gumbel <- function(theta, u, v) {
   
   # Density
   density <- C_uv * theta * part1 / part2 * part3
-  return(log(density))
+  return(sum(log(density)))
 }
 
 
