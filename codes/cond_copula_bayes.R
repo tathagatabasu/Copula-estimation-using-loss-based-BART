@@ -23,7 +23,7 @@ require(doParallel)
 # data generation
 ################################################################################
 
-if(F){
+if(T){
   set.seed(123)
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
@@ -40,7 +40,6 @@ if(F){
   tree_top <- assign_term_node_values(tree_top, 0.6, 0.1)
   tau_true_1 <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
-  rm(tree_top)
   
   # monotone
   tau_true_2 <- 0.3 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
@@ -89,13 +88,8 @@ if(F){
   rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
   
   # tau with tree structure
-  tree_top <- generate_random_binary_tree_n_delta(8,4)
-  tree_top <- assign_node_idx(tree_top)
-  tree_top <- assign_split_rules(tree_top, X_obs_pred)
-  tree_top <- assign_term_node_values(tree_top, 0.6, 0.1)
   tau_true_pred_1 <- sample_CART(tree_top, X_obs_pred, sigma_ = 0.001) 
-  tau_true_pred_1 <- matrix(tau_true_1, ncol = 1)
-  rm(tree_top)
+  tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
   
   # monotone
   tau_true_pred_2 <- 0.3 + 0.2 * sin(3*X_obs_pred) + 0.3*X_obs_pred^2
@@ -116,7 +110,7 @@ if(F){
 ################################################################################
 # gaussian
 ################################################################################
-if(T){
+if(F){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
   for (i in 1:4) {
@@ -594,13 +588,6 @@ if(F){
   
   # prediction
   
-  X_obs_pred = matrix(runif(n), ncol = 1)
-  
-  # normalise predictors 
-  X_obs_pred.norm <- as.data.frame(apply(X_obs_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
-  X_obs_pred.norm <- as.matrix(X_obs_pred.norm)
-  rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
-  
   pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
                                                                      mcmc.list = model.list.def,
                                                                      born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
@@ -609,7 +596,7 @@ if(F){
   pred_cond = do.call(rbind,pred_cond)
   
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_gauss(get(paste0("tau_true_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(param_gauss(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
   
@@ -911,7 +898,7 @@ if(F){
   pred_cond = do.call(rbind,pred_cond)
   
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_gumbel(get(paste0("tau_true_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(param_gumbel(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
   
@@ -1201,13 +1188,6 @@ if(F){
   
   # prediction
   
-  X_obs_pred = matrix(runif(n), ncol = 1)
-  
-  # normalise predictors 
-  X_obs_pred.norm <- as.data.frame(apply(X_obs_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
-  X_obs_pred.norm <- as.matrix(X_obs_pred.norm)
-  rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
-  
   pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
                                                                      mcmc.list = model.list.def,
                                                                      born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
@@ -1215,7 +1195,7 @@ if(F){
   pred_cond = do.call(rbind,pred_cond)
   
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
   
