@@ -561,32 +561,28 @@ loglik_t <- function(rho, u, v, df = 3) {
 }
 
 loglik_clayton <- function(theta, u, v) {
-  A <- u^(-theta) + v^(-theta) - 1
-  return(sum(log(1 + theta) + (-2 - 1/theta)* log(A) + (-1 - theta) * log(u) + (-1 - theta)*log(v)))
+  if(min(theta)<0) return(0)
+  
+  print(theta)
+  
+  log_density <- log(1+theta) + (-1-theta)*log(u*v) + (-1/theta-2) * log((u^(-theta)+v^(-theta)-1))
+  return(sum(log_density))
 }
 
 
 loglik_gumbel <- function(theta, u, v) {
   
+  if(any(theta)<1) return(0)
+  
   # Transformations
-  log_u <- -log(u)
-  log_v <- -log(v)
-  log_u_theta <- log_u^theta
-  log_v_theta <- log_v^theta
-  sum_theta <- log_u_theta + log_v_theta
-  A <- sum_theta^(1 / theta)
+  A <- ((-log(u))^theta+(-log(v))^theta)^(1/theta)
   
-  # Copula value
-  C_uv <- exp(-A)
-  
-  # Partial derivatives
-  part1 <- (log_u * log_v)^(theta - 1)
-  part2 <- sum_theta^(2 - 2/theta)
-  part3 <- (theta - 1 + A) / (u * v * log_u * log_v)
+  print(theta)
   
   # Density
-  density <- C_uv * theta * part1 / part2 * part3
-  return(sum(log(density)))
+  log_density <- -A -(log(u) + log(v)) + (-2+2/theta)*log((-log(u))^theta+ (-log(v))^theta) + (theta-1) *log(log(u)*log(v)) + log(1+(theta-1)*((-log(u))^theta+(-log(v))^theta)^(-1/theta))
+  
+  return(sum(log_density))
 }
 
 
