@@ -1,4 +1,5 @@
 # codes and packages
+load("analysis_sim_dat_new.RData")
 source('code/import_functions.R')
 source('mclapply.R')
 source('MCMC_BART_copula.R')
@@ -23,7 +24,7 @@ require(doParallel)
 # data generation
 ################################################################################
 
-if(T){
+if(F){
   set.seed(123)
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
@@ -101,10 +102,11 @@ if(T){
   # mcmc params
   n.chain_par <- 1
   n.iter_par <- 15000
-  n.born.out.par = 5000
+  n.born.out.par <- 0 #5000
+  n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
-  moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
+  moves.prob_par <- c(0.25, 0.25, 0.25, 0.25)
 }
 
 ################################################################################
@@ -120,7 +122,7 @@ if(F){
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                  U2 = get(paste0("copula_uu_gauss_",i))[,2],
                                                                  mu = 0, cop_type = "Gauss", 
-                                                                 sigma = .5, alpha_val = 0, beta_val = 0, 
+                                                                 sigma = .5, alpha_val = 1, beta_val = 1, 
                                                                  log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                  prior_list = lb.prior.def, 
                                                                  moves.prob = moves.prob_par, 
@@ -136,7 +138,7 @@ if(F){
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                  U2 = get(paste0("copula_uu_gauss_",i))[,2],
                                                                  mu = 0, cop_type = "Gauss", 
-                                                                 sigma = .1, alpha_val = 0, beta_val = 0, 
+                                                                 sigma = .5, alpha_val = 0, beta_val = 0, 
                                                                  log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                  prior_list = lb.prior.def, 
                                                                  moves.prob = moves.prob_par, 
@@ -153,7 +155,7 @@ if(F){
                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                  U2 = get(paste0("copula_uu_gauss_",i))[,2],
                                                                  mu = 0, cop_type = "Gauss", 
-                                                                 sigma = .1, alpha_val = .5, beta_val = .5, 
+                                                                 sigma = .5, alpha_val = .5, beta_val = .5, 
                                                                  log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                  prior_list = lb.prior.def, 
                                                                  moves.prob = moves.prob_par, 
@@ -169,7 +171,7 @@ if(F){
                                                                 U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                 U2 = get(paste0("copula_uu_gauss_",i))[,2],
                                                                 mu = 0, cop_type = "Gauss", 
-                                                                sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                                sigma = .5, alpha_val = 2, beta_val = 2, 
                                                                 log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                 prior_list = lb.prior.def, 
                                                                 moves.prob = moves.prob_par, 
@@ -218,10 +220,10 @@ if(F){
                                  mcmc.list = model.list.def,
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
-  depth.df_thin <- na.omit(depth.df[c(rep(NA,9), TRUE),])
-  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,9), TRUE),])
-  like.df_thin <- na.omit(like.df[c(rep(NA,9), TRUE),])
-  acc.df_thin <- na.omit(acc.df[c(rep(NA,9), TRUE),])
+  depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
+  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
+  like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
+  acc.df_thin <- na.omit(acc.df[c(rep(NA,(n.thin-1)), TRUE),])
   
   df.sum.def <- data.frame(tree = nterm.df$x,
                            panel.name = nterm.df$panel.name,
@@ -252,28 +254,28 @@ if(F){
     theme_classic()
   
   trace.nl <- ggplot(nterm.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab(~n[L]) +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   trace.depth <- ggplot(depth.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab('Depth') +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
-  trace.loglik <- ggplot(df.sum.def, aes(tree/10, loglik)) + 
+  trace.loglik <- ggplot(df.sum.def, aes(tree/n.thin, loglik)) + 
     geom_line() + 
     facet_wrap(facets = ~panel.name) + 
     theme_classic() + 
     xlab('Iteration') + 
     ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   # plots
   hist.nl
@@ -294,7 +296,7 @@ if(F){
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   pred_cond$theta_true = as.vector(apply(param_gauss(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
-  pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
+  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
@@ -422,7 +424,7 @@ if(F){
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .5, alpha_val = 0, beta_val = 0, 
+                                                                   sigma = .5, alpha_val = 1, beta_val = 1, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -438,7 +440,7 @@ if(F){
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .1, alpha_val = 0, beta_val = 0, 
+                                                                   sigma = .5, alpha_val = 0, beta_val = 0, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -455,7 +457,7 @@ if(F){
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .1, alpha_val = .5, beta_val = .5, 
+                                                                   sigma = .5, alpha_val = .5, beta_val = .5, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -471,7 +473,7 @@ if(F){
                                                                   U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                   mu = 0, cop_type = "t", 
-                                                                  sigma = .1, alpha_val = 2, beta_val = 2, 
+                                                                  sigma = .5, alpha_val = 2, beta_val = 2, 
                                                                   log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                   prior_list = lb.prior.def, 
                                                                   moves.prob = moves.prob_par, 
@@ -521,10 +523,10 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   
-  depth.df_thin <- na.omit(depth.df[c(rep(NA,9), TRUE),])
-  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,9), TRUE),])
-  like.df_thin <- na.omit(like.df[c(rep(NA,9), TRUE),])
-  acc.df_thin <- na.omit(acc.df[c(rep(NA,9), TRUE),])
+  depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
+  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
+  like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
+  acc.df_thin <- na.omit(acc.df[c(rep(NA,(n.thin-1)), TRUE),])
   
   df.sum.def <- data.frame(tree = nterm.df$x,
                            panel.name = nterm.df$panel.name,
@@ -555,28 +557,27 @@ if(F){
     theme_classic()
   
   trace.nl <- ggplot(nterm.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab(~n[L]) +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   trace.depth <- ggplot(depth.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab('Depth') +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
-  trace.loglik <- ggplot(df.sum.def, aes(tree/10, loglik)) + 
+  trace.loglik <- ggplot(df.sum.def, aes(tree/n.thin, loglik)) + 
     geom_line() + 
     facet_wrap(facets = ~panel.name) + 
     theme_classic() + 
     xlab('Iteration') + 
-    ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    ylab('Log likelihood')
   
   # plots
   
@@ -598,7 +599,7 @@ if(F){
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   pred_cond$theta_true = as.vector(apply(param_gauss(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
-  pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
+  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
@@ -726,7 +727,7 @@ if(F){
                                                                         U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                         U2 = get(paste0("copula_uu_gumbel_",i))[,2],
                                                                         mu = 0, cop_type = "gumbel", 
-                                                                        sigma = .5, alpha_val = 2, beta_val = 2, 
+                                                                        sigma = 1, alpha_val = 2, beta_val = 2, 
                                                                         log_nor_mu = 0, log_nor_sigma = 1, prior_type = "IG",
                                                                         prior_list = lb.prior.def, 
                                                                         moves.prob = moves.prob_par, 
@@ -742,7 +743,7 @@ if(F){
                                                                         U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                         U2 = get(paste0("copula_uu_gumbel_",i))[,2],
                                                                         mu = 0, cop_type = "gumbel", 
-                                                                        sigma = .5, alpha_val = 1, beta_val = 1, 
+                                                                        sigma = 1, alpha_val = 1, beta_val = 1, 
                                                                         log_nor_mu = 0, log_nor_sigma = 1, prior_type = "IG",
                                                                         prior_list = lb.prior.def, 
                                                                         moves.prob = moves.prob_par, 
@@ -759,7 +760,7 @@ if(F){
                                                                         U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                         U2 = get(paste0("copula_uu_gumbel_",i))[,2],
                                                                         mu = 0, cop_type = "gumbel", 
-                                                                        sigma = .5, alpha_val = .5, beta_val = .5, 
+                                                                        sigma = 1, alpha_val = .5, beta_val = .5, 
                                                                         log_nor_mu = 0, log_nor_sigma = 1, prior_type = "LN",
                                                                         prior_list = lb.prior.def, 
                                                                         moves.prob = moves.prob_par, 
@@ -775,7 +776,7 @@ if(F){
                                                                         U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                         U2 = get(paste0("copula_uu_gumbel_",i))[,2],
                                                                         mu = 0, cop_type = "gumbel", 
-                                                                        sigma = .5, alpha_val = 2, beta_val = 2, 
+                                                                        sigma = 1, alpha_val = 2, beta_val = 2, 
                                                                         log_nor_mu = 0, log_nor_sigma = 5, prior_type = "LN",
                                                                         prior_list = lb.prior.def, 
                                                                         moves.prob = moves.prob_par, 
@@ -824,10 +825,10 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   
-  depth.df_thin <- na.omit(depth.df[c(rep(NA,9), TRUE),])
-  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,9), TRUE),])
-  like.df_thin <- na.omit(like.df[c(rep(NA,9), TRUE),])
-  acc.df_thin <- na.omit(acc.df[c(rep(NA,9), TRUE),])
+  depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
+  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
+  like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
+  acc.df_thin <- na.omit(acc.df[c(rep(NA,(n.thin-1)), TRUE),])
   
   df.sum.def <- data.frame(tree = nterm.df$x,
                            panel.name = nterm.df$panel.name,
@@ -858,28 +859,28 @@ if(F){
     theme_classic()
   
   trace.nl <- ggplot(nterm.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab(~n[L]) +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   trace.depth <- ggplot(depth.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab('Depth') +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
-  trace.loglik <- ggplot(df.sum.def, aes(tree/10, loglik)) + 
+  trace.loglik <- ggplot(df.sum.def, aes(tree/n.thin, loglik)) + 
     geom_line() + 
     facet_wrap(facets = ~panel.name) + 
     theme_classic() + 
     xlab('Iteration') + 
     ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   # plots
   
@@ -900,7 +901,7 @@ if(F){
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   pred_cond$theta_true = as.vector(apply(param_gumbel(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
-  pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
+  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
@@ -910,6 +911,11 @@ if(F){
   
   pred_cond_mod$U1 = copula_uu_gumbel_pred[,1]
   pred_cond_mod$U2 = copula_uu_gumbel_pred[,2]
+  
+  pred_cond_mod_p1 = pred_cond_mod %>% filter(panel.name == "LB - default - IG22")
+  pred_cond_mod_p2 = pred_cond_mod %>% filter(panel.name == "LB - default - IG11")
+  pred_cond_mod_p3 = pred_cond_mod %>% filter(panel.name == "LB - default - LN01")
+  pred_cond_mod_p4 = pred_cond_mod %>% filter(panel.name == "LB - default - LN05")
   
   # Plot 3D histogram
   hist_true <- hist2d(get(paste0("copula_uu_gumbel_",i))[,1], get(paste0("copula_uu_gumbel_",i))[,2], nbins = c(10,10), show = FALSE)
@@ -1022,7 +1028,7 @@ if(F){
                                                                          U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                          U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                          mu = 0, cop_type = "Clayton", 
-                                                                         sigma = .5, alpha_val = 2, beta_val = 2, 
+                                                                         sigma = 1, alpha_val = 2, beta_val = 2, 
                                                                          log_nor_mu = 0, log_nor_sigma = 1, prior_type = "IG",
                                                                          prior_list = lb.prior.def, 
                                                                          moves.prob = moves.prob_par, 
@@ -1038,7 +1044,7 @@ if(F){
                                                                          U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                          U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                          mu = 0, cop_type = "Clayton", 
-                                                                         sigma = .5, alpha_val = 1, beta_val = 1, 
+                                                                         sigma = 1, alpha_val = 1, beta_val = 1, 
                                                                          log_nor_mu = 0, log_nor_sigma = 1, prior_type = "IG",
                                                                          prior_list = lb.prior.def, 
                                                                          moves.prob = moves.prob_par, 
@@ -1055,7 +1061,7 @@ if(F){
                                                                          U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                          U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                          mu = 0, cop_type = "Clayton", 
-                                                                         sigma = .5, alpha_val = .5, beta_val = .5, 
+                                                                         sigma = 1, alpha_val = .5, beta_val = .5, 
                                                                          log_nor_mu = 0, log_nor_sigma = 1, prior_type = "LN",
                                                                          prior_list = lb.prior.def, 
                                                                          moves.prob = moves.prob_par, 
@@ -1071,7 +1077,7 @@ if(F){
                                                                          U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                          U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                          mu = 0, cop_type = "Clayton", 
-                                                                         sigma = .5, alpha_val = 2, beta_val = 2, 
+                                                                         sigma = 1, alpha_val = 2, beta_val = 2, 
                                                                          log_nor_mu = 0, log_nor_sigma = 5, prior_type = "LN",
                                                                          prior_list = lb.prior.def, 
                                                                          moves.prob = moves.prob_par, 
@@ -1121,10 +1127,10 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   
-  depth.df_thin <- na.omit(depth.df[c(rep(NA,9), TRUE),])
-  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,9), TRUE),])
-  like.df_thin <- na.omit(like.df[c(rep(NA,9), TRUE),])
-  acc.df_thin <- na.omit(acc.df[c(rep(NA,9), TRUE),])
+  depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
+  nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
+  like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
+  acc.df_thin <- na.omit(acc.df[c(rep(NA,(n.thin-1)), TRUE),])
   
   df.sum.def <- data.frame(tree = nterm.df$x,
                            panel.name = nterm.df$panel.name,
@@ -1155,28 +1161,28 @@ if(F){
     theme_classic()
   
   trace.nl <- ggplot(nterm.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab(~n[L]) +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   trace.depth <- ggplot(depth.df_thin) +
-    geom_line(aes(x/10, y)) +
+    geom_line(aes(x/n.thin, y)) +
     facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('Iteration') +
     ylab('Depth') +
     theme_classic() +
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
-  trace.loglik <- ggplot(df.sum.def, aes(tree/10, loglik)) + 
+  trace.loglik <- ggplot(df.sum.def, aes(tree/n.thin, loglik)) + 
     geom_line() + 
     facet_wrap(facets = ~panel.name) + 
     theme_classic() + 
     xlab('Iteration') + 
     ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,1000,by = 200))
+    scale_x_continuous(breaks = seq(0,((n.iter_par-n.born.out.par)/n.thin),by = (n.iter_par-n.born.out.par)/(5*n.thin)))
   
   # plots
   
@@ -1197,7 +1203,7 @@ if(F){
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
-  pred_cond_thin = na.omit(pred_cond[c(rep(NA,9), TRUE),])
+  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
@@ -1207,6 +1213,11 @@ if(F){
   
   pred_cond_mod$U1 = copula_uu_clayton_pred[,1]
   pred_cond_mod$U2 = copula_uu_clayton_pred[,2]
+  
+  pred_cond_mod_p1 = pred_cond_mod %>% filter(panel.name == "LB - default - IG22")
+  pred_cond_mod_p2 = pred_cond_mod %>% filter(panel.name == "LB - default - IG11")
+  pred_cond_mod_p3 = pred_cond_mod %>% filter(panel.name == "LB - default - LN01")
+  pred_cond_mod_p4 = pred_cond_mod %>% filter(panel.name == "LB - default - LN05")
   
   # Plot 3D histogram
   hist_true <- hist2d(copula_uu_clayton_1[,1], copula_uu_clayton_1[,2], nbins = c(10,10), show = FALSE)

@@ -40,7 +40,7 @@ MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior
     rt_old <- generate_random_binary_tree_depth_free(1)
     rt_old <- assign_node_idx(rt_old)
     rt_old <- assign_split_rules(rt_old, X)
-    rt_old <- assign_term_node_values_copula(rt_old, mu, sigma) # check input
+    rt_old <- assign_term_node_values_copula(rt_old, mu, sigma, cop_type) # check input
   } else {
     rt_old <- starting.tree
   }
@@ -235,10 +235,10 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_va
   }
 }
 
-assign_term_node_values_copula <- function(tree_top, mu, sigma){ # check input
+assign_term_node_values_copula <- function(tree_top, mu, sigma, cop_type){ # check input
   term.node.idx <- get_terminal_nodes_idx(tree_top)
   for(node.idx in term.node.idx){
-    tree_top <- set_term_node_value_copula(node.idx, tree_top, mu, sigma) # check input
+    tree_top <- set_term_node_value_copula(node.idx, tree_top, mu, sigma, cop_type) # check input
   }
   return(tree_top)
 }
@@ -312,9 +312,9 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   
   ##############################################################################
   proposal = rnorm(1, mu, sigma)
-  print(proposal)
+  
   if(cop_type == "Gauss"){
-    if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
+    if(any(proposal <= -1)||any(proposal >= 1)) HR = 0 else # Q needs to be >0
       # Hastings ratio of the proposal
       HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
@@ -326,21 +326,21 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }else if(cop_type == "Clayton"){
-    if(proposal<=0) HR = 0 else{
+    if(any(proposal<=0) || any(proposal>28)) HR = 0 else{
       HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
                  logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                               beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
     }
   }else if(cop_type == "gumbel"){
-    if(proposal<1) HR = 0 else{
+    if(any(proposal<1)||any(proposal>17)) HR = 0 else{
       HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
                  logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
                               beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
     }
   }else if(cop_type == "t"){
-    if((proposal <= -1)||(proposal >= 1)) HR = 0 else # Q needs to be >0
+    if(any(proposal <= -1)||any(proposal >= 1)) HR = 0 else # Q needs to be >0
       # Hastings ratio of the proposal
       HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
@@ -348,7 +348,7 @@ sample.cond.mu.copula <- function(tree_top = NULL,
                               beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
   }
   
-  print(HR)
+  
   
   
   if (runif(1) < HR){ 
@@ -495,17 +495,23 @@ cart_log_lik_copula <- function(tree_top, U1, U2, X, cop_type){ # check input
   return(sum(log.prob.obs))
 }
 
-set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma){
+set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma, cop_type){
   if(is.null(tree_top$left) & is.null(tree_top$right)){
     if(tree_top$node.idx == node.idx){
-      tree_top$value = rnorm(1, mean = mu, sd = sigma)
+      if(cop_type == "Gauss" || cop_type == "t"){
+        tree_top$value = rnorm(1, mean = mu, sd = sigma)
+      } else if(cop_type == "gumbel") {
+        tree_top$value = rlnorm(1, meanlog = mu, sdlog = sigma) + 1
+      } else if(cop_type == "Clayton") {
+        tree_top$value = rlnorm(1, meanlog = mu, sdlog = sigma)
+      }
       return(tree_top)
     } else {
       return(tree_top)  
     }
   }  else {
-    tree.left <- set_term_node_value_copula(node.idx, tree_top$left, mu, sigma)
-    tree.right <- set_term_node_value_copula(node.idx, tree_top$right, mu, sigma)
+    tree.left <- set_term_node_value_copula(node.idx, tree_top$left, mu, sigma, cop_type)
+    tree.right <- set_term_node_value_copula(node.idx, tree_top$right, mu, sigma, cop_type)
     return(list(left = tree.left, right = tree.right, node.idx = tree_top$node.idx,
                 cond = tree_top$cond))
   }
@@ -534,57 +540,27 @@ loglik_frank <- function(theta, u, v) {
   return(sum(log(densty)))
 }
 
-loglik_t <- function(rho, u, v, df = 3) {
+loglik_t <- function(theta, u, v, df = 3) {
   
-  # Inverse t CDF (quantiles)
-  x <- qt(u, df)
-  y <- qt(v, df)
-  
-  # Univariate t densities
-  fx <- dt(x, df)
-  fy <- dt(y, df)
-  
-  # Bivariate t density (manual formula)
-  denom <- sqrt(1 - rho^2)
-  z <- (x^2 - 2 * rho * x * y + y^2) / (df * (1 - rho^2))
-  
-  A <- gamma((df + 2) / 2) / (gamma(df / 2) * df * pi * denom)
-  B <- (1 + z)^(-(df + 2) / 2)
-  f_biv <- A * B
-  
-  # Copula density
-  copula_density <- f_biv / (fx * fy)
-  
-  # Log-likelihood
-  log_lik <- sum(log(copula_density))
-  return(log_lik)
+  densty = BiCopPDF(u, v, par = theta, family = 2, par2 = df)
+  return(sum(log(densty)))
 }
 
 loglik_clayton <- function(theta, u, v) {
-  if(min(theta)<0) return(0)
   
-  print(theta)
-  
-  log_density <- log(1+theta) + (-1-theta)*log(u*v) + (-1/theta-2) * log((u^(-theta)+v^(-theta)-1))
-  return(sum(log_density))
+  # theta = pmin(theta, 28)
+  # theta = pmax(theta, 1e-10)
+  densty = BiCopPDF(u, v, par = theta, family = 3)
+  return(sum(log(densty)))
 }
-
 
 loglik_gumbel <- function(theta, u, v) {
   
-  if(any(theta)<1) return(0)
-  
-  # Transformations
-  A <- ((-log(u))^theta+(-log(v))^theta)^(1/theta)
-  
-  print(theta)
-  
-  # Density
-  log_density <- -A -(log(u) + log(v)) + (-2+2/theta)*log((-log(u))^theta+ (-log(v))^theta) + (theta-1) *log(log(u)*log(v)) + log(1+(theta-1)*((-log(u))^theta+(-log(v))^theta)^(-1/theta))
-  
-  return(sum(log_density))
+  # theta = pmin(theta, 17)
+  # theta = pmax(theta, 1)
+  densty = BiCopPDF(u, v, par = theta, family = 4)
+  return(sum(log(densty)))
 }
-
 
 logprior_unif <- function(rho, bound = 1, alpha_val, beta_val) {
   return((alpha_val - 1)*log(bound + rho) + (beta_val - 1)*log(bound - rho))
