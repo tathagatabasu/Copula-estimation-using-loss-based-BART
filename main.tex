@@ -223,14 +223,14 @@ Then using these values of conditional Kendall's $\tau$, we generate the copula 
 
 \begin{table}
     \centering
-    \begin{tabular}{l|c|c}
+    \begin{tabular}{l|c|c|c}
     \toprule
-        Family & Support & Relation with $\tau$ \\
+        Family & Support & Relation with $\tau$ & Range of $\tau$ \\
          \midrule
-        Gaussian & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ \\
-        Student-t & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ \\
-        Clayton & $\theta \in (0,\infty)$ & $2\tau/(1-\tau)$; $\tau>0$ \\
-        Gumbel & $\theta\in [1,\infty)$ & $1/(1-\tau)$ \\
+        Gaussian & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ & (-1,1)\\
+        Student-t & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ & (-1,1) \\
+        Clayton & $\theta \in (0,\infty)$ & $2\tau/(1-\tau)$ & $(0,1)$ \\
+        Gumbel & $\theta\in [1,\infty)$ & $1/(1-\tau)$  & $[0,1)$ \\
         \bottomrule
     \end{tabular}
     \caption{Copula families used for analyses, along with parameter support and relation with Kendall's $\tau$.}
