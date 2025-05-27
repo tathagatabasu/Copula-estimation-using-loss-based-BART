@@ -279,6 +279,62 @@ We present the summary of our analyses with Gaussian copula in \cref{tab:gauss:s
 		\end{tabular}}
 \end{table}
 
+\paragraph{Convergence Diagnostic}
+\begin{table}[ht]
+	\centering
+	\caption{Posterior convergence diagnostic for Gaussian copula. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood. To obtain the reduced samples we discard 5000 burnin samples followed by thinning of 10.}
+	\scriptsize{
+		\begin{tabular}{ll|crr|crr|crr}
+			\toprule
+			\multicolumn{2}{c|}{} &
+			\multicolumn{3}{c|}{Depth} &
+			\multicolumn{3}{c|}{$n_L$} &
+			\multicolumn{3}{c}{likelihood} \\
+			\midrule
+			& Prior & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+			\midrule
+			Case 1 & TBeta(1,1) & 0.95 & 0.82 & 5.23 & 0.96 & 1.46 & 1.42 & 0.88 & 1.85 & 3.09 \\ 
+			all sample & TBeta(0.5,0.5) & 0.91 & 3.00 & -1.27 & 0.94 & 2.59 & -2.10 & 0.79 & 5.19 & -0.27 \\ 
+			& TBeta(0,0) & 0.94 & 1.64 & -3.64 & 0.96 & 1.77 & -3.47 & 0.80 & 3.35 & 1.17 \\ 
+			& TBeta(2,2) & 0.92 & 2.24 & -2.44 & 0.95 & 2.07 & -2.49 & 0.81 & 4.06 & 4.62 \\ 
+			\midrule
+			reduced sample & TBeta(1,1) & 0.63 & 5.34 & -1.80 & 0.66 & 8.63 & -1.56 & 0.56 & 19.99 & -0.06 \\ 
+			& TBeta(0.5,0.5) & 0.56 & 13.42 & 0.06 & 0.61 & 12.42 & -0.01 & 0.13 & 26.78 & -1.47 \\ 
+			& TBeta(0,0) & 0.66 & 12.67 & 0.22 & 0.70 & 11.99 & 0.12 & 0.19 & 13.06 & 0.81 \\ 
+			& TBeta(2,2) & 0.58 & 8.92 & -1.52 & 0.65 & 10.25 & -2.30 & 0.29 & 29.62 & 1.10 \\ 
+			\midrule
+			Case 2 & TBeta(1,1) & 0.85 & 2.49 & -1.59 & 0.90 & 1.89 & -1.64 & 0.86 & 5.65 & 0.33 \\ 
+			all sample & TBeta(0.5,0.5) & 0.96 & 0.13 & -1.57 & 0.98 & 0.14 & -1.72 & 0.94 & 0.58 & 1.03 \\ 
+			& TBeta(0,0) & 0.83 & 4.58 & -1.93 & 0.89 & 3.48 & -2.01 & 0.69 & 14.52 & -1.31 \\ 
+			& TBeta(2,2) & 0.87 & 2.24 & -3.88 & 0.92 & 1.70 & -3.75 & 0.69 & 14.77 & -0.06 \\ 
+			\midrule
+			reduced sample & TBeta(1,1) & 0.50 & 9.16 & -0.24 & 0.58 & 8.27 & 0.10 & 0.39 & 39.46 & -0.57 \\ 
+			& TBeta(0.5,0.5) & 0.89 & 0.31 & -1.04 & 0.92 & 0.67 & -1.33 & 0.82 & 7.19 & 0.98 \\ 
+			& TBeta(0,0) & 0.31 & 33.88 & -2.14 & 0.44 & 28.33 & -1.80 & 0.11 & 80.77 & -0.67 \\ 
+			& TBeta(2,2) & 0.50 & 11.85 & -1.97 & 0.62 & 6.22 & -1.76 & 0.12 & 86.78 & 0.18 \\ 
+			\midrule
+			Case 3 & TBeta(1,1) & 0.97 & 0.33 & -1.83 & 0.98 & 0.52 & -2.16 & 0.98 & 0.51 & 2.67 \\ 
+			all sample & TBeta(0.5,0.5) & 0.88 & 3.32 & 0.96 & 0.92 & 3.44 & 1.47 & 0.95 & 0.70 & 2.91 \\ 
+			& TBeta(0,0) & 0.89 & 4.06 & -1.81 & 0.94 & 2.34 & -3.63 & 0.92 & 1.50 & 0.23 \\ 
+			& TBeta(2,2) & 0.95 & 1.10 & 9.28 & 0.95 & 1.76 & 7.14 & 0.90 & 2.86 & -1.19 \\ 
+			\midrule
+			reduced sample & TBeta(1,1) & 0.83 & 1.09 & 2.69 & 0.80 & 1.39 & 1.99 & 0.85 & 3.42 & -1.27 \\ 
+			& TBeta(0.5,0.5) & 0.26 & 59.01 & 0.21 & 0.40 & 38.65 & -0.32 & 0.41 & 41.89 & 0.32 \\ 
+			& TBeta(0,0) & 0.35 & 36.00 & 0.09 & 0.57 & 17.03 & 0.69 & 0.67 & 5.15 & -1.88 \\ 
+			& TBeta(2,2) & 0.47 & 30.46 & 1.26 & 0.51 & 28.39 & 0.88 & 0.40 & 16.41 & -0.83 \\  
+			\midrule
+			Case 4 & TBeta(1,1) & 0.97 & 0.34 & 2.75 & 0.97 & 0.45 & 3.02 & 0.98 & 0.70 & -0.35 \\ 
+			all sample & TBeta(0.5,0.5) & 0.90 & 3.06 & 0.40 & 0.93 & 2.45 & 0.45 & 0.95 & 0.62 & 1.36 \\ 
+			& TBeta(0,0) & 0.90 & 5.05 & 0.64 & 0.93 & 3.21 & -0.18 & 0.87 & 2.03 & 1.02 \\ 
+			& TBeta(2,2) & 0.91 & 4.00 & 0.24 & 0.94 & 3.01 & 0.89 & 0.78 & 4.65 & -1.33 \\ 
+			\midrule
+			reduced sample & TBeta(1,1) & 0.78 & 1.28 & 3.55 & 0.78 & 1.80 & 1.56 & 0.92 & 2.43 & 0.04 \\ 
+			& TBeta(0.5,0.5) & 0.41 & 28.62 & 0.74 & 0.54 & 18.10 & 0.64 & 0.73 & 2.15 & -1.42 \\ 
+			& TBeta(0,0) & 0.39 & 44.21 & 0.85 & 0.52 & 31.39 & 0.49 & 0.24 & 12.61 & 1.34 \\ 
+			& TBeta(2,2) & 0.41 & 35.74 & -0.37 & 0.54 & 19.52 & -0.73 & 0.13 & 32.53 & 0.82 \\ 
+			\midrule
+	\end{tabular}}
+\end{table}
 
 \paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:gauss:nterm,fig:case1:gauss:depth,fig:case1:gauss:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:gauss:nterm,fig:case2:gauss:depth,fig:case2:gauss:like}; for case 3 the trace-plots are provided in \cref{fig:case3:gauss:nterm,fig:case3:gauss:depth,fig:case3:gauss:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:gauss:nterm,fig:case4:gauss:depth,fig:case4:gauss:like}.
 
@@ -402,6 +458,63 @@ We present the summary of our analyses with student-t copula in \cref{tab:studen
 		(\cref{eq:synth:tau_x:case4}) & TBeta(0,0) & 2.387 & 1.311 & 0.275 & 0.0003 & 0.1406 & \textbf{1.000} \\ 
 		& TBeta(2,2) & 2.689 & 1.488 & 0.266 & 0.0003 & 0.1648 & \textbf{1.000} \\ 
 		& TBeta(1,1) & 2.824 & 1.568 & 0.259 & 0.0003 & 0.1482 & \textbf{1.000} \\ 
+		\end{tabular}}
+\end{table}
+
+\paragraph{Convergence Diagnostic}
+\begin{table}[ht]
+	\centering
+	\caption{Posterior convergence diagnostic for student t copula. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood. To obtain the reduced samples we discard 5000 burnin samples followed by thinning of 10.}
+	\scriptsize{
+	\begin{tabular}{ll|crr|crr|crr}
+		\toprule
+		\multicolumn{2}{c|}{} &
+		\multicolumn{3}{c|}{Depth} &
+		\multicolumn{3}{c|}{$n_L$} &
+		\multicolumn{3}{c}{likelihood} \\
+		\midrule
+		& Prior & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+		\midrule
+		Case1 & TBeta(1,1) & 0.90 & 4 & -0.89 & 0.93 & 3 & -0.53 & 0.82 & 5 & 0.23 \\ 
+		all sample & TBeta(0.5,0.5) & 0.91 & 3 & -3.10 & 0.95 & 2 & -2.92 & 0.84 & 4 & 1.57 \\ 
+		& TBeta(0,0) & 0.92 & 3 & -3.67 & 0.95 & 2 & -3.56 & 0.87 & 2 & 1.48 \\ 
+		& TBeta(2,2) & 0.92 & 2 & -4.31 & 0.95 & 1 & -3.67 & 0.83 & 5 & -0.18 \\ 
+		\midrule
+		reduced sample & TBeta(1,1) & 0.46 & 37 & 0.77 & 0.58 & 27 & 0.74 & 0.36 & 41 & 0.60 \\ 
+		& TBeta(0.5,0.5) & 0.49 & 30 & 0.38 & 0.63 & 22 & 0.58 & 0.38 & 44 & -0.63 \\ 
+		& TBeta(0,0) & 0.56 & 22 & 0.46 & 0.69 & 18 & 0.61 & 0.49 & 25 & 1.10 \\ 
+		& TBeta(2,2) & 0.48 & 27 & -1.83 & 0.62 & 16 & -1.82 & 0.36 & 28 & 0.29 \\ 
+		\midrule
+		Case 2 & TBeta(1,1) & 0.94 & 1 & -2.64 & 0.97 & 1 & -2.87 & 0.86 & 5 & 2.83 \\ 
+		all sample & TBeta(0.5,0.5) & 0.93 & 2 & 1.42 & 0.96 & 1 & 1.03 & 0.86 & 4 & 0.87 \\ 
+		& TBeta(0,0) & 0.94 & 1 & -1.70 & 0.96 & 1 & -1.41 & 0.87 & 4 & 1.40 \\ 
+		& TBeta(2,2) & 0.91 & 3 & 2.65 & 0.94 & 2 & 2.65 & 0.85 & 5 & 0.77 \\ 
+		\midrule
+		reduced sample & TBeta(1,1) & 0.66 & 6 & -0.27 & 0.77 & 4 & -0.60 & 0.43 & 34 & 1.08 \\ 
+		& TBeta(0.5,0.5) & 0.60 & 14 & -1.19 & 0.74 & 12 & -1.36 & 0.34 & 37 & 0.05 \\ 
+		& TBeta(0,0) & 0.68 & 7 & 0.94 & 0.76 & 8 & 1.13 & 0.45 & 32 & -0.07 \\ 
+		& TBeta(2,2) & 0.44 & 30 & 1.32 & 0.54 & 30 & 0.49 & 0.35 & 34 & 0.79 \\ 
+		\midrule
+		Case 3 & TBeta(1,1) & 0.96 & 1 & -1.51 & 0.97 & 1 & -1.27 & 0.94 & 2 & 0.75 \\ 
+		all sample & TBeta(0.5,0.5) & 0.98 & 1 & -3.07 & 0.99 & 1 & -3.19 & 0.94 & 2 & 2.07 \\ 
+		& TBeta(0,0) & 0.95 & 1 & -1.90 & 0.97 & 1 & -2.42 & 0.95 & 2 & 1.68 \\ 
+		& TBeta(2,2) & 0.95 & 1 & -0.80 & 0.97 & 1 & -1.21 & 0.94 & 2 & 1.29 \\ 
+		\midrule
+		reduced sample & TBeta(1,1) & 0.75 & 9 & 1.36 & 0.83 & 8 & 0.78 & 0.60 & 18 & 1.26 \\ 
+		& TBeta(0.5,0.5) & 0.88 & 1 & -0.89 & 0.94 & 1 & -0.47 & 0.69 & 14 & -0.30 \\ 
+		& TBeta(0,0) & 0.74 & 5 & 1.73 & 0.83 & 5 & 2.11 & 0.65 & 16 & 1.86 \\ 
+		& TBeta(2,2) & 0.72 & 11 & 1.65 & 0.79 & 10 & 1.72 & 0.67 & 18 & 1.59 \\ 
+		\midrule
+		Case 4 & TBeta(1,1) & 0.95 & 1 & -0.39 & 0.97 & 1 & -0.24 & 0.91 & 1 & -1.65 \\ 
+		all sample & TBeta(0.5,0.5) & 0.98 & 1 & -3.07 & 0.99 & 1 & -3.22 & 0.95 & 1 & -2.35 \\ 
+		& TBeta(0,0) & 0.93 & 2 & -1.80 & 0.96 & 2 & -1.33 & 0.81 & 2 & -0.98 \\ 
+		& TBeta(2,2) & 0.95 & 1 & -3.66 & 0.97 & 1 & -3.48 & 0.82 & 2 & -4.12 \\ 
+		\midrule
+		reduced sample & TBeta(1,1) & 0.74 & 6 & -2.17 & 0.83 & 5 & -2.28 & 0.87 & 4 & -2.48 \\ 
+		& TBeta(0.5,0.5) & 0.88 & 1 & -1.47 & 0.94 & 1 & -2.03 & 0.94 & 1 & -1.33 \\ 
+		& TBeta(0,0) & 0.57 & 20 & -0.52 & 0.69 & 15 & -0.53 & 0.64 & 15 & -2.28 \\ 
+		& TBeta(2,2) & 0.72 & 9 & -0.16 & 0.83 & 9 & -0.29 & 0.70 & 14 & -0.04 \\ 
+		\bottomrule
 		\end{tabular}}
 \end{table}
 
@@ -529,6 +642,58 @@ We present the summary of our analyses with Clayton copula in \cref{tab:clayton:
 	\end{tabular}}
 \end{table}
 
+\paragraph{Convergence Diagnostic}
+\begin{table}[ht]
+	\centering
+	\caption{Clayton}
+	\scriptsize{
+		\begin{tabular}{l|crr|crr|crr}
+			\toprule
+			& AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+			\midrule
+			LB - default - IG22 & 0.96 & 0.56 & 0.44 & 0.97 & 0.75 & 0.93 & 0.78 & 2.15 & -2.22 \\ 
+			LB - default - IG11 & 0.91 & 0.80 & -7.01 & 0.93 & 1.38 & -6.73 & 0.97 & 0.99 & 1.43 \\ 
+			LB - default - LN01 & 0.95 & 0.85 & 0.31 & 0.96 & 1.05 & 1.16 & 0.83 & 1.30 & -0.90 \\ 
+			LB - default - LN05 & 0.92 & 1.77 & 0.97 & 0.95 & 0.95 & 0.92 & 0.78 & 1.66 & 2.05 \\ 
+			\midrule
+			LB - default - IG22 & 0.79 & 2.91 & -0.99 & 0.82 & 4.49 & -0.61 & 0.41 & 13.94 & -0.60 \\ 
+			LB - default - IG11 & 0.64 & 7.45 & -0.14 & 0.60 & 12.20 & -0.98 & 0.84 & 4.35 & -0.50 \\ 
+			LB - default - LN01 & 0.73 & 8.41 & 1.50 & 0.75 & 5.76 & 1.11 & 0.53 & 11.90 & -1.76 \\ 
+			LB - default - LN05 & 0.61 & 6.01 & -2.90 & 0.69 & 3.87 & -4.00 & 0.38 & 10.90 & 1.38 \\ 
+			 \midrule
+			LB - default - IG22 & 0.91 & 1.08 & -0.46 & 0.95 & 1.30 & -0.28 & 0.66 & 9.01 & 0.83 \\ 
+			LB - default - IG11 & 0.83 & 4.55 & -1.46 & 0.88 & 3.81 & -1.56 & 0.90 & 4.86 & -0.24 \\ 
+			LB - default - LN01 & 0.91 & 1.14 & -1.41 & 0.94 & 1.50 & -1.55 & 0.68 & 9.35 & 1.33 \\ 
+			LB - default - LN05 & 0.90 & 1.95 & -0.62 & 0.93 & 2.00 & -0.92 & 0.67 & 12.93 & 0.48 \\ 
+			\midrule
+			LB - default - IG22 & 0.58 & 11.16 & 0.02 & 0.65 & 13.23 & 0.22 & 0.13 & 55.62 & -0.59 \\ 
+			LB - default - IG11 & 0.21 & 64.79 & -2.20 & 0.33 & 50.02 & -1.70 & 0.41 & 35.19 & -0.14 \\ 
+			LB - default - LN01 & 0.59 & 7.47 & -1.83 & 0.65 & 7.92 & -1.41 & 0.10 & 58.61 & 3.32 \\ 
+			LB - default - LN05 & 0.57 & 14.31 & 1.14 & 0.64 & 18.75 & 0.67 & 0.13 & 64.29 & -0.84 \\ 
+			\midrule
+			LB - default - IG22 & 0.89 & 4.39 & 0.75 & 0.92 & 3.82 & 0.63 & 0.72 & 13.42 & 1.94 \\ 
+			LB - default - IG11 & 0.97 & 0.36 & 1.70 & 0.96 & 0.49 & 2.51 & 0.97 & 1.24 & 0.49 \\ 
+			LB - default - LN01 & 0.90 & 3.86 & -1.50 & 0.93 & 3.00 & -1.67 & 0.75 & 10.13 & 1.70 \\ 
+			LB - default - LN05 & 0.93 & 2.50 & 4.17 & 0.94 & 2.47 & 4.81 & 0.77 & 7.87 & 0.95 \\ 
+			\midrule
+			LB - default - IG22 & 0.32 & 51.31 & 0.86 & 0.46 & 36.65 & 0.65 & 0.14 & 75.77 & 1.55 \\ 
+			LB - default - IG11 & 0.34 & 48.78 & -1.23 & 0.39 & 44.29 & -1.03 & 0.74 & 14.64 & -1.51 \\ 
+			LB - default - LN01 & 0.50 & 33.42 & -0.15 & 0.58 & 26.89 & 0.33 & 0.14 & 75.50 & 0.48 \\ 
+			LB - default - LN05 & 0.41 & 41.85 & 0.41 & 0.46 & 37.22 & 0.25 & 0.11 & 50.67 & -1.52 \\ 
+			\midrule
+			LB - default - IG22 & 0.90 & 4.16 & -1.66 & 0.94 & 2.11 & -2.24 & 0.78 & 6.62 & 1.07 \\ 
+			LB - default - IG11 & 0.91 & 2.64 & -0.82 & 0.92 & 3.41 & 0.32 & 0.97 & 1.14 & 2.78 \\ 
+			LB - default - LN01 & 0.89 & 4.04 & -1.43 & 0.91 & 3.45 & -1.31 & 0.76 & 10.21 & 2.55 \\ 
+			LB - default - LN05 & 0.95 & 0.98 & 0.34 & 0.96 & 1.40 & 0.41 & 0.79 & 5.41 & 1.52 \\ 
+			\midrule
+			LB - default - IG22 & 0.49 & 22.10 & -0.53 & 0.61 & 12.75 & -0.83 & 0.19 & 41.46 & 0.37 \\ 
+			LB - default - IG11 & 0.36 & 44.02 & 1.31 & 0.40 & 42.72 & 0.68 & 0.74 & 14.69 & 1.07 \\ 
+			LB - default - LN01 & 0.34 & 35.92 & 1.14 & 0.48 & 27.42 & 1.32 & 0.15 & 74.26 & 0.96 \\ 
+			LB - default - LN05 & 0.65 & 4.46 & 19.87 & 0.69 & 5.54 & 7.37 & 0.19 & 43.53 & -3.11 \\ 
+			\bottomrule
+	\end{tabular}}
+\end{table}
+
 
 \paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:clayton:nterm,fig:case1:clayton:depth,fig:case1:clayton:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:clayton:nterm,fig:case2:clayton:depth,fig:case2:clayton:like}; for case 3 the trace-plots are provided in \cref{fig:case3:clayton:nterm,fig:case3:clayton:depth,fig:case3:clayton:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:clayton:nterm,fig:case4:clayton:depth,fig:case4:clayton:like}.
 
@@ -631,7 +796,7 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 	\begin{tabular}{ll|cccccc}
 		\toprule
 		& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
-		\hline
+		\midrule
 		Case 1 & Gamma(1,1) & 4.513 & 2.397 & 0.246 & 0.1292 & 0.9088 & 0.908 \\ 
 		(Tree) & Gamma(2,2) & 4.714 & 2.532 & 0.256 & 0.1407 & 0.8179 & 0.858 \\ 
 		& LogNorm(0,1) & 4.626 & 2.525 & 0.260 & 0.1321 & 0.9956 & \textbf{0.916} \\ 
@@ -652,6 +817,58 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 		& LogNorm(0,1) & 2.527 & 1.405 & 0.224 & 0.0161 & 0.7377 & 0.988 \\ 
 		& LogNorm(0,5) & 2.445 & 1.353 & 0.217 & 0.0148 & 0.7090 & \textbf{0.990} \\ 
 		\end{tabular}}
+\end{table}
+
+\paragraph{Convergence Diagnostic}
+\begin{table}[ht]
+	\centering
+	\caption{Gumbel}
+	\scriptsize{
+		\begin{tabular}{l|crr|crr|crr}
+			\toprule
+			& AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+			\midrule
+			LB - default - IG22 & 0.88 & 1.40 & 13.28 & 0.93 & 1.35 & 9.66 & 0.86 & 1.62 & 8.23 \\ 
+			LB - default - IG11 & 0.90 & 1.59 & 14.60 & 0.93 & 2.01 & 9.80 & 0.87 & 1.91 & 10.05 \\ 
+			LB - default - LN01 & 0.87 & 1.48 & 2.69 & 0.92 & 1.76 & 2.34 & 0.86 & 2.76 & 2.53 \\ 
+			LB - default - LN05 & 0.85 & 2.40 & -1.80 & 0.89 & 2.52 & -1.21 & 0.85 & 2.57 & -0.59 \\ 
+			\midrule
+			LB - default - IG22 & 0.32 & 47.94 & -0.64 & 0.43 & 25.79 & -0.78 & 0.36 & 44.19 & -0.17 \\ 
+			LB - default - IG11 & 0.30 & 43.42 & -0.84 & 0.41 & 41.76 & -0.94 & 0.37 & 45.81 & -1.31 \\ 
+			LB - default - LN01 & 0.57 & 15.31 & 1.26 & 0.63 & 12.33 & 0.97 & 0.47 & 22.66 & 0.90 \\ 
+			LB - default - LN05 & 0.49 & 13.55 & -2.88 & 0.52 & 16.06 & -3.28 & 0.45 & 7.66 & -0.98 \\ 
+			\midrule
+			LB - default - IG22 & 0.91 & 0.92 & -2.79 & 0.94 & 0.97 & -2.81 & 0.78 & 2.63 & 0.19 \\ 
+			LB - default - IG11 & 0.87 & 2.37 & -3.44 & 0.92 & 2.19 & -3.25 & 0.71 & 17.15 & -1.64 \\ 
+			LB - default - LN01 & 0.84 & 3.05 & -3.12 & 0.90 & 3.21 & -3.20 & 0.71 & 16.91 & -1.39 \\ 
+			LB - default - LN05 & 0.87 & 2.95 & -4.08 & 0.92 & 2.03 & -3.65 & 0.71 & 17.24 & 0.01 \\ 
+			\midrule
+			LB - default - IG22 & 0.31 & 52.92 & 0.81 & 0.36 & 46.93 & 0.65 & 0.05 & 100.00 & -1.27 \\ 
+			LB - default - IG11 & 0.55 & 9.81 & -1.63 & 0.68 & 8.82 & -2.29 & 0.06 & 100.00 & -0.86 \\ 
+			LB - default - LN01 & 0.53 & 16.09 & -0.71 & 0.58 & 18.85 & -1.21 & 0.07 & 70.10 & -0.45 \\ 
+			LB - default - LN05 & 0.49 & 13.28 & -0.26 & 0.55 & 13.05 & -0.16 & 0.03 & 100.00 & 1.29 \\ 
+			\midrule
+			LB - default - IG22 & 0.86 & 6.21 & 1.15 & 0.89 & 5.27 & 1.06 & 0.68 & 7.15 & -0.25 \\ 
+			LB - default - IG11 & 0.86 & 6.80 & 1.50 & 0.90 & 5.45 & 1.08 & 0.66 & 8.14 & 1.84 \\ 
+			LB - default - LN01 & 0.94 & 1.81 & -0.90 & 0.95 & 1.84 & -1.16 & 0.68 & 10.78 & -0.29 \\ 
+			LB - default - LN05 & 0.89 & 4.91 & 1.09 & 0.92 & 2.62 & 1.94 & 0.70 & 7.57 & -2.84 \\ 
+			\midrule
+			LB - default - IG22 & 0.14 & 58.08 & -1.26 & 0.26 & 58.21 & -3.38 & 0.10 & 22.12 & 1.92 \\ 
+			LB - default - IG11 & 0.20 & 49.04 & -1.79 & 0.31 & 52.44 & -0.05 & 0.14 & 65.67 & 0.53 \\ 
+			LB - default - LN01 & 0.54 & 20.23 & 1.12 & 0.53 & 25.72 & 0.89 & 0.15 & 62.36 & -1.08 \\ 
+			LB - default - LN05 & 0.46 & 35.09 & 1.01 & 0.47 & 30.96 & 1.71 & 0.11 & 40.65 & 1.21 \\ 
+			\midrule
+			LB - default - IG22 & 0.93 & 1.66 & 0.10 & 0.95 & 1.86 & 0.06 & 0.72 & 4.10 & -0.21 \\ 
+			LB - default - IG11 & 0.91 & 3.58 & 1.00 & 0.94 & 2.69 & 0.02 & 0.75 & 4.80 & -0.70 \\ 
+			LB - default - LN01 & 0.89 & 4.14 & -0.04 & 0.92 & 3.53 & 1.06 & 0.71 & 6.72 & 0.22 \\ 
+			LB - default - LN05 & 0.90 & 4.18 & 0.69 & 0.93 & 3.24 & 0.53 & 0.84 & 0.76 & 1.17 \\ 
+			\midrule
+			LB - default - IG22 & 0.71 & 13.53 & -0.32 & 0.70 & 11.16 & -0.05 & 0.26 & 31.32 & -0.78 \\ 
+			LB - default - IG11 & 0.46 & 31.79 & -0.08 & 0.57 & 27.62 & -0.31 & 0.30 & 20.51 & 0.17 \\ 
+			LB - default - LN01 & 0.28 & 57.84 & 1.54 & 0.40 & 38.27 & 1.73 & 0.24 & 27.89 & 0.66 \\ 
+			LB - default - LN05 & 0.45 & 37.97 & -0.40 & 0.49 & 33.99 & -1.06 & 0.63 & 3.14 & 0.74 \\ 
+			\bottomrule
+	\end{tabular}}
 \end{table}
 
 \paragraph{Trace-plots} We present trace-plots for $n_l$, depth and likelihood for case 1 in \cref{fig:case1:gumbel:nterm,fig:case1:gumbel:depth,fig:case1:gumbel:like}. Similarly for case 2 the trace-plots are provided in \cref{fig:case2:gumbel:nterm,fig:case2:gumbel:depth,fig:case2:gumbel:like}; for case 3 the trace-plots are provided in \cref{fig:case3:gumbel:nterm,fig:case3:gumbel:depth,fig:case3:gumbel:like}; and for case 4 the trace-plots are provided in \cref{fig:case4:gumbel:nterm,fig:case4:gumbel:depth,fig:case4:gumbel:like}.

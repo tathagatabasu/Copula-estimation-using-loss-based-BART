@@ -651,3 +651,27 @@ logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sig
 param_gauss = function(tau) return(sin(tau*pi/2))
 param_gumbel = function(tau) return(1/(1-tau))
 param_clayton = function(tau) return((2*tau)/(1-tau))
+
+conv_diag = function(post_data, panel_name, n.burn, n.thin){
+  
+  post_mat = (post_data %>% filter(panel.name == panel_name))$y
+  
+  post_mat_red = na.omit((post_mat[n.burn+1:length(post_mat)])[c(rep(NA,(n.thin-1)), TRUE)])
+  
+  post_data_mcmc = mcmc(post_mat_red, start = 1)
+  
+  auto_corr_sum = autocorr.diag(post_data_mcmc)
+  
+  eff_size = effectiveSize(post_data_mcmc)
+  
+  geweke_score = geweke.diag(post_data_mcmc)
+  
+  
+  summ_dat = cbind(auto_corr_sum[2], 100*(eff_size/length(post_data_mcmc)), geweke_score$z)
+  
+  colnames(summ_dat) = c("auto-correlation", "ess (%)", "geweke-score")
+  rownames(summ_dat) = panel_name
+  
+  return(summ_dat)
+  
+}

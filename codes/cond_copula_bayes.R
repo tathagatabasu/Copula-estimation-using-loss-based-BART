@@ -220,6 +220,18 @@ if(F){
                                  mcmc.list = model.list.def,
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
+  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  
+  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  
+  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  
+  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
+  xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
+  
   depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
   nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
   like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
@@ -523,6 +535,18 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   
+  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  
+  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  
+  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  
+  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
+  xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
+  
   depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
   nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
   like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
@@ -825,6 +849,18 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   
+  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  
+  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  
+  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  
+  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
+  xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
+  
   depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
   nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
   like.df_thin <- na.omit(like.df[c(rep(NA,(n.thin-1)), TRUE),])
@@ -1126,6 +1162,18 @@ if(F){
                                  mcmc.list = model.list.def,
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
+  
+  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  
+  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  
+  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  
+  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
+  xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
   
   depth.df_thin <- na.omit(depth.df[c(rep(NA,(n.thin-1)), TRUE),])
   nterm.df_thin <- na.omit(nterm.df[c(rep(NA,(n.thin-1)), TRUE),])
