@@ -221,13 +221,13 @@ if(F){
                                  born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
   
   depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
-  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, n.born.out.par, 10)))
   
   nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
-  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, n.born.out.par, 10)))
   
   like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
-  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, n.born.out.par, 10)))
   
   xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
   xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
@@ -426,17 +426,17 @@ if(F){
 ################################################################################
 # t
 ################################################################################
-if(F){
+if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) # c(1.5618883, 0.6293944)
   
-  for (i in 1:4) {
+    for (i in 1:4) {
     assign(paste0("t_mcmc_lb.def_unif_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .5, alpha_val = 1, beta_val = 1, 
+                                                                   sigma = .005, alpha_val = 1, beta_val = 1, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -452,7 +452,7 @@ if(F){
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .5, alpha_val = 0, beta_val = 0, 
+                                                                   sigma = .005, alpha_val = 0, beta_val = 0, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -469,7 +469,7 @@ if(F){
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    mu = 0, cop_type = "t", 
-                                                                   sigma = .5, alpha_val = .5, beta_val = .5, 
+                                                                   sigma = .005, alpha_val = .5, beta_val = .5, 
                                                                    log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
@@ -485,7 +485,7 @@ if(F){
                                                                   U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                   mu = 0, cop_type = "t", 
-                                                                  sigma = .5, alpha_val = 2, beta_val = 2, 
+                                                                  sigma = .005, alpha_val = 2, beta_val = 2, 
                                                                   log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
                                                                   prior_list = lb.prior.def, 
                                                                   moves.prob = moves.prob_par, 
@@ -499,7 +499,7 @@ if(F){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 3
   
   model.list.def <- list(
     get(paste0("t_mcmc_lb.def_unif_",test_case)),
@@ -536,13 +536,13 @@ if(F){
   
   
   depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
-  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, n.born.out.par, 10)))
   
   nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
-  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, n.born.out.par, 10)))
   
   like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
-  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, n.born.out.par, 10)))
   
   xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
   xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
@@ -850,13 +850,13 @@ if(F){
   
   
   depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
-  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, n.born.out.par, 10)))
   
   nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
-  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, n.born.out.par, 10)))
   
   like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
-  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, n.born.out.par, 10)))
   
   xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
   xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
@@ -1164,13 +1164,13 @@ if(F){
   
   
   depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
-  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 5000, 10)))
+  depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, n.born.out.par, 10)))
   
   nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 1)))
-  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 5000, 10)))
+  nterm_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, n.born.out.par, 10)))
   
   like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 1)))
-  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 5000, 10)))
+  like_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, n.born.out.par, 10)))
   
   xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
   xtable(cbind(depth_conv_red, nterm_conv_red, like_conv_red))
