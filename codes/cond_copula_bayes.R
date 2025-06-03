@@ -314,6 +314,16 @@ if(F){
     group_by(panel.name, obs, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated rho') +
+    theme_classic()
+  
   copula_uu_gauss_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 1, par = pred_cond_mod$theta_mean)
   
   pred_cond_mod$U1 = copula_uu_gauss_pred[,1]
@@ -499,7 +509,7 @@ if(T){
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
   model.list.def <- list(
     get(paste0("t_mcmc_lb.def_unif_",test_case)),
@@ -628,6 +638,16 @@ if(F){
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
+  
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated rho') +
+    theme_classic()
   
   copula_uu_t_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 2, par = pred_cond_mod$theta_mean, par2 = 3)
   
@@ -943,6 +963,16 @@ if(F){
     group_by(panel.name, obs, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated rho') +
+    theme_classic()
+  
   copula_uu_gumbel_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 4, par = pmax(pred_cond_mod$theta_mean,1))
   
   pred_cond_mod$U1 = copula_uu_gumbel_pred[,1]
@@ -1256,6 +1286,16 @@ if(F){
   pred_cond_mod = pred_cond_thin %>%
     group_by(panel.name, obs, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
+  
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated rho') +
+    theme_classic()
   
   copula_uu_clayton_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 3, par = pred_cond_mod$theta_mean)
   

@@ -107,6 +107,11 @@ MCMC_copula <- function(n.iter, X, U1, U2, mu, sigma, alpha_val, beta_val, prior
     
     
     new.tree <- new.tree.list$tree
+    new.tree <- assign_term_node_values_cond_copula(tree_top = new.tree, 
+                                                    mu = mu,
+                                                    sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
+                                                    log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,cop_type = cop_type,
+                                                    X = X, U1 = U1, U2 = U2)
     
     tree_list[[i]] <- new.tree
     matrix.res[i,] <- c(move.type, get_depth(rt_old), get_num_terminal_nodes(rt_old),
@@ -200,22 +205,11 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, mu, sigma, alpha_va
     return('empty count exceeded')
   }
   
-  move.list$tree <- assign_term_node_values_cond_copula(tree_top = move.list$tree,
-                                                                    mu = mu,
-                                                                    sigma = sigma, alpha_val = alpha_val, beta_val = beta_val,
-                                                                    log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,cop_type = cop_type,
-                                                                    X = X, U1 = U1, U2 = U2)
-  
-  
-  
   acc.prob <- acceptance.prob.list_copula(move_list = move.list, 
                                           old.tree = old_tree,
                                           X = X,
                                           U1 = U1,
                                           U2 = U2, cop_type = cop_type,
-                                          mu = mu,
-                                          sigma = sigma, alpha_val = alpha_val, beta_val = beta_val, 
-                                          log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type,
                                           prior_input_list = prior_list,
                                           include.split = include.split)
   acceptance <- runif(1) <= acc.prob$alpha
@@ -316,52 +310,12 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   } 
   
   ##############################################################################
-  proposal = rnorm(1, mu, sigma)
+  log_post <- function(x)logposterior(x, U1.at.node, U2.at.node, alpha_val = alpha_val, 
+                                      beta_val= beta_val, log_nor_mu= log_nor_mu, log_nor_sigma= log_nor_sigma, 
+                                      prior_type = prior_type, cop_type = cop_type)
   
-  # if(cop_type == "Gauss"){
-  #   if(any(proposal <= -1)||any(proposal >= 1)) HR = 0 else # Q needs to be >0
-  #     # Hastings ratio of the proposal
-  #     HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-  #                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-  #                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-  #                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
-  # } else if(cop_type == "Frank"){
-  #   HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-  #                         beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-  #              logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-  #                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
-  # }else if(cop_type == "Clayton"){
-  #   if(any(proposal<=0) || any(proposal>28)) HR = 0 else{
-  #     HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-  #                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-  #                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-  #                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
-  #   }
-  # }else if(cop_type == "gumbel"){
-  #   if(any(proposal<1)||any(proposal>17)) HR = 0 else{
-  #     HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-  #                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-  #                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-  #                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
-  #   }
-  # }else if(cop_type == "t"){
-  #   if(any(proposal <= -1)||any(proposal >= 1)) HR = 0 else # Q needs to be >0
-  #     # Hastings ratio of the proposal
-  #     HR = exp(logposterior(U1.at.node, U2.at.node, rho = proposal, alpha_val = alpha_val, cop_type = cop_type, 
-  #                           beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type) -
-  #                logposterior(U1.at.node, U2.at.node, rho = mu, alpha_val = alpha_val, cop_type = cop_type, 
-  #                             beta_val = beta_val, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma, prior_type = prior_type))
-  # }
-  # 
-  # 
-  # 
-  # 
-  # if (runif(1) < HR){ 
-  #   new_mu = proposal
-  #   # if proposal is rejected, keep the values from the previous iteration
-  # }else{
-  #   new_mu = mu
-  # }
+  
+  proposal = slice_sampler(log_post, x0 = mu, w = 1, N = 1)
   
   return(proposal)
 }
@@ -442,135 +396,20 @@ prune_move_copula <- function(tree_top, mu, sigma, alpha_val, beta_val, log_nor_
 }
 
 acceptance.prob.list_copula <- function(move_list, old.tree, X, U1, U2, prior_input_list, cop_type, 
-                                        mu,
-                                        sigma, alpha_val, beta_val, 
-                                        log_nor_mu, log_nor_sigma, prior_type,
                                         include.split, cont.unif = TRUE){ # check input
   if(identical(move_list$tree, old.tree)){
     return(list(prior.ratio = 1, lik.ratio = 1, 
                 trans.ratio = 1, alpha = 1))
   }
-  term_val_old <- unique(get_value_tree(old.tree, X))
-  term_val_new <- unique(get_value_tree(move_list$tree, X))
-  
-  if(cop_type == "Gauss"){
-    if(any(term_val_new <= -1)||any(term_val_new >= 1)) { 
-      term_val_prior_new <- 0
-      log.lik.new <- -Inf
-      if(prior_type == "B"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-        # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-      }else{
-        if(prior_type == "LN"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-          # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-        }else{
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-          # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-        }
-      }
-    } else {
-      log.lik.new <- cart_log_lik_copula(tree_top = move_list$tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
-      if(prior_type == "B"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-        term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-      }else{
-        if(prior_type == "LN"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-        }else{
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-        }
-      }
-    }
-  } else if(cop_type == "Clayton"){
-    if(any(term_val_new<=0) || any(term_val_new>28)) {
-      term_val_prior_new <- 0
-      log.lik.new <- -Inf
-      if(prior_type == "IG"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-        # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-      }else if(prior_type == "LN"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-        # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-      }
-      } else{
-        log.lik.new <- cart_log_lik_copula(tree_top = move_list$tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
-        if(prior_type == "IG"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-        }else if(prior_type == "LN"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-        }
-    }
-  }else if(cop_type == "gumbel"){
-    if(any(term_val_new<1)||any(term_val_new>17)) {
-      term_val_prior_new <- 0
-      log.lik.new <- -Inf
-      if(prior_type == "IG"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-        # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-      }else{
-        if(prior_type == "LN"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-          # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-        }
-      }
-      } else{
-        log.lik.new <- cart_log_lik_copula(tree_top = move_list$tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
-        if(prior_type == "IG"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dgamma(x, shape = alpha_val, rate = beta_val)))))
-        }else{
-          if(prior_type == "LN"){
-            term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-            term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)log(dlnorm(x, meanlog = log_nor_mu, sdlog = log_nor_sigma)))))
-          }
-        }
-    }
-  }else if(cop_type == "t"){
-    if(any(term_val_new <= -1)||any(term_val_new >= 1)) {
-      term_val_prior_new <- 0
-      log.lik.new <- -Inf
-      if(prior_type == "B"){
-        term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-        # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-      }else{
-        if(prior_type == "LN"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-          # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-        }else{
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-          # term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-        }
-      }
-      } else {
-        log.lik.new <- cart_log_lik_copula(tree_top = move_list$tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
-        if(prior_type == "B"){
-          term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-          term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_unif(x, alpha_val = alpha_val, beta_val = beta_val))))
-        }else{
-          if(prior_type == "LN"){
-            term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-            term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_log_normal(x, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))))
-          }else{
-            term_val_prior_old <- exp(sum(sapply(term_val_old, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-            term_val_prior_new <- exp(sum(sapply(term_val_new, function(x)logprior_inv_gamma(x, alpha_val = alpha_val, beta_val = beta_val))))
-          }
-        }
-      }
-  }
   
   prior.tree.old <- prior_input_list$fun(old.tree, prior_input_list$param[1], prior_input_list$param[1])
-  prior.old <- prior.tree.old*prior.split.rule(old.tree, X, cont.unif = cont.unif) * term_val_prior_old
+  prior.old <- prior.tree.old*prior.split.rule(old.tree, X, cont.unif = cont.unif)
   
   prior.tree.new <- prior_input_list$fun(move_list$tree, prior_input_list$param[1], prior_input_list$param[1])
-  prior.new <- prior.tree.new*prior.split.rule(move_list$tree, X, cont.unif = cont.unif) * term_val_prior_new
+  prior.new <- prior.tree.new*prior.split.rule(move_list$tree, X, cont.unif = cont.unif)
   # likelihood 
   log.lik.old <- cart_log_lik_copula(tree_top = old.tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
-  
+  log.lik.new <- cart_log_lik_copula(tree_top = move_list$tree, U1 = U1, U2 = U2, X = X, cop_type = cop_type)
   
   #transition probabilities
   if(move_list$move == 'swap'){
@@ -593,7 +432,7 @@ acceptance.prob.list_copula <- function(move_list, old.tree, X, U1, U2, prior_in
   lik.ratio <- exp(log.lik.new - log.lik.old)
   trans.ratio <- (prob.new.to.old/prob.old.to.new)
   acc.prob <- prior.ratio*lik.ratio*trans.ratio 
-  
+  print(lik.ratio)
   return(list(prior.ratio = prior.ratio, lik.ratio = lik.ratio, 
               trans.ratio = trans.ratio, alpha = min(1, acc.prob)))
 }
@@ -636,8 +475,11 @@ set_term_node_value_copula <- function(node.idx, tree_top, mu, sigma, cop_type){
                 cond = tree_top$cond))
   }
 }
-##########################################################################################
+
 gaussian_copula_loglik <- function(rho, u, v) {
+  
+  if(any(abs(rho)>=1)) return(-Inf)
+  
   z1 <- qnorm(u)
   z2 <- qnorm(v)
   
@@ -652,37 +494,64 @@ gaussian_copula_loglik <- function(rho, u, v) {
   return(log_lik)
 }
 
-loglik_frank <- function(theta, u, v) {
+loglik_t <- function(rho, u, v, df = 3) {
   
-  theta = pmin(theta, 35)
-  theta = pmax(theta, -35)
-  densty = BiCopPDF(u, v, par = theta, family = 5)
-  return(sum(log(densty)))
-}
-
-loglik_t <- function(theta, u, v, df = 3) {
+  if(any(abs(rho)>=1)) return(-Inf)
   
-  densty = BiCopPDF(u, v, par = theta, family = 2, par2 = df)
-  return(sum(log(densty)))
+  # Inverse t CDF (quantiles)
+  x <- qt(u, df)
+  y <- qt(v, df)
+  
+  # Univariate t densities
+  fx <- dt(x, df)
+  fy <- dt(y, df)
+  
+  # Bivariate t density (manual formula)
+  denom <- sqrt(1 - rho^2)
+  z <- (x^2 - 2 * rho * x * y + y^2) / (df * (1 - rho^2))
+  
+  A <- gamma((df + 2) / 2) / (gamma(df / 2) * df * pi * denom)
+  B <- (1 + z)^(-(df + 2) / 2)
+  f_biv <- A * B
+  
+  # Copula density
+  copula_density <- f_biv / (fx * fy)
+  
+  # Log-likelihood
+  log_lik <- sum(log(copula_density))
+  return(log_lik)
 }
 
 loglik_clayton <- function(theta, u, v) {
+  if(min(theta)<0) return(-Inf)
   
-  # theta = pmin(theta, 28)
-  # theta = pmax(theta, 1e-10)
-  densty = BiCopPDF(u, v, par = theta, family = 3)
-  return(sum(log(densty)))
+  print(theta)
+  
+  log_density <- log(1+theta) + (-1-theta)*log(u*v) + (-1/theta-2) * log((u^(-theta)+v^(-theta)-1))
+  return(sum(log_density))
 }
+
 
 loglik_gumbel <- function(theta, u, v) {
   
-  # theta = pmin(theta, 17)
-  # theta = pmax(theta, 1)
-  densty = BiCopPDF(u, v, par = theta, family = 4)
-  return(sum(log(densty)))
+  if(any(theta)<1) return(-Inf)
+  
+  # Transformations
+  A <- ((-log(u))^theta+(-log(v))^theta)^(1/theta)
+  
+  print(theta)
+  
+  # Density
+  log_density <- -A -(log(u) + log(v)) + (-2+2/theta)*log((-log(u))^theta+ (-log(v))^theta) + (theta-1) *log(log(u)*log(v)) + log(1+(theta-1)*((-log(u))^theta+(-log(v))^theta)^(-1/theta))
+  
+  return(sum(log_density))
 }
 
-logprior_unif <- function(rho, bound = 1, alpha_val, beta_val) {
+log_prior_tbeta <- function(rho, bound = 1, alpha_val, beta_val) {
+  if (any(abs(rho) >= 1)) {
+    return(rep(0, length(rho)))
+  }
+  
   return((alpha_val - 1)*log(bound + rho) + (beta_val - 1)*log(bound - rho))
 }
 
@@ -717,26 +586,12 @@ logprior_log_normal <- function(p, log_nor_mu, log_nor_sigma) {
 logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sigma, prior_type = "B", cop_type){
   if(cop_type == "Gauss"){
     if(prior_type == "B"){
-      return(gaussian_copula_loglik(rho, u, v) + logprior_unif(rho, alpha_val = alpha_val, beta_val = beta_val))
+      return(gaussian_copula_loglik(rho, u, v) + log_prior_tbeta(rho, alpha_val = alpha_val, beta_val = beta_val))
     }else{
       if(prior_type == "LN"){
         return(gaussian_copula_loglik(rho, u, v) + logprior_log_normal(rho, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))
       }else{
         return(gaussian_copula_loglik(rho, u, v) + logprior_inv_gamma(rho, alpha_val = alpha_val, beta_val = beta_val))
-      }
-    }
-  }else if(cop_type == "Frank"){
-    if(prior_type == "Normal"){
-      return(loglik_frank(rho, u, v) + log(dnorm(rho, mean = log_nor_mu, sd = log_nor_sigma)))
-    }else{
-      if(prior_type == "T"){
-        return(loglik_frank(rho, u, v) + log(dt(rho, ncp = log_nor_mu, df = 1/log_nor_sigma)))
-      }else{
-        if(prior_type == "Unif"){
-          return(loglik_frank(rho, u, v) + log(dunif(rho, min = -35, max = 35)))
-        }else{
-          return(loglik_frank(rho, u, v) + logprior_unif(rho, bound = 35+1e-3, alpha_val, beta_val))
-        }
       }
     }
   }else if(cop_type == "Clayton"){
@@ -757,7 +612,7 @@ logposterior <- function(rho, u, v, alpha_val, beta_val, log_nor_mu, log_nor_sig
     }
   }else if(cop_type == "t"){
     if(prior_type == "B"){
-      return(loglik_t(rho, u, v) + logprior_unif(rho, alpha_val = alpha_val, beta_val = beta_val))
+      return(loglik_t(rho, u, v) + log_prior_tbeta(rho, alpha_val = alpha_val, beta_val = beta_val))
     }else{
       if(prior_type == "LN"){
         return(loglik_t(rho, u, v) + logprior_log_normal(rho, log_nor_mu = log_nor_mu, log_nor_sigma = log_nor_sigma))
@@ -794,4 +649,37 @@ conv_diag = function(post_data, panel_name, n.burn, n.thin){
   
   return(summ_dat)
   
+}
+
+slice_sampler <- function(log_post, x0, w = 1, N = 1) {
+  samples <- numeric(N)
+  x <- x0
+  
+  for (i in 1:N) {
+    # Evaluate log density at current position
+    log_y <- log_post(x) - rexp(1)
+    
+    # Stepping out procedure
+    L <- x - runif(1, 0, w)
+    R <- L + w
+    while (log_post(L) > log_y) L <- L - w
+    while (log_post(R) > log_y) R <- R + w
+    
+    # Sample new x from the slice
+    repeat {
+      x_new <- runif(1, L, R)
+      if (log_post(x_new) >= log_y) break
+      # Shrink the interval
+      if (x_new < x) {
+        L <- x_new
+      } else {
+        R <- x_new
+      }
+    }
+    
+    x <- x_new
+    samples[i] <- x
+  }
+  
+  return(samples)
 }
