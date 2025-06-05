@@ -509,7 +509,7 @@ if(T){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 3
   
   model.list.def <- list(
     get(paste0("t_mcmc_lb.def_unif_",test_case)),
