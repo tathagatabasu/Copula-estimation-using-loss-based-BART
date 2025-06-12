@@ -35,11 +35,38 @@ if(F){
   rownames(X_obs.norm) <- 1:nrow(X_obs)
   
   # tau with tree structure
-  tree_top <- generate_random_binary_tree_n_delta(8,4)
-  tree_top <- assign_node_idx(tree_top)
-  tree_top <- assign_split_rules(tree_top, X_obs)
-  tree_top <- assign_term_node_values(tree_top, 0.6, 0.1)
-  tau_true_1 <- sample_CART(tree_top, X_obs, sigma_ = 0.001) 
+  # initialize list
+  tree_ex <- list()
+  # one split on the left branch
+  tree_ex$left <- list(left = list(left = NULL,
+                                   right = NULL),
+                       right = list(left = NULL,
+                                    right = NULL))
+  # no split on the right branch
+  tree_ex$right <-  list(left = NULL,
+                         right = NULL)
+  
+  # assign node index
+  tree_ex <- assign_node_idx(tree_ex)
+  # plot the tree
+  get_tree_plot.idx(tree_ex)
+  
+  # assign first splitting rule
+  tree_ex$cond <- list(x.idx = 1, x.val = 0.6)
+  # assign second splitting rule
+  tree_ex$left$cond <- list(x.idx = 1, x.val = 0.25)
+  # set mu_3
+  tree_ex$left$left$cond <- NULL
+  tree_ex$left$left$value <- .5
+  # set mu_4
+  tree_ex$left$right$cond <- NULL
+  tree_ex$left$right$value <- .7
+  # set mu_5
+  tree_ex$right$cond <- NULL
+  tree_ex$right$value <- .3
+  # plot the tree
+  get_tree_plot(tree_ex)
+  tau_true_1 <- sample_CART(tree_ex, X_obs, sigma_ = 0.001) 
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
   
   # monotone
@@ -89,7 +116,7 @@ if(F){
   rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
   
   # tau with tree structure
-  tau_true_pred_1 <- sample_CART(tree_top, X_obs_pred, sigma_ = 0.001) 
+  tau_true_pred_1 <- sample_CART(tree_ex, X_obs_pred, sigma_ = 0.001) 
   tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
   
   # monotone
