@@ -418,7 +418,7 @@ sample.cond.mu.copula <- function(tree_top = NULL,
     U2.at.node <- U2[as.numeric(rownames(obs.at.node))]
     prop_mu = mean(get_value_tree(tree_top, obs.at.node))
   } 
-  print(prop_mu)
+  
   ##############################################################################
   log_post <- function(x)logposterior(x, U1.at.node, U2.at.node, 
                                       log_like_fun = log_like_fun, 
@@ -427,22 +427,14 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   optim_mu = optim(prop_mu, function(x)-log_post(x))
 
   prop_mu_new = optim_mu$par
-  # 
-  prop_sd2_inv = fderiv(function(x)-log_post(x), prop_mu_new, n=2)+1e-5
 
-  prop_sd = sqrt(1/prop_sd2_inv)+1e-5
+  # prop_sd2_inv = hessian(function(x)-log_post(x), prop_mu_new)+1e-5
+
+  # prop_sd = sqrt(1/prop_sd2_inv)+1e-5
   
-  proposal = rnorm(1, prop_mu_new, prop_sd)
-# 
-#   #########################################################
-#   HR = exp(log_post(proposal) - log_post(prop_mu))
-# 
-#   if(HR<runif(1)){
-#     proposal <- prop_mu
-#   }
-# 
-  return(list("val"= proposal, "mu" = prop_mu_new, "sigma" = prop_sd))
-  # return(list("val"= min(max(-1+1e-5, proposal), +1-1e-5)))
+  proposal = rnorm(1, prop_mu_new, prop_sigma)
+
+  return(list("val"= proposal, "mu" = prop_mu_new, "sigma" = prop_sigma))
 }
 
 grow_move_copula <- function(tree_top, X, U1, U2, cont.unif = TRUE, obs.per.term = 1, 
@@ -552,29 +544,29 @@ swap_move_copula <- function(tree_top, X, U1, U2,
     swap.idx <- swap.node.idx[swap.idx.row, ]
     swap.tree_top <- swap_node_condition(swap.idx[1,1], swap.idx[1,2], tree_top)
     
-    # obs.at.node_1 <- get_obs_at_node(node.idx = swap.idx[1,1], X = X, tree_top = swap.tree_top, X.orig = X)
-    # U1.at.node_1 <- U1[as.numeric(rownames(obs.at.node_1))]
-    # U2.at.node_1 <- U2[as.numeric(rownames(obs.at.node_1))]
-    # 
-    # swap.tree_top <- set_term_node_value_cond_copula(node.idx = swap.idx[1,1], tree_top = swap.tree_top, # check input
-    #                                 X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node_1,
-    #                                 U2.at.node = U2.at.node_1,
-    #                                 mu = mean(get_value_tree(swap.tree_top, obs.at.node_1)),
-    #                                 sigma = sigma,
-    #                                 log_like_fun = log_like_fun,
-    #                                 log_prior_fun = log_prior_fun)
-    # 
-    # obs.at.node_2 <- get_obs_at_node(node.idx = swap.idx[1,2], X = X, tree_top = swap.tree_top, X.orig = X)
-    # U1.at.node_2 <- U1[as.numeric(rownames(obs.at.node_2))]
-    # U2.at.node_2 <- U2[as.numeric(rownames(obs.at.node_2))]
-    # 
-    # swap.tree_top <- set_term_node_value_cond_copula(node.idx = swap.idx[1,2], tree_top = swap.tree_top,
-    #                                                  X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node_2,
-    #                                                  U2.at.node = U2.at.node_2,
-    #                                                  mu = mean(get_value_tree(swap.tree_top, obs.at.node_2)),,
-    #                                                  sigma = sigma,
-    #                                                  log_like_fun = log_like_fun,
-    #                                                  log_prior_fun = log_prior_fun)
+    obs.at.node_1 <- get_obs_at_node(node.idx = swap.idx[1,1], X = X, tree_top = swap.tree_top, X.orig = X)
+    U1.at.node_1 <- U1[as.numeric(rownames(obs.at.node_1))]
+    U2.at.node_1 <- U2[as.numeric(rownames(obs.at.node_1))]
+
+    swap.tree_top <- set_term_node_value_cond_copula(node.idx = swap.idx[1,1], tree_top = swap.tree_top, # check input
+                                    X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node_1,
+                                    U2.at.node = U2.at.node_1,
+                                    mu = mean(get_value_tree(swap.tree_top, obs.at.node_1)),
+                                    sigma = sigma,
+                                    log_like_fun = log_like_fun,
+                                    log_prior_fun = log_prior_fun)
+
+    obs.at.node_2 <- get_obs_at_node(node.idx = swap.idx[1,2], X = X, tree_top = swap.tree_top, X.orig = X)
+    U1.at.node_2 <- U1[as.numeric(rownames(obs.at.node_2))]
+    U2.at.node_2 <- U2[as.numeric(rownames(obs.at.node_2))]
+
+    swap.tree_top <- set_term_node_value_cond_copula(node.idx = swap.idx[1,2], tree_top = swap.tree_top,
+                                                     X = X, U1 =U1, U2=U2, U1.at.node = U1.at.node_2,
+                                                     U2.at.node = U2.at.node_2,
+                                                     mu = mean(get_value_tree(swap.tree_top, obs.at.node_2)),,
+                                                     sigma = sigma,
+                                                     log_like_fun = log_like_fun,
+                                                     log_prior_fun = log_prior_fun)
     
     return(list(tree = swap.tree_top, move = 'swap', node.idx = swap.idx, valid.pred = NULL, valid.split = NULL))
   }

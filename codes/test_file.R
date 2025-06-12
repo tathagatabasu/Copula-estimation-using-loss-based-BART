@@ -1,7 +1,7 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) # c(1.5618883, 0.6293944)
   n.iter_par <- 1000
-  for (i in 1) {
+  for (i in 3) {
     assign(paste0("clayton_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
                                                                    X = X_obs.norm,
@@ -12,7 +12,7 @@ if(T){
                                                                    starting.tree = NULL,
                                                                    cont.unif = cont.unif_par,
                                                                    include.split = incl.split_par,
-                                                                   prop_mu = 1, prop_sigma = .25,
+                                                                   prop_mu = 1, prop_sigma = .2,
                                                                    theta_param_1 = 1, theta_param_2 = 1,
                                                                    prior_type = "LN",
                                                                    cop_type = "clayton"))
@@ -72,7 +72,7 @@ if(T){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 3
   
   n.born.out.par <- 0
   
