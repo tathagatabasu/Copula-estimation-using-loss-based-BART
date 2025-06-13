@@ -1,7 +1,8 @@
 if(T){
-  lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) # c(1.5618883, 0.6293944)
-  n.iter_par <- 1000
-  for (i in 3) {
+  lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
+  n.iter_par <- 2000
+  test_case = 4
+  for (i in test_case) {
     assign(paste0("clayton_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
                                                                    X = X_obs.norm,
@@ -12,68 +13,14 @@ if(T){
                                                                    starting.tree = NULL,
                                                                    cont.unif = cont.unif_par,
                                                                    include.split = incl.split_par,
-                                                                   prop_mu = 1, prop_sigma = .2,
-                                                                   theta_param_1 = 1, theta_param_2 = 1,
+                                                                   prop_mu = 2, prop_sigma = .3,
+                                                                   theta_param_1 = 0, theta_param_2 = 1,
                                                                    prior_type = "LN",
                                                                    cop_type = "clayton"))
   }
-  
-  # for (i in 1) {
-  #   assign(paste0("t_mcmc_lb.def_jeff_",i), multichain_MCMC_copula(n.chain = n.chain_par,
-  #                                                                  n.iter = n.iter_par,
-  #                                                                  X = X_obs.norm,
-  #                                                                  U1 = get(paste0("copula_uu_t_",i))[,1],
-  #                                                                  U2 = get(paste0("copula_uu_t_",i))[,2],
-  #                                                                  mu = 0, cop_type = "t", 
-  #                                                                  sigma = .005, alpha_val = 0, beta_val = 0, 
-  #                                                                  log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
-  #                                                                  prior_list = lb.prior.def, 
-  #                                                                  moves.prob = moves.prob_par, 
-  #                                                                  starting.tree = NULL,
-  #                                                                  cont.unif = cont.unif_par,
-  #                                                                  include.split = incl.split_par))
-  # }
-  # 
-  # 
-  # for (i in 1) {
-  #   assign(paste0("t_mcmc_lb.def_half_",i), multichain_MCMC_copula(n.chain = n.chain_par,
-  #                                                                  n.iter = n.iter_par,
-  #                                                                  X = X_obs.norm,
-  #                                                                  U1 = get(paste0("copula_uu_t_",i))[,1],
-  #                                                                  U2 = get(paste0("copula_uu_t_",i))[,2],
-  #                                                                  mu = 0, cop_type = "t", 
-  #                                                                  sigma = .005, alpha_val = .5, beta_val = .5, 
-  #                                                                  log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
-  #                                                                  prior_list = lb.prior.def, 
-  #                                                                  moves.prob = moves.prob_par, 
-  #                                                                  starting.tree = NULL,
-  #                                                                  cont.unif = cont.unif_par,
-  #                                                                  include.split = incl.split_par))
-  # }
-  # 
-  # for (i in 1) {
-  #   assign(paste0("t_mcmc_lb.def_two_",i), multichain_MCMC_copula(n.chain = n.chain_par,
-  #                                                                 n.iter = n.iter_par,
-  #                                                                 X = X_obs.norm,
-  #                                                                 U1 = get(paste0("copula_uu_t_",i))[,1],
-  #                                                                 U2 = get(paste0("copula_uu_t_",i))[,2],
-  #                                                                 mu = 0, cop_type = "t", 
-  #                                                                 sigma = .005, alpha_val = 2, beta_val = 2, 
-  #                                                                 log_nor_mu = 0, log_nor_sigma = 1, prior_type = "B",
-  #                                                                 prior_list = lb.prior.def, 
-  #                                                                 moves.prob = moves.prob_par, 
-  #                                                                 starting.tree = NULL,
-  #                                                                 cont.unif = cont.unif_par,
-  #                                                                 include.split = incl.split_par))
-  # }
-  
 }
 
-# results
-
 if(T){
-  test_case = 3
-  
   n.born.out.par <- 0
   
   model.list.def <- list(get(paste0("clayton_mcmc_lb.def_unif_",test_case))#,
@@ -216,97 +163,6 @@ if(T){
     ylab('estimated rho') +
     theme_classic()
   
-  copula_uu_t_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 2, par = pred_cond_mod$theta_mean, par2 = 3)
-  
-  pred_cond_mod$U1 = copula_uu_t_pred[,1]
-  pred_cond_mod$U2 = copula_uu_t_pred[,2]
-  
-  pred_cond_mod_p1 = pred_cond_mod %>% filter(panel.name == "LB - default - unif")
-  pred_cond_mod_p2 = pred_cond_mod %>% filter(panel.name == "LB - default - half")
-  pred_cond_mod_p3 = pred_cond_mod %>% filter(panel.name == "LB - default - jeff")
-  pred_cond_mod_p4 = pred_cond_mod %>% filter(panel.name == "LB - default - two")
-  
-  # 3d histogram
-  
-  hist_true <- hist2d(get(paste0("copula_uu_t_",i))[,1], get(paste0("copula_uu_t_",i))[,2], nbins = c(10,10), show = FALSE)
-  
-  hist_pred1 <- hist2d(pred_cond_mod_p1$U1, pred_cond_mod_p1$U2, nbins = c(10,10), show = FALSE)
-  hist_pred2 <- hist2d(pred_cond_mod_p2$U1, pred_cond_mod_p2$U2, nbins = c(10,10), show = FALSE)
-  hist_pred3 <- hist2d(pred_cond_mod_p3$U1, pred_cond_mod_p3$U2, nbins = c(10,10), show = FALSE)
-  hist_pred4 <- hist2d(pred_cond_mod_p4$U1, pred_cond_mod_p4$U2, nbins = c(10,10), show = FALSE)
-  
-  par(mar = c(1,1,1,1), mfrow = c(2,3))
-  
-  hist3D(
-    x = hist_true$x,
-    y = hist_true$y,
-    z = hist_true$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = "Observed copula"
-  )
-  
-  hist3D(
-    x = hist_pred1$x,
-    y = hist_pred1$y,
-    z = hist_pred1$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = unique(pred_cond_mod_p1$panel.name)
-  )
-  
-  hist3D(
-    x = hist_pred2$x,
-    y = hist_pred2$y,
-    z = hist_pred2$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = unique(pred_cond_mod_p2$panel.name)
-  )
-  
-  hist3D(
-    x = hist_pred3$x,
-    y = hist_pred3$y,
-    z = hist_pred3$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = unique(pred_cond_mod_p3$panel.name)
-  )
-  
-  hist3D(
-    x = hist_pred4$x,
-    y = hist_pred4$y,
-    z = hist_pred4$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = unique(pred_cond_mod_p4$panel.name)
-  )
-  
   pred_cond_stat = pred_cond_mod %>%
     group_by(panel.name)%>%
     mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
@@ -321,6 +177,6 @@ if(T){
   tree_stat_summary = df.sum.def_thin %>%
     group_by(panel.name)%>%
     summarise_at(c("nterm","depth","acc_rate"),mean)
-  
+    
   xtable(cbind(tree_stat_summary, pred_cond_summary[,-1]) , digits = 4)
 }
