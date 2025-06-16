@@ -61,18 +61,29 @@ and $c(u_1,u_2\mid x;\theta)$ is conditional copula density function.
 
 \subsection{Loss-based BART}
 
-Let $T$ denote a tree and $M$ denote the vector of terminal node values $M = \{\mu_1,\mu_2, \cdots, \mu_{n_L}\}$. Let $\theta_i$ denote the copula parameter conditional on $x_i$ such that:
+Let $T$ denote a tree and $M$ denote the vector of terminal node values $M = \{\mu_1,\mu_2, \cdots, \mu_{n_L}\}$. Let $\theta_i$ denote the copula parameter conditional on $x_i$. Our aim is to estimate this copula parameter using a regression tree such that
 \begin{equation}
-	\theta_i = g(x_i, T, M).
+	\theta_i = g(x_i, T, M)
 \end{equation}
-For, $T,M$ a loss-based prior is proposed by \citet{serafini2024lossbasedpriortreetopologies} in the following way:
+where $g$ denotes the assign rule of the tree $T$. Recently, 
+a loss-based prior for regression tree is proposed by \citet{serafini2024lossbasedpriortreetopologies} in the following way:
 \begin{align}
 	T, M &\sim \pi(T)\pi(M\mid T)\\
 	T &\propto \exp\left(\omega n_L(T)-\gamma\Delta(T)\right)\\
-	\pi(M\mid T) & = \prod_{j=1}^{n_L}\pi(\mu_j\mid T)
+	\pi(M\mid T) & = \prod_{j=1}^{n_L}\pi(\mu_j\mid T).
 \end{align}
 
-For the choice of prior on $\mu_j\mid T$ a conjugate prior is suggested by \citet{chipman_BART,serafini2024lossbasedpriortreetopologies}. However, finding a conjugate prior for copula parameter may not be possible always. Instead, we use a flat-prior on the support of the copula parameter and employ Metropolis-Hastings algorithm for obtaining posterior estimates.
+\subsection{Complete hierarchical model}
+As mentioned earlier, we wish to estimate the copula parameter using a regression tree. Given a set of observations $(u_{11}, u_{21}), (u_{12}, u_{22}), \cdots, (u_{1n}, u_{2n})$
+
+\begin{align}
+    u_{1i}, u_{2i} \mid \theta_i &\sim c(u_{1i},u_{2i}\mid x_i;\theta_i) \qquad i = 1,2,\cdots, n  \\
+    \theta_i & = g(x_i, T, M)\\
+    T, M &\sim \pi(T)\pi(M\mid T)\\
+	T &\propto \exp\left(\omega n_L(T)-\gamma\Delta(T)\right)
+\end{align}
+
+For the choice of prior on $\mu_j\mid T$ a conjugate prior is suggested by \citet{chipman_BART,serafini2024lossbasedpriortreetopologies}. However, finding a conjugate prior for the copula parameter is not trivial. Instead, we use a flat-prior on the support of the copula parameter and employ Metropolis-Hastings algorithm for obtaining posterior estimates. Choice of priors are detailed in the next section for specific simulation analyses.
 
 
 \iffalse
@@ -195,7 +206,19 @@ Like before, we can show that the function is continuous at 0.
 To generate the true copula parameter, we first consider 4 different test cases to simulate Kendall's tau conditional on $x$. Such that
  
 \begin{itemize}
-    \item Case 1: True $\tau_x$ has a tree structure with respect to $x$.
+    \item Case 1: True $\tau_x$ has a tree structure with respect to $x$. To obtain the tree structure we first generate a random binary tree such that number of terminal nodes is 8 and and difference between left and right terminal node is 4. Then we generate $\tau_x$ such that
+    \begin{equation}
+        \tau_x = \begin{cases}
+        0.574 + \mathcal{N}(0,0.01) & x \le 0.251\\
+        0.505 + \mathcal{N}(0,0.01) & 0.251 < x \le 0.267\\
+        0.674 + \mathcal{N}(0,0.01) & 0.267 < x \le 0.308\\
+        0.690 + \mathcal{N}(0,0.01) & 0.308 < x \le 0.312\\
+        0.565 + \mathcal{N}(0,0.01) & 0.312 < x \le 0.361\\
+        0.422 + \mathcal{N}(0,0.01) & 0.361 < x \le 0.538\\
+        0.646 + \mathcal{N}(0,0.01) & 0.538 < x \le 0.933\\
+        0.405 + \mathcal{N}(0,0.01) & 0.933 < x
+    \end{cases}
+    \end{equation}
     \item Case 2: True $\tau_x$ is monotone with respect to $x$ such that 
     \begin{equation}\label{eq:synth:tau_x:case2}
         \tau_x = 0.3 + 0.2 \sin(3x) + 0.3x^2.
@@ -210,7 +233,14 @@ To generate the true copula parameter, we first consider 4 different test cases 
     \end{equation}
 \end{itemize}
 
-We present the plot of true values of Kendall's $\tau$ with respect to $x$ in \cref{fig:true:tau}.
+We present the plot of true values of Kendall's $\tau$ with respect to $x$ in \cref{fig:true:tau}. Additionally, we provide the tree structure based $\tau_x$ in for clearer interpretation of the splitting rule.
+
+\begin{figure}
+    \centering
+    \caption{Splitting rule for the tree based $\tau_x$}
+    \label{fig:tau_tree_split}
+    \includegraphics[width=0.5\linewidth]{tree_cond_tau_x.png}
+\end{figure}
 
 \begin{figure}
     \centering
@@ -237,14 +267,37 @@ Then using these values of conditional Kendall's $\tau$, we generate the copula 
     \label{tab:cop:link}
 \end{table}
 
+\paragraph{Prediction accuracy} For the sake of evaluating the efficiency of copula parameter estimation we check in sample prediction of the copula parameter ($\rho$ for Gaussian and student-t; $\theta$ for Clayton and Gumbel) using the posterior samples of the regression trees . 
+
+There after we check the root mean squared error with respect to the true copula parameter used in the data generation phase. Given by:
+
+\begin{equation}
+    \text{RMSE} = \sqrt{1/n\sum_{i=1}^n (\theta_i - \overline{\theta}^*_i)^2}
+\end{equation}
+where $\overline{\theta}^*_i$ is posterior sample mean of copula parameter conditional on $x_i$.
+
+For credible interval coverage, check whether the true copula parameter is contained within the 95\% credible interval of the predictive samples of the copula parameter
+
+\begin{equation}
+    \text{CI coverage} = \frac{\sum_{i=1}^n\mathbb{I}\left(Q_{2.5}(\theta^*_i) \le \theta_i \le Q_{97.5}(\theta^*_i)\right)}{n}.
+\end{equation}
+
+Additionally, we check for credible interval length using $\left(Q_{97.5}(\theta^*_i) - Q_{2.5}(\theta^*_i)\right)$.
+
 \subsection{Results}
 
 \subsubsection{Gaussian Copula} For the Gaussian copula, the copula parameter $\rho$ lies within the open interval $(-1,1)$. So a natural choice for prior on $\mu_j$ is transformed beta as suggested by \citet{gokhale_prior_cor}. 
 
 \begin{equation}
-	\text{TBeta}(a, b) = \frac{1}{2^{a+b-1}\mathcal{B}(a,b)}(1+\rho)^{a-1}(1-\rho)^{b-1},
+	\text{TBeta}(a, b) = \frac{1}{2^{a+b-1}\mathcal{B}(a,b)}(1+\rho)^{a-1}(1-\rho)^{b-1}\propto(1+\rho)^{a-1}(1-\rho)^{b-1},
 \end{equation}
-for $a,b>0$ and $\mathcal{B}$ denotes beta function. Note that, for $a=b=0$, this leads to an improper prior. 
+for $a,b>0$ and $\mathcal{B}$ denotes beta function. Note that, for $a=b=0$, this leads to an improper prior given by:
+\begin{equation}
+    \pi(\rho) \propto \frac{1}{(1-\rho)(1+\rho)}.
+\end{equation}
+This corresponds to the Jeffrey's prior as suggested by \citet{berger_2008_objective}.
+
+From an implementation perspective, we only require $(1+\rho)^{a-1}(1-\rho)^{b-1}$ to evaluate the prior for MH algorithm. Therefore, setting $a=0, b=0$ in the transformed beta prior will allow us to analyse results for Jeffrey's prior. Sinilarly, setting $a=1,b=1$ will give us uniform prior on $\rho$.
 
 We present the summary of our analyses with Gaussian copula in \cref{tab:gauss:summary}. 
 
@@ -620,23 +673,23 @@ We present the summary of our analyses with Clayton copula in \cref{tab:clayton:
 			\toprule
 			& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
 			\midrule
-			Case 1 & Gamma(1,1) & 2.867 & 1.662 & 0.232 & 0.5097 & 1.3417 & 0.764 \\ 
-			(Tree) & Gamma(2,2) & 4.246 & 2.416 & 0.300 & 0.3705 & 1.5866 & \textbf{0.924} \\ 
+			Case 1 & InvGamma(1,1) & 2.867 & 1.662 & 0.232 & 0.5097 & 1.3417 & 0.764 \\ 
+			(Tree) & InvGamma(2,2) & 4.246 & 2.416 & 0.300 & 0.3705 & 1.5866 & \textbf{0.924} \\ 
 			& LogNorm(0,1) & 3.629 & 2.095 & 0.285 & 0.4099 & 1.5664 & 0.824 \\ 
 			& LogNorm(0,5) & 3.876 & 2.178 & 0.246 & 0.3598 & 1.7381 & 0.842 \\ 
 			\midrule
-			Case 2 & Gamma(1,1) & 2.291 & 1.228 & 0.202 & 0.1254 & 0.9802 & 0.880 \\ 
-			(\cref{eq:synth:tau_x:case2}) & Gamma(2,2) & 2.703 & 1.513 & 0.245 & 0.0902 & 1.2297 & \textbf{1.000} \\ 
+			Case 2 & InvGamma(1,1) & 2.291 & 1.228 & 0.202 & 0.1254 & 0.9802 & 0.880 \\ 
+			(\cref{eq:synth:tau_x:case2}) & InvGamma(2,2) & 2.703 & 1.513 & 0.245 & 0.0902 & 1.2297 & \textbf{1.000} \\ 
 			& LogNorm(0,1) & 2.799 & 1.581 & 0.249 & 0.0757 & 1.2844 & \textbf{1.000} \\ 
 			& LogNorm(0,5) & 2.625 & 1.467 & 0.213 & 0.0834 & 1.2934 & \textbf{1.000} \\ 
 			\midrule
-			Case 3 & Gamma(1,1) & 3.388 & 2.060 & 0.229 & 0.6166 & 2.2269 & 0.754 \\ 
-			(\cref{eq:synth:tau_x:case3}) & Gamma(2,2) & 3.588 & 2.125 & 0.259 & 0.5407 & 2.5436 & 0.822 \\ 
+			Case 3 & InvGamma(1,1) & 3.388 & 2.060 & 0.229 & 0.6166 & 2.2269 & 0.754 \\ 
+			(\cref{eq:synth:tau_x:case3}) & InvGamma(2,2) & 3.588 & 2.125 & 0.259 & 0.5407 & 2.5436 & 0.822 \\ 
 			& LogNorm(0,1) & 3.679 & 2.147 & 0.232 & 0.5492 & 2.4543 & \textbf{0.902} \\ 
 			& LogNorm(0,5) & 3.516 & 2.111 & 0.265 & 0.5881 & 2.4645 & 0.884 \\ 
 			\midrule
-			Case 4 & Gamma(1,1) & 2.205 & 1.183 & 0.207 & 0.0492 & 1.0143 & \textbf{0.978} \\ 
-			(\cref{eq:synth:tau_x:case4}) & Gamma(2,2) & 2.318 & 1.260 & 0.214 & 0.0527 & 1.0409 & 0.974 \\ 
+			Case 4 & InvGamma(1,1) & 2.205 & 1.183 & 0.207 & 0.0492 & 1.0143 & \textbf{0.978} \\ 
+			(\cref{eq:synth:tau_x:case4}) & InvGamma(2,2) & 2.318 & 1.260 & 0.214 & 0.0527 & 1.0409 & 0.974 \\ 
 			& LogNorm(0,1) & 2.377 & 1.301 & 0.241 & 0.0531 & 1.0920 & 0.972 \\ 
 			& LogNorm(0,5) & 2.407 & 1.320 & 0.204 & 0.0561 & 1.1192 & 0.974 \\ 
 	\end{tabular}}
@@ -645,51 +698,56 @@ We present the summary of our analyses with Clayton copula in \cref{tab:clayton:
 \paragraph{Convergence Diagnostic}
 \begin{table}[ht]
 	\centering
-	\caption{Clayton}
+	\caption{Posterior convergence diagnostic for Clayton copula. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood. To obtain the reduced samples we discard 5000 burnin samples followed by thinning of 10.}
 	\scriptsize{
-		\begin{tabular}{l|crr|crr|crr}
+		\begin{tabular}{ll|crr|crr|crr}
 			\toprule
-			& AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+		\multicolumn{2}{c|}{} &
+		\multicolumn{3}{c|}{Depth} &
+		\multicolumn{3}{c|}{$n_L$} &
+		\multicolumn{3}{c}{likelihood} \\
+		\midrule
+		& Prior & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
 			\midrule
-			LB - default - IG22 & 0.96 & 0.56 & 0.44 & 0.97 & 0.75 & 0.93 & 0.78 & 2.15 & -2.22 \\ 
-			LB - default - IG11 & 0.91 & 0.80 & -7.01 & 0.93 & 1.38 & -6.73 & 0.97 & 0.99 & 1.43 \\ 
-			LB - default - LN01 & 0.95 & 0.85 & 0.31 & 0.96 & 1.05 & 1.16 & 0.83 & 1.30 & -0.90 \\ 
-			LB - default - LN05 & 0.92 & 1.77 & 0.97 & 0.95 & 0.95 & 0.92 & 0.78 & 1.66 & 2.05 \\ 
+			Case 1 & InvGamma(2,2) & 0.96 & 0.56 & 0.44 & 0.97 & 0.75 & 0.93 & 0.78 & 2.15 & -2.22 \\ 
+			all sample & InvGamma(1,1) & 0.91 & 0.80 & -7.01 & 0.93 & 1.38 & -6.73 & 0.97 & 0.99 & 1.43 \\ 
+			& LogNorm(0,1) & 0.95 & 0.85 & 0.31 & 0.96 & 1.05 & 1.16 & 0.83 & 1.30 & -0.90 \\ 
+			& LogNorm(0,5) & 0.92 & 1.77 & 0.97 & 0.95 & 0.95 & 0.92 & 0.78 & 1.66 & 2.05 \\ 
 			\midrule
-			LB - default - IG22 & 0.79 & 2.91 & -0.99 & 0.82 & 4.49 & -0.61 & 0.41 & 13.94 & -0.60 \\ 
-			LB - default - IG11 & 0.64 & 7.45 & -0.14 & 0.60 & 12.20 & -0.98 & 0.84 & 4.35 & -0.50 \\ 
-			LB - default - LN01 & 0.73 & 8.41 & 1.50 & 0.75 & 5.76 & 1.11 & 0.53 & 11.90 & -1.76 \\ 
-			LB - default - LN05 & 0.61 & 6.01 & -2.90 & 0.69 & 3.87 & -4.00 & 0.38 & 10.90 & 1.38 \\ 
+			reduced sample & InvGamma(2,2) & 0.79 & 2.91 & -0.99 & 0.82 & 4.49 & -0.61 & 0.41 & 13.94 & -0.60 \\ 
+			& InvGamma(1,1) & 0.64 & 7.45 & -0.14 & 0.60 & 12.20 & -0.98 & 0.84 & 4.35 & -0.50 \\ 
+			& LogNorm(0,1) & 0.73 & 8.41 & 1.50 & 0.75 & 5.76 & 1.11 & 0.53 & 11.90 & -1.76 \\ 
+			& LogNorm(0,5) & 0.61 & 6.01 & -2.90 & 0.69 & 3.87 & -4.00 & 0.38 & 10.90 & 1.38 \\ 
 			 \midrule
-			LB - default - IG22 & 0.91 & 1.08 & -0.46 & 0.95 & 1.30 & -0.28 & 0.66 & 9.01 & 0.83 \\ 
-			LB - default - IG11 & 0.83 & 4.55 & -1.46 & 0.88 & 3.81 & -1.56 & 0.90 & 4.86 & -0.24 \\ 
-			LB - default - LN01 & 0.91 & 1.14 & -1.41 & 0.94 & 1.50 & -1.55 & 0.68 & 9.35 & 1.33 \\ 
-			LB - default - LN05 & 0.90 & 1.95 & -0.62 & 0.93 & 2.00 & -0.92 & 0.67 & 12.93 & 0.48 \\ 
+			Case 2 & InvGamma(2,2) & 0.91 & 1.08 & -0.46 & 0.95 & 1.30 & -0.28 & 0.66 & 9.01 & 0.83 \\ 
+			all sample & InvGamma(1,1) & 0.83 & 4.55 & -1.46 & 0.88 & 3.81 & -1.56 & 0.90 & 4.86 & -0.24 \\ 
+			& LogNorm(0,1) & 0.91 & 1.14 & -1.41 & 0.94 & 1.50 & -1.55 & 0.68 & 9.35 & 1.33 \\ 
+			& LogNorm(0,5) & 0.90 & 1.95 & -0.62 & 0.93 & 2.00 & -0.92 & 0.67 & 12.93 & 0.48 \\ 
 			\midrule
-			LB - default - IG22 & 0.58 & 11.16 & 0.02 & 0.65 & 13.23 & 0.22 & 0.13 & 55.62 & -0.59 \\ 
-			LB - default - IG11 & 0.21 & 64.79 & -2.20 & 0.33 & 50.02 & -1.70 & 0.41 & 35.19 & -0.14 \\ 
-			LB - default - LN01 & 0.59 & 7.47 & -1.83 & 0.65 & 7.92 & -1.41 & 0.10 & 58.61 & 3.32 \\ 
-			LB - default - LN05 & 0.57 & 14.31 & 1.14 & 0.64 & 18.75 & 0.67 & 0.13 & 64.29 & -0.84 \\ 
+			reduced sample & InvGamma(2,2) & 0.58 & 11.16 & 0.02 & 0.65 & 13.23 & 0.22 & 0.13 & 55.62 & -0.59 \\ 
+			& InvGamma(1,1) & 0.21 & 64.79 & -2.20 & 0.33 & 50.02 & -1.70 & 0.41 & 35.19 & -0.14 \\ 
+			& LogNorm(0,1) & 0.59 & 7.47 & -1.83 & 0.65 & 7.92 & -1.41 & 0.10 & 58.61 & 3.32 \\ 
+			& LogNorm(0,5) & 0.57 & 14.31 & 1.14 & 0.64 & 18.75 & 0.67 & 0.13 & 64.29 & -0.84 \\ 
 			\midrule
-			LB - default - IG22 & 0.89 & 4.39 & 0.75 & 0.92 & 3.82 & 0.63 & 0.72 & 13.42 & 1.94 \\ 
-			LB - default - IG11 & 0.97 & 0.36 & 1.70 & 0.96 & 0.49 & 2.51 & 0.97 & 1.24 & 0.49 \\ 
-			LB - default - LN01 & 0.90 & 3.86 & -1.50 & 0.93 & 3.00 & -1.67 & 0.75 & 10.13 & 1.70 \\ 
-			LB - default - LN05 & 0.93 & 2.50 & 4.17 & 0.94 & 2.47 & 4.81 & 0.77 & 7.87 & 0.95 \\ 
+			Case 3 & InvGamma(2,2) & 0.89 & 4.39 & 0.75 & 0.92 & 3.82 & 0.63 & 0.72 & 13.42 & 1.94 \\ 
+			all sample & InvGamma(1,1) & 0.97 & 0.36 & 1.70 & 0.96 & 0.49 & 2.51 & 0.97 & 1.24 & 0.49 \\ 
+			& LogNorm(0,1) & 0.90 & 3.86 & -1.50 & 0.93 & 3.00 & -1.67 & 0.75 & 10.13 & 1.70 \\ 
+			& LogNorm(0,5) & 0.93 & 2.50 & 4.17 & 0.94 & 2.47 & 4.81 & 0.77 & 7.87 & 0.95 \\ 
 			\midrule
-			LB - default - IG22 & 0.32 & 51.31 & 0.86 & 0.46 & 36.65 & 0.65 & 0.14 & 75.77 & 1.55 \\ 
-			LB - default - IG11 & 0.34 & 48.78 & -1.23 & 0.39 & 44.29 & -1.03 & 0.74 & 14.64 & -1.51 \\ 
-			LB - default - LN01 & 0.50 & 33.42 & -0.15 & 0.58 & 26.89 & 0.33 & 0.14 & 75.50 & 0.48 \\ 
-			LB - default - LN05 & 0.41 & 41.85 & 0.41 & 0.46 & 37.22 & 0.25 & 0.11 & 50.67 & -1.52 \\ 
+			reduced sample & InvGamma(2,2) & 0.32 & 51.31 & 0.86 & 0.46 & 36.65 & 0.65 & 0.14 & 75.77 & 1.55 \\ 
+			& InvGamma(1,1) & 0.34 & 48.78 & -1.23 & 0.39 & 44.29 & -1.03 & 0.74 & 14.64 & -1.51 \\ 
+			& LogNorm(0,1) & 0.50 & 33.42 & -0.15 & 0.58 & 26.89 & 0.33 & 0.14 & 75.50 & 0.48 \\ 
+			& LogNorm(0,5) & 0.41 & 41.85 & 0.41 & 0.46 & 37.22 & 0.25 & 0.11 & 50.67 & -1.52 \\ 
 			\midrule
-			LB - default - IG22 & 0.90 & 4.16 & -1.66 & 0.94 & 2.11 & -2.24 & 0.78 & 6.62 & 1.07 \\ 
-			LB - default - IG11 & 0.91 & 2.64 & -0.82 & 0.92 & 3.41 & 0.32 & 0.97 & 1.14 & 2.78 \\ 
-			LB - default - LN01 & 0.89 & 4.04 & -1.43 & 0.91 & 3.45 & -1.31 & 0.76 & 10.21 & 2.55 \\ 
-			LB - default - LN05 & 0.95 & 0.98 & 0.34 & 0.96 & 1.40 & 0.41 & 0.79 & 5.41 & 1.52 \\ 
+			Case 4 & InvGamma(2,2) & 0.90 & 4.16 & -1.66 & 0.94 & 2.11 & -2.24 & 0.78 & 6.62 & 1.07 \\ 
+			all sample & InvGamma(1,1) & 0.91 & 2.64 & -0.82 & 0.92 & 3.41 & 0.32 & 0.97 & 1.14 & 2.78 \\ 
+			& LogNorm(0,1) & 0.89 & 4.04 & -1.43 & 0.91 & 3.45 & -1.31 & 0.76 & 10.21 & 2.55 \\ 
+			& LogNorm(0,5) & 0.95 & 0.98 & 0.34 & 0.96 & 1.40 & 0.41 & 0.79 & 5.41 & 1.52 \\ 
 			\midrule
-			LB - default - IG22 & 0.49 & 22.10 & -0.53 & 0.61 & 12.75 & -0.83 & 0.19 & 41.46 & 0.37 \\ 
-			LB - default - IG11 & 0.36 & 44.02 & 1.31 & 0.40 & 42.72 & 0.68 & 0.74 & 14.69 & 1.07 \\ 
-			LB - default - LN01 & 0.34 & 35.92 & 1.14 & 0.48 & 27.42 & 1.32 & 0.15 & 74.26 & 0.96 \\ 
-			LB - default - LN05 & 0.65 & 4.46 & 19.87 & 0.69 & 5.54 & 7.37 & 0.19 & 43.53 & -3.11 \\ 
+			reduced sample & InvGamma(2,2) & 0.49 & 22.10 & -0.53 & 0.61 & 12.75 & -0.83 & 0.19 & 41.46 & 0.37 \\ 
+			& InvGamma(1,1) & 0.36 & 44.02 & 1.31 & 0.40 & 42.72 & 0.68 & 0.74 & 14.69 & 1.07 \\ 
+			& LogNorm(0,1) & 0.34 & 35.92 & 1.14 & 0.48 & 27.42 & 1.32 & 0.15 & 74.26 & 0.96 \\ 
+			& LogNorm(0,5) & 0.65 & 4.46 & 19.87 & 0.69 & 5.54 & 7.37 & 0.19 & 43.53 & -3.11 \\ 
 			\bottomrule
 	\end{tabular}}
 \end{table}
@@ -702,84 +760,84 @@ We present the summary of our analyses with Clayton copula in \cref{tab:clayton:
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:clayton:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_depth.pdf}
-	\caption{Trace plot of depth for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:clayton:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_clayton_like.pdf}
-	\caption{Trace plot of likelihood for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:clayton:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:clayton:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_depth.pdf}
-	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:clayton:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_clayton_like.pdf}
-	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:clayton:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:clayton:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_depth.pdf}
-	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:clayton:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_clayton_like.pdf}
-	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:clayton:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:clayton:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_depth.pdf}
-	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:clayton:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_clayton_like.pdf}
-	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Clayton copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:clayton:like}
 \end{figure}
 
@@ -797,23 +855,23 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 		\toprule
 		& Prior on $\mu_j$ & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & CI coverage \\ 
 		\midrule
-		Case 1 & Gamma(1,1) & 4.513 & 2.397 & 0.246 & 0.1292 & 0.9088 & 0.908 \\ 
-		(Tree) & Gamma(2,2) & 4.714 & 2.532 & 0.256 & 0.1407 & 0.8179 & 0.858 \\ 
+		Case 1 & InvGamma(1,1) & 4.513 & 2.397 & 0.246 & 0.1292 & 0.9088 & 0.908 \\ 
+		(Tree) & InvGamma(2,2) & 4.714 & 2.532 & 0.256 & 0.1407 & 0.8179 & 0.858 \\ 
 		& LogNorm(0,1) & 4.626 & 2.525 & 0.260 & 0.1321 & 0.9956 & \textbf{0.916} \\ 
 		& LogNorm(0,5) & 4.389 & 2.335 & 0.227 & 0.1353 & 0.8653 & 0.856 \\ 
 		\midrule
-		Case 2 & Gamma(1,1) & 2.373 & 1.289 & 0.202 & 0.0277 & 0.6032 & 0.998 \\ 
-		(\cref{eq:synth:tau_x:case2}) & Gamma(2,2) & 2.605 & 1.455 & 0.209 & 0.0262 & 0.6956 & \textbf{1.000} \\ 
+		Case 2 & InvGamma(1,1) & 2.373 & 1.289 & 0.202 & 0.0277 & 0.6032 & 0.998 \\ 
+		(\cref{eq:synth:tau_x:case2}) & InvGamma(2,2) & 2.605 & 1.455 & 0.209 & 0.0262 & 0.6956 & \textbf{1.000} \\ 
 		& LogNorm(0,1) & 2.349 & 1.268 & 0.214 & 0.0273 & 0.6049 & 0.994 \\ 
 		& LogNorm(0,5) & 2.408 & 1.314 & 0.212 & 0.0277 & 0.6025 & 0.974 \\ 
 		\midrule
-		Case 3 & Gamma(1,1) & 3.421 & 2.086 & 0.241 & 0.1523 & 1.1744 & 0.764 \\ 
-		(\cref{eq:synth:tau_x:case3}) & Gamma(2,2) & 3.429 & 2.077 & 0.252 & 0.1509 & 1.2093 & 0.788 \\ 
+		Case 3 & InvGamma(1,1) & 3.421 & 2.086 & 0.241 & 0.1523 & 1.1744 & 0.764 \\ 
+		(\cref{eq:synth:tau_x:case3}) & InvGamma(2,2) & 3.429 & 2.077 & 0.252 & 0.1509 & 1.2093 & 0.788 \\ 
 		& LogNorm(0,1) & 3.631 & 2.173 & 0.267 & 0.1566 & 1.1954 & 0.792 \\ 
 		& LogNorm(0,5) & 3.590 & 2.119 & 0.262 & 0.1575 & 1.2772 & \textbf{0.854} \\ 
 		\midrule
-		Case 4 & Gamma(1,1) & 2.706 & 1.517 & 0.247 & 0.0152 & 0.7585 & 0.974 \\ 
-		(\cref{eq:synth:tau_x:case4}) & Gamma(2,2) & 2.602 & 1.466 & 0.252 & 0.0140 & 0.7451 & 0.974 \\ 
+		Case 4 & InvGamma(1,1) & 2.706 & 1.517 & 0.247 & 0.0152 & 0.7585 & 0.974 \\ 
+		(\cref{eq:synth:tau_x:case4}) & InvGamma(2,2) & 2.602 & 1.466 & 0.252 & 0.0140 & 0.7451 & 0.974 \\ 
 		& LogNorm(0,1) & 2.527 & 1.405 & 0.224 & 0.0161 & 0.7377 & 0.988 \\ 
 		& LogNorm(0,5) & 2.445 & 1.353 & 0.217 & 0.0148 & 0.7090 & \textbf{0.990} \\ 
 		\end{tabular}}
@@ -822,51 +880,56 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 \paragraph{Convergence Diagnostic}
 \begin{table}[ht]
 	\centering
-	\caption{Gumbel}
+	\caption{Posterior convergence diagnostic for Gumbel copula. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood. To obtain the reduced samples we discard 5000 burnin samples followed by thinning of 10.}
 	\scriptsize{
-		\begin{tabular}{l|crr|crr|crr}
+		\begin{tabular}{ll|crr|crr|crr}
 			\toprule
-			& AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
+		\multicolumn{2}{c|}{} &
+		\multicolumn{3}{c|}{Depth} &
+		\multicolumn{3}{c|}{$n_L$} &
+		\multicolumn{3}{c}{likelihood} \\
+		\midrule
+		& Prior & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
 			\midrule
-			LB - default - IG22 & 0.88 & 1.40 & 13.28 & 0.93 & 1.35 & 9.66 & 0.86 & 1.62 & 8.23 \\ 
-			LB - default - IG11 & 0.90 & 1.59 & 14.60 & 0.93 & 2.01 & 9.80 & 0.87 & 1.91 & 10.05 \\ 
-			LB - default - LN01 & 0.87 & 1.48 & 2.69 & 0.92 & 1.76 & 2.34 & 0.86 & 2.76 & 2.53 \\ 
-			LB - default - LN05 & 0.85 & 2.40 & -1.80 & 0.89 & 2.52 & -1.21 & 0.85 & 2.57 & -0.59 \\ 
+			Case 1 & InvGamma(2,2) & 0.88 & 1.40 & 13.28 & 0.93 & 1.35 & 9.66 & 0.86 & 1.62 & 8.23 \\ 
+			all sample & InvGamma(1,1) & 0.90 & 1.59 & 14.60 & 0.93 & 2.01 & 9.80 & 0.87 & 1.91 & 10.05 \\ 
+			& LogNorm(0,1) & 0.87 & 1.48 & 2.69 & 0.92 & 1.76 & 2.34 & 0.86 & 2.76 & 2.53 \\ 
+			& LogNorm(0,5) & 0.85 & 2.40 & -1.80 & 0.89 & 2.52 & -1.21 & 0.85 & 2.57 & -0.59 \\ 
 			\midrule
-			LB - default - IG22 & 0.32 & 47.94 & -0.64 & 0.43 & 25.79 & -0.78 & 0.36 & 44.19 & -0.17 \\ 
-			LB - default - IG11 & 0.30 & 43.42 & -0.84 & 0.41 & 41.76 & -0.94 & 0.37 & 45.81 & -1.31 \\ 
-			LB - default - LN01 & 0.57 & 15.31 & 1.26 & 0.63 & 12.33 & 0.97 & 0.47 & 22.66 & 0.90 \\ 
-			LB - default - LN05 & 0.49 & 13.55 & -2.88 & 0.52 & 16.06 & -3.28 & 0.45 & 7.66 & -0.98 \\ 
+			reduced sample & InvGamma(2,2) & 0.32 & 47.94 & -0.64 & 0.43 & 25.79 & -0.78 & 0.36 & 44.19 & -0.17 \\ 
+			& InvGamma(1,1) & 0.30 & 43.42 & -0.84 & 0.41 & 41.76 & -0.94 & 0.37 & 45.81 & -1.31 \\ 
+			& LogNorm(0,1) & 0.57 & 15.31 & 1.26 & 0.63 & 12.33 & 0.97 & 0.47 & 22.66 & 0.90 \\ 
+			& LogNorm(0,5) & 0.49 & 13.55 & -2.88 & 0.52 & 16.06 & -3.28 & 0.45 & 7.66 & -0.98 \\ 
 			\midrule
-			LB - default - IG22 & 0.91 & 0.92 & -2.79 & 0.94 & 0.97 & -2.81 & 0.78 & 2.63 & 0.19 \\ 
-			LB - default - IG11 & 0.87 & 2.37 & -3.44 & 0.92 & 2.19 & -3.25 & 0.71 & 17.15 & -1.64 \\ 
-			LB - default - LN01 & 0.84 & 3.05 & -3.12 & 0.90 & 3.21 & -3.20 & 0.71 & 16.91 & -1.39 \\ 
-			LB - default - LN05 & 0.87 & 2.95 & -4.08 & 0.92 & 2.03 & -3.65 & 0.71 & 17.24 & 0.01 \\ 
+			Case 2 & InvGamma(2,2) & 0.91 & 0.92 & -2.79 & 0.94 & 0.97 & -2.81 & 0.78 & 2.63 & 0.19 \\ 
+			all sample & InvGamma(1,1) & 0.87 & 2.37 & -3.44 & 0.92 & 2.19 & -3.25 & 0.71 & 17.15 & -1.64 \\ 
+			& LogNorm(0,1) & 0.84 & 3.05 & -3.12 & 0.90 & 3.21 & -3.20 & 0.71 & 16.91 & -1.39 \\ 
+			& LogNorm(0,5) & 0.87 & 2.95 & -4.08 & 0.92 & 2.03 & -3.65 & 0.71 & 17.24 & 0.01 \\ 
 			\midrule
-			LB - default - IG22 & 0.31 & 52.92 & 0.81 & 0.36 & 46.93 & 0.65 & 0.05 & 100.00 & -1.27 \\ 
-			LB - default - IG11 & 0.55 & 9.81 & -1.63 & 0.68 & 8.82 & -2.29 & 0.06 & 100.00 & -0.86 \\ 
-			LB - default - LN01 & 0.53 & 16.09 & -0.71 & 0.58 & 18.85 & -1.21 & 0.07 & 70.10 & -0.45 \\ 
-			LB - default - LN05 & 0.49 & 13.28 & -0.26 & 0.55 & 13.05 & -0.16 & 0.03 & 100.00 & 1.29 \\ 
+			reduced sample & InvGamma(2,2) & 0.31 & 52.92 & 0.81 & 0.36 & 46.93 & 0.65 & \textbf{0.05} & 100.00 & -1.27 \\ 
+			& InvGamma(1,1) & 0.55 & 9.81 & -1.63 & 0.68 & 8.82 & -2.29 & \textbf{0.06} & 100.00 & -0.86 \\ 
+			& LogNorm(0,1) & 0.53 & 16.09 & -0.71 & 0.58 & 18.85 & -1.21 & 0.07 & 70.10 & -0.45 \\ 
+			& LogNorm(0,5) & 0.49 & 13.28 & -0.26 & 0.55 & 13.05 & -0.16 & \textbf{0.03} & 100.00 & 1.29 \\ 
 			\midrule
-			LB - default - IG22 & 0.86 & 6.21 & 1.15 & 0.89 & 5.27 & 1.06 & 0.68 & 7.15 & -0.25 \\ 
-			LB - default - IG11 & 0.86 & 6.80 & 1.50 & 0.90 & 5.45 & 1.08 & 0.66 & 8.14 & 1.84 \\ 
-			LB - default - LN01 & 0.94 & 1.81 & -0.90 & 0.95 & 1.84 & -1.16 & 0.68 & 10.78 & -0.29 \\ 
-			LB - default - LN05 & 0.89 & 4.91 & 1.09 & 0.92 & 2.62 & 1.94 & 0.70 & 7.57 & -2.84 \\ 
+			Case 3 & InvGamma(2,2) & 0.86 & 6.21 & 1.15 & 0.89 & 5.27 & 1.06 & 0.68 & 7.15 & -0.25 \\ 
+			all sample & InvGamma(1,1) & 0.86 & 6.80 & 1.50 & 0.90 & 5.45 & 1.08 & 0.66 & 8.14 & 1.84 \\ 
+			& LogNorm(0,1) & 0.94 & 1.81 & -0.90 & 0.95 & 1.84 & -1.16 & 0.68 & 10.78 & -0.29 \\ 
+			& LogNorm(0,5) & 0.89 & 4.91 & 1.09 & 0.92 & 2.62 & 1.94 & 0.70 & 7.57 & -2.84 \\ 
 			\midrule
-			LB - default - IG22 & 0.14 & 58.08 & -1.26 & 0.26 & 58.21 & -3.38 & 0.10 & 22.12 & 1.92 \\ 
-			LB - default - IG11 & 0.20 & 49.04 & -1.79 & 0.31 & 52.44 & -0.05 & 0.14 & 65.67 & 0.53 \\ 
-			LB - default - LN01 & 0.54 & 20.23 & 1.12 & 0.53 & 25.72 & 0.89 & 0.15 & 62.36 & -1.08 \\ 
-			LB - default - LN05 & 0.46 & 35.09 & 1.01 & 0.47 & 30.96 & 1.71 & 0.11 & 40.65 & 1.21 \\ 
+			reduced sample & InvGamma(2,2) & 0.14 & 58.08 & -1.26 & 0.26 & 58.21 & -3.38 & 0.10 & 22.12 & 1.92 \\ 
+			& InvGamma(1,1) & 0.20 & 49.04 & -1.79 & 0.31 & 52.44 & -0.05 & 0.14 & 65.67 & 0.53 \\ 
+			& LogNorm(0,1) & 0.54 & 20.23 & 1.12 & 0.53 & 25.72 & 0.89 & 0.15 & 62.36 & -1.08 \\ 
+			& LogNorm(0,5) & 0.46 & 35.09 & 1.01 & 0.47 & 30.96 & 1.71 & 0.11 & 40.65 & 1.21 \\ 
 			\midrule
-			LB - default - IG22 & 0.93 & 1.66 & 0.10 & 0.95 & 1.86 & 0.06 & 0.72 & 4.10 & -0.21 \\ 
-			LB - default - IG11 & 0.91 & 3.58 & 1.00 & 0.94 & 2.69 & 0.02 & 0.75 & 4.80 & -0.70 \\ 
-			LB - default - LN01 & 0.89 & 4.14 & -0.04 & 0.92 & 3.53 & 1.06 & 0.71 & 6.72 & 0.22 \\ 
-			LB - default - LN05 & 0.90 & 4.18 & 0.69 & 0.93 & 3.24 & 0.53 & 0.84 & 0.76 & 1.17 \\ 
+			Case 4 & InvGamma(2,2) & 0.93 & 1.66 & 0.10 & 0.95 & 1.86 & 0.06 & 0.72 & 4.10 & -0.21 \\ 
+			all sample & InvGamma(1,1) & 0.91 & 3.58 & 1.00 & 0.94 & 2.69 & 0.02 & 0.75 & 4.80 & -0.70 \\ 
+			& LogNorm(0,1) & 0.89 & 4.14 & -0.04 & 0.92 & 3.53 & 1.06 & 0.71 & 6.72 & 0.22 \\ 
+			& LogNorm(0,5) & 0.90 & 4.18 & 0.69 & 0.93 & 3.24 & 0.53 & 0.84 & 0.76 & 1.17 \\ 
 			\midrule
-			LB - default - IG22 & 0.71 & 13.53 & -0.32 & 0.70 & 11.16 & -0.05 & 0.26 & 31.32 & -0.78 \\ 
-			LB - default - IG11 & 0.46 & 31.79 & -0.08 & 0.57 & 27.62 & -0.31 & 0.30 & 20.51 & 0.17 \\ 
-			LB - default - LN01 & 0.28 & 57.84 & 1.54 & 0.40 & 38.27 & 1.73 & 0.24 & 27.89 & 0.66 \\ 
-			LB - default - LN05 & 0.45 & 37.97 & -0.40 & 0.49 & 33.99 & -1.06 & 0.63 & 3.14 & 0.74 \\ 
+			reduced sample & InvGamma(2,2) & 0.71 & 13.53 & -0.32 & 0.70 & 11.16 & -0.05 & 0.26 & 31.32 & -0.78 \\ 
+			& InvGamma(1,1) & 0.46 & 31.79 & -0.08 & 0.57 & 27.62 & -0.31 & 0.30 & 20.51 & 0.17 \\ 
+			& LogNorm(0,1) & 0.28 & 57.84 & 1.54 & 0.40 & 38.27 & 1.73 & 0.24 & 27.89 & 0.66 \\ 
+			& LogNorm(0,5) & 0.45 & 37.97 & -0.40 & 0.49 & 33.99 & -1.06 & 0.63 & 3.14 & 0.74 \\ 
 			\bottomrule
 	\end{tabular}}
 \end{table}
@@ -878,84 +941,84 @@ We present the summary of our analyses with Gumbel copula in \cref{tab:gumbel:su
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:gumbel:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_depth.pdf}
-	\caption{Trace plot of depth for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:gumbel:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case1_gumbel_like.pdf}
-	\caption{Trace plot of likelihood for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 1 (tree structure) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case1:gumbel:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:gumbel:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_depth.pdf}
-	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:gumbel:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case2_gumbel_like.pdf}
-	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 2 (\cref{eq:synth:tau_x:case2}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case2:gumbel:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:gumbel:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_depth.pdf}
-	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:gumbel:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case3_gumbel_like.pdf}
-	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 3 (\cref{eq:synth:tau_x:case3}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case3:gumbel:like}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_nterm.pdf}
-	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of $n_L$ for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:gumbel:nterm}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_depth.pdf}
-	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of depth for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:gumbel:depth}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.75\linewidth]{trace_case4_gumbel_like.pdf}
-	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvGamma(1,1), top right denotes analysis with InvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
+	\caption{Trace plot of likelihood for case 4 (\cref{eq:synth:tau_x:case4}) with Gumbel copula. The top left denotes analysis with InvInvGamma(1,1), top right denotes analysis with InvInvGamma(2,2), bottom left denotes analysis with LogNormal(0,1) and bottom right denotes analysis with LogNormal(0,5).}
 	\label{fig:case4:gumbel:like}
 \end{figure}
 
