@@ -585,35 +585,11 @@ acceptance.prob.list_copula <- function(move_list, old.tree, X, U1, U2, prior_in
                 trans.ratio = 1, alpha = 1))
   }
   
-  # term_node_old <- get_terminal_nodes_idx(old.tree)
-  # term_node_new <- get_terminal_nodes_idx(move_list$tree)
-  # 
-  # term_val_old <- sapply(term_node_old, function(i)unique(get_value_tree(old.tree, get_obs_at_node(i, X, old.tree,1,X))))
-  # term_val_new <- sapply(term_node_new, function(i)unique(get_value_tree(move_list$tree, get_obs_at_node(i, X, move_list$tree,1,X))))
-  # 
-  # prop_dist_old <- assign_term_node_proposal_cond_copula(old.tree,
-  #                                                        X, U1, U2, 
-  #                                                        prop_mu = prop_mu, prop_sigma = prop_sigma, 
-  #                                                        log_like_fun = log_like_fun, 
-  #                                                        log_prior_fun = log_prior_fun)
-  # 
-  # prop_dist_new <- assign_term_node_proposal_cond_copula(move_list$tree, 
-  #                                                        X, U1, U2, 
-  #                                                        prop_mu = prop_mu, prop_sigma = prop_sigma, 
-  #                                                        log_like_fun = log_like_fun, 
-  #                                                        log_prior_fun = log_prior_fun)
-  # 
-  # prop_dist_old_val <- prod(dnorm(term_val_old, mean = prop_dist_old[,1], sd = prop_dist_old[,2]))
-  # prop_dist_new_val <- prod(dnorm(term_val_new, mean = prop_dist_new[,1], sd = prop_dist_new[,2]))
-  # 
-  # term_val_prior_old <- (sum(sapply(term_val_old, log_prior_fun)))
-  # term_val_prior_new <- (sum(sapply(term_val_new, log_prior_fun)))
-  
   prior.tree.old <- prior_input_list$fun(old.tree, prior_input_list$param[1], prior_input_list$param[2])
   prior.tree.new <- prior_input_list$fun(move_list$tree, prior_input_list$param[1], prior_input_list$param[2])
   
-  prior.old <- prior.tree.old*prior.split.rule(old.tree, X, cont.unif = cont.unif) #* exp(term_val_prior_old)
-  prior.new <- prior.tree.new*prior.split.rule(move_list$tree, X, cont.unif = cont.unif) #* exp(term_val_prior_new)
+  prior.old <- prior.tree.old*prior.split.rule(old.tree, X, cont.unif = cont.unif) 
+  prior.new <- prior.tree.new*prior.split.rule(move_list$tree, X, cont.unif = cont.unif) 
   
   # likelihood 
   log.lik.old <- cart_log_lik_copula(tree_top = old.tree, U1 = U1, U2 = U2, X = X, log_like_fun = log_like_fun)
@@ -639,9 +615,8 @@ acceptance.prob.list_copula <- function(move_list, old.tree, X, U1, U2, prior_in
   }
   prior.ratio <- (prior.new/prior.old)
   lik.ratio <- exp(log.lik.new - log.lik.old)
-  trans.ratio <- (prob.new.to.old/prob.old.to.new)#*(prop_dist_old_val/prop_dist_new_val)
-  acc.prob <- (prior.new/prior.old) * (prob.new.to.old/prob.old.to.new) *
-    exp(log.lik.new - log.lik.old)# + term_val_prior_new - term_val_prior_old + prop_dist_old_val-prop_dist_new_val)
+  trans.ratio <- (prob.new.to.old/prob.old.to.new)
+  acc.prob <- (prior.new/prior.old) * (prob.new.to.old/prob.old.to.new) * exp(log.lik.new - log.lik.old)
   
   return(list(prior.ratio = prior.ratio, lik.ratio = lik.ratio, 
               trans.ratio = trans.ratio, alpha = min(1, acc.prob)))
@@ -699,31 +674,32 @@ loglik_gaussian <- function(rho, u, v) {
   return(log_lik)
 }
 
+d_biv_t_log <- function(x, y, rho, nu) {
+  Q <- (x^2 - 2 * rho * x * y + y^2) / (1 - rho^2)
+  term1 <- lgamma((nu + 2)/2) - lgamma(nu/2)
+  term2 <- -log(pi * nu) - 0.5 * log(1 - rho^2)
+  term3 <- -((nu + 2)/2) * log(1 + Q / nu)
+  return(term1 + term2 + term3)
+}
+
 loglik_t <- function(rho, u, v, df = 3) {
   
   if(any(abs(rho)>=1)) return(-Inf)
   
-  # Inverse t CDF (quantiles)
   x <- qt(u, df)
   y <- qt(v, df)
-  
+
   # Univariate t densities
   fx <- dt(x, df)
   fy <- dt(y, df)
-  
-  # Bivariate t density (manual formula)
-  denom <- sqrt(1 - rho^2)
-  z <- (x^2 - 2 * rho * x * y + y^2) / (df * (1 - rho^2))
-  
-  A <- gamma((df + 2) / 2) / (gamma(df / 2) * df * pi * denom)
-  B <- (1 + z)^(-(df + 2) / 2)
-  f_biv <- A * B
-  
-  # Copula density
-  copula_density <- f_biv / (fx * fy)
-  
+
+  f_xy <- d_biv_t_log(x, y, rho, df)
+
+  copula_density <- f_xy - fx - fy
+
   # Log-likelihood
-  log_lik <- sum(log(copula_density))
+  log_lik <- sum((copula_density))
+  
   return(log_lik)
 }
 
@@ -761,6 +737,7 @@ logposterior <- function(rho, u, v, log_like_fun, log_prior_fun){
 }
 
 param_gauss <- function(tau) return(sin(tau*pi/2))
+param_t <- function(tau) return(sin(tau*pi/2))
 param_gumbel <- function(tau) return(1/(1-tau))
 param_clayton <- function(tau) return((2*tau)/(1-tau))
 
@@ -786,37 +763,4 @@ conv_diag <- function(post_data, panel_name, n.burn, n.thin){
   
   return(summ_dat)
   
-}
-
-slice_sampler <- function(log_post, x0, w = 1, N = 1) {
-  samples <- numeric(N)
-  x <- x0
-  
-  for (i in 1:N) {
-    # Evaluate log density at current position
-    log_y <- log_post(x) - rexp(1)
-    
-    # Stepping out procedure
-    L <- x - runif(1, 0, w)
-    R <- L + w
-    while (log_post(L) > log_y) L <- L - w
-    while (log_post(R) > log_y) R <- R + w
-    
-    # Sample new x from the slice
-    repeat {
-      x_new <- runif(1, L, R)
-      if (log_post(x_new) >= log_y) break
-      # Shrink the interval
-      if (x_new < x) {
-        L <- x_new
-      } else {
-        R <- x_new
-      }
-    }
-    
-    x <- x_new
-    samples[i] <- x
-  }
-  
-  return(samples)
 }

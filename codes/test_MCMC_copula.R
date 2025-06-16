@@ -837,16 +837,16 @@ FI_gauss <- function(theta, u, v) {
   
   if(any(abs((2*sigmoid(theta)-1))>=1)) return(0)
   
-  f_deriv <- BiCopDeriv(u,v,1,(2*sigmoid(theta)-1))
-  f_deriv2 <- BiCopDeriv2(u,v,1,(2*sigmoid(theta)-1))
+  # f_deriv <- BiCopDeriv(u,v,1,(2*sigmoid(theta)-1))
+  # f_deriv2 <- BiCopDeriv2(u,v,1,(2*sigmoid(theta)-1))
 
   # f<- BiCopPDF(u,v,1,(2*sigmoid(theta)-1))
   # 
   # FI <- (f_deriv2 / f - f_deriv^2/f^2) * (2*sigmoid(theta) * (1-sigmoid(theta))) + (f_deriv/f) * (2*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
   
-  FI <- (f_deriv2) * (2*sigmoid(theta) * (1-sigmoid(theta)))^2 + (f_deriv) * (2*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+  # FI <- (f_deriv2) * (2*sigmoid(theta) * (1-sigmoid(theta)))^2 + (f_deriv) * (2*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
   
-  # FI <- (1+((2*sigmoid(theta)-1)^2))/(1-((2*sigmoid(theta)-1)^2))^2
+  FI <- ((1+((2*sigmoid(theta)-1)^2))/(1-((2*sigmoid(theta)-1)^2))^2) *(2*sigmoid(theta) * (1-sigmoid(theta)))^2
     
   return(sum(FI))
 }
@@ -859,8 +859,8 @@ FD_log_gauss <- function(theta, u, v) {
   
   f<- BiCopPDF(u,v,1,(2*sigmoid(theta)-1))
   
-  # FD <- (f_deriv / f) * (2*sigmoid(theta) * (1-sigmoid(theta)))
-  FD <- (f_deriv) * (2*sigmoid(theta) * (1-sigmoid(theta)))
+  FD <- (f_deriv / f) * (2*sigmoid(theta) * (1-sigmoid(theta)))
+  # FD <- (f_deriv) * (2*sigmoid(theta) * (1-sigmoid(theta)))
   
   return(sum(FD))
 }

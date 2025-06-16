@@ -1,27 +1,27 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
-  n.iter_par <- 1000
-  test_case = 4
+  n.iter_par <- 6000
+  test_case = 3
   for (i in test_case) {
-    assign(paste0("gumbel_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
+    assign(paste0("clayton_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
                                                                    X = X_obs.norm,
-                                                                   U1 = get(paste0("copula_uu_gumbel_",i))[,1],
-                                                                   U2 = get(paste0("copula_uu_gumbel_",i))[,2],
+                                                                   U1 = get(paste0("copula_uu_clayton_",i))[,1],
+                                                                   U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
                                                                    starting.tree = NULL,
                                                                    cont.unif = cont.unif_par,
                                                                    include.split = incl.split_par,
-                                                                   prop_mu = 1, prop_sigma = .7,
-                                                                   theta_param_1 = 1, theta_param_2 = 3,
+                                                                   prop_mu = 0, prop_sigma = 3,
+                                                                   theta_param_1 = 0, theta_param_2 = 1,
                                                                    prior_type = "LN",
-                                                                   cop_type = "gumbel"))
+                                                                   cop_type = "clayton"))
   }
 }
 
 if(T){
-  model.list.def <- list(get(paste0("gumbel_mcmc_lb.def_unif_",test_case))#,
+  model.list.def <- list(get(paste0("clayton_mcmc_lb.def_unif_",test_case))#,
     # get(paste0("t_mcmc_lb.def_half_",test_case)),
     # get(paste0("t_mcmc_lb.def_jeff_",test_case)),
     # get(paste0("t_mcmc_lb.def_two_",test_case))
@@ -34,6 +34,10 @@ if(T){
     # 'LB - default - two'
   )
   
+  n.born.out.par <- 1000
+  n.thin <- 10
+  n.chain_par <- 1
+  
   # extract depth, number of terminal nodes and loglik of all the trees
   depth.df <- apply_fun_models(fun_ = get_depth,
                                mcmc.list = model.list.def,
@@ -43,10 +47,10 @@ if(T){
                                mcmc.list = model.list.def,
                                born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_gumbel_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_gumbel_",i))[,2],
+  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_clayton_",i))[,1],
+                                                              U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                               X = X_obs.norm, 
-                                                              log_like_fun = loglik_gumbel), #((2*sigmoid(rho)-1), u, v) 
+                                                              log_like_fun = loglik_clayton), #((2*sigmoid(rho)-1), u, v) 
                               mcmc.list = model.list.def, 
                               born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
@@ -54,8 +58,6 @@ if(T){
                                  mcmc.list = model.list.def,
                                  born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
-  n.born.out.par <- 500
-  n.thin <- 1
   
   depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 1)))
   depth_conv_red <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, n.born.out.par, n.thin)))
@@ -143,7 +145,7 @@ if(T){
   pred_cond = do.call(rbind,pred_cond)
   
   pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_gumbel(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
