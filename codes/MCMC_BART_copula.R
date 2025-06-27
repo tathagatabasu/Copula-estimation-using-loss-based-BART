@@ -764,3 +764,4 @@ conv_diag <- function(post_data, panel_name, n.burn, n.thin){
   return(summ_dat)
   
 }
+

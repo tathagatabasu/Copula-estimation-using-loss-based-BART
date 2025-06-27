@@ -1,10 +1,12 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
-  n.iter_par <- 6000
+  n.iter_par <- 2000
+  n.chain_par <- 1
   test_case = 3
   for (i in test_case) {
     assign(paste0("clayton_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
+                                                                   n.tree = 3,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -13,9 +15,9 @@ if(T){
                                                                    starting.tree = NULL,
                                                                    cont.unif = cont.unif_par,
                                                                    include.split = incl.split_par,
-                                                                   prop_mu = 0, prop_sigma = 3,
+                                                                   prop_mu = 0, prop_sigma = 1,
                                                                    theta_param_1 = 0, theta_param_2 = 1,
-                                                                   prior_type = "LN",
+                                                                   prior_type = "N",
                                                                    cop_type = "clayton"))
   }
 }
@@ -34,10 +36,76 @@ if(T){
     # 'LB - default - two'
   )
   
-  n.born.out.par <- 1000
-  n.thin <- 10
-  n.chain_par <- 1
   
+  list_pred_lb_10 <- lapply(1:length(model.list.def$`LB - default - unif`$trees), \(idx) BART_calculate_pred(model.list.def$`LB - default - unif`$trees[[idx]], X_obs_pred.norm))
+  
+  pred_val = do.call(rbind,list_pred_lb_10)
+  
+  n.born.out.par <- 1000
+  n.thin <- 1
+  
+  pred_val_vec = as.vector(pred_val[(n.born.out.par+1):nrow(pred_val),])
+  
+  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  
+  theta_true = rep(param_clayton(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  
+  pred_cond <- data.frame("obs" = pred_obs)
+  pred_cond$obs = pred_obs
+  pred_cond$theta_true = theta_true
+  pred_cond$y = link_clayton(pred_val_vec)
+  
+  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
+  
+  pred_cond_mod = pred_cond_thin %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
+  
+  ggplot(pred_cond_mod) +
+    geom_line(aes(obs, theta_mean)) +
+    geom_line(aes(obs, theta_true), col = 2) +
+    geom_line(aes(obs, theta_q975), col = 3) +
+    geom_line(aes(obs, theta_q025), col = 3) +
+    # facet_wrap(facets = ~panel.name, ncol = 2) +
+    xlab('X') +
+    ylab('estimated rho') +
+    theme_classic()
+  
+  
+  pred_cond_stat = pred_cond_mod %>%
+    mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
+    mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
+    mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
+    dplyr::select(c(RMSE, CI.length, CI.cov))
+  
+  pred_cond_summary = colMeans(pred_cond_stat[,-1])
+  
+  # nterm
+  
+  nt_lb_10.df <- nterm_BART(model.list.def$`LB - default - unif`)
+  nt_lb_10.df_burn <- nt_lb_10.df[nt_lb_10.df$idx >= n.born.out.par,]
+  
+  pl_nl_10 <- ggplot(nt_lb_10.df_burn, aes(trees, nn)) + 
+    geom_boxplot() + 
+    ylab('') + 
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_nl_10
+  
+  # depth
+  
+  depth_lb_10.df <- depth_BART(model.list.def$`LB - default - unif`)
+  depth_lb_10.df_burn <- depth_lb_10.df[depth_lb_10.df$idx >= n.born.out.par,]
+  
+  ggplot(depth_lb_10.df_burn, aes(trees, nn)) + 
+    geom_boxplot() + 
+    ylab('Depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  
+  n.born.out.par <- 0
   # extract depth, number of terminal nodes and loglik of all the trees
   depth.df <- apply_fun_models(fun_ = get_depth,
                                mcmc.list = model.list.def,
@@ -50,7 +118,7 @@ if(T){
   like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                               U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                               X = X_obs.norm, 
-                                                              log_like_fun = loglik_clayton), #((2*sigmoid(rho)-1), u, v) 
+                                                              log_like_fun = function(rho, u, v) loglik_clayton(exp(rho), u, v)), #((2*sigmoid(rho)-1), u, v) 
                               mcmc.list = model.list.def, 
                               born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
@@ -87,7 +155,7 @@ if(T){
                                 nterm = nterm.df_thin$y,
                                 depth = depth.df_thin$y,
                                 acc_rate = acc.df_thin$y)
-  
+  # df.sum.def_thin <- df.sum.def
   hist.nl <- ggplot(nterm.df_thin) +
     geom_histogram(aes(x = y, y = after_stat(density)),
                    binwidth = 1, color = 'black', fill = 'white') +
@@ -135,44 +203,6 @@ if(T){
   trace.depth
   trace.loglik
   
-  # prediction
-  
-  pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)((get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]))),
-                                                                          mcmc.list = model.list.def,
-                                                                          born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
-  
-  
-  pred_cond = do.call(rbind,pred_cond)
-  
-  pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  
-  pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
-  
-  pred_cond_mod = pred_cond_thin %>%
-    group_by(panel.name, obs, theta_true) %>%
-    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
-  
-  ggplot(pred_cond_mod) +
-    geom_line(aes(obs, theta_mean)) +
-    geom_line(aes(obs, theta_true), col = 2) +
-    geom_line(aes(obs, theta_q975), col = 3) +
-    geom_line(aes(obs, theta_q025), col = 3) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('X') +
-    ylab('estimated rho') +
-    theme_classic()
-  
-  pred_cond_stat = pred_cond_mod %>%
-    group_by(panel.name)%>%
-    mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
-    mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
-    mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
-    dplyr::select(c(RMSE, CI.length, CI.cov))
-  
-  pred_cond_summary = pred_cond_stat %>%
-    group_by(panel.name)%>%
-    summarise_all(mean)
   
   tree_stat_summary = df.sum.def_thin %>%
     group_by(panel.name)%>%
