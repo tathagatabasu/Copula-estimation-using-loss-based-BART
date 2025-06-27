@@ -26,8 +26,8 @@ set.seed(1e5)
 
 load("analysis_sim_dat_new.RData")
 
-if(F){
-  n <- 100
+if(T){
+  n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
   # normalise predictors 

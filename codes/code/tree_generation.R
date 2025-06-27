@@ -226,7 +226,6 @@ gen_node_condition <- function(node.idx, tree_top, X,
                                  X = X,
                                  tree_top = tree_top,
                                  X.orig = X)
-  print(obs.at.node)
   subtree.at.node <- get_offsprings(node.idx, tree_top)
   if(for.grow){
     n.term.left <- 1
@@ -254,7 +253,7 @@ gen_node_condition <- function(node.idx, tree_top, X,
   } else{
     if(is.numeric(split.set)){
       if(cont.unif){
-        cat('extremes split set: ', min(split.set), ',', max(split.set), '\n')
+        # cat('extremes split set: ', min(split.set), ',', max(split.set), '\n')
         split.value <- runif(1, min = min(split.set), max = max(split.set))
       } else {
         split.value <- sample(split.set, 1)    

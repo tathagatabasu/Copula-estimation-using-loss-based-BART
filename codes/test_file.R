@@ -1,15 +1,15 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
-  n.iter_par <- 2000
+  n.iter_par <- 500
   n.chain_par <- 1
   test_case = 3
   for (i in test_case) {
-    assign(paste0("clayton_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
+    assign(paste0("t_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
-                                                                   n.tree = 3,
+                                                                   n.tree = 10,
                                                                    X = X_obs.norm,
-                                                                   U1 = get(paste0("copula_uu_clayton_",i))[,1],
-                                                                   U2 = get(paste0("copula_uu_clayton_",i))[,2],
+                                                                   U1 = get(paste0("copula_uu_t_",i))[,1],
+                                                                   U2 = get(paste0("copula_uu_t_",i))[,2],
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
                                                                    starting.tree = NULL,
@@ -18,12 +18,12 @@ if(T){
                                                                    prop_mu = 0, prop_sigma = 1,
                                                                    theta_param_1 = 0, theta_param_2 = 1,
                                                                    prior_type = "N",
-                                                                   cop_type = "clayton"))
+                                                                   cop_type = "t"))
   }
 }
 
 if(T){
-  model.list.def <- list(get(paste0("clayton_mcmc_lb.def_unif_",test_case))#,
+  model.list.def <- list(get(paste0("t_mcmc_lb.def_unif_",test_case))#,
     # get(paste0("t_mcmc_lb.def_half_",test_case)),
     # get(paste0("t_mcmc_lb.def_jeff_",test_case)),
     # get(paste0("t_mcmc_lb.def_two_",test_case))
@@ -41,19 +41,19 @@ if(T){
   
   pred_val = do.call(rbind,list_pred_lb_10)
   
-  n.born.out.par <- 1000
+  n.born.out.par <- 250
   n.thin <- 1
   
   pred_val_vec = as.vector(pred_val[(n.born.out.par+1):nrow(pred_val),])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_clayton(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep(param_t(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_clayton(pred_val_vec)
+  pred_cond$y = link_t(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -115,10 +115,10 @@ if(T){
                                mcmc.list = model.list.def,
                                born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_clayton_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_clayton_",i))[,2],
+  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_t_",i))[,1],
+                                                              U2 = get(paste0("copula_uu_t_",i))[,2],
                                                               X = X_obs.norm, 
-                                                              log_like_fun = function(rho, u, v) loglik_clayton(exp(rho), u, v)), #((2*sigmoid(rho)-1), u, v) 
+                                                              log_like_fun = function(rho, u, v) loglik_t(exp(rho), u, v)), #((2*sigmoid(rho)-1), u, v) 
                               mcmc.list = model.list.def, 
                               born.out.pc = 0, n.chain = n.chain_par, sample.pc = n.iter_par)
   
