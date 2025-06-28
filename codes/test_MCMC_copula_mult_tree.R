@@ -29,9 +29,9 @@ multichain_MCMC_copula <- function(n.iter, n.chain,n.tree = 10,
   tree_list <- lapply(chain.list, function(x) x$trees)
   tree_list_comb <- Reduce(c, tree_list)
   
-  df_list <- lapply(1:n.chain, 
-                    function(x) chain.list[[x]]$df.res %>% mutate(chain = x))
-  df.res <- Reduce(rbind, df_list)
+  df_list <- lapply(chain.list, 
+                    function(x) x$df_res)
+  df.res <- Reduce(c, df_list)
   return(list(trees = tree_list_comb, df.res = df.res))
 }
 
@@ -86,16 +86,16 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
   # initialise output
   starting.tree.list <- lapply(1:n.tree, \(x) NULL)
   last.tree.list <- starting.tree.list
+  df_res.list <- list()
   idx.tree.vec <- 1:n.tree
   res_theta_list <- lapply(1:n.tree, \(x) rep(0, length(X)))
-  nterm_tree <- lapply(1:n.tree, \(x) c() )
-  depth_tree <- lapply(1:n.tree, \(x) c() )
   
   sig_2 <- rinvgamma(n.tree, shape = 0.01, rate = 0.01)
   
   # params for computation
   
   trees.for.iter <- list()
+  df_res.for.iter <- list()
   
   st_time = Sys.time()
   
@@ -123,25 +123,17 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
         
         new_tree <- new_tree_single$tree
         
-        sig_2[idx.tree] <- new_tree_single$sig_2
+        sig_2[idx.tree] <- as.numeric(new_tree_single$df_res$sig2)
         
         last.tree.list[[idx.tree]] <- new_tree
-        dt = get_depth(new_tree)
-        nt = get_num_terminal_nodes(new_tree)
-        # if(verbose){
-        cat('Depth: ', dt, '\n')
-        cat('Terminal Nodes: ', nt, '\n')
-        # }
+        df_res.list[[idx.tree]] <- new_tree_single$df_res
         theta_pred <- vapply(1:nrow(X), \(x) g.T(new_tree, X[x,]), 0)
         res_theta_list[[idx.tree]] <- theta_pred
         
-        nterm_tree[[idx.tree]] <- c(nterm_tree[[idx.tree]] , nt)
-        depth_tree[[idx.tree]] <- c(depth_tree[[idx.tree]] , nt)
-        # if(verbose){print('----------------')}
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
-      #average_res <- c(average_res, mean(Y - Reduce('+', res_theta_list)))
-      # if(verbose){print('##############')}
+      df_res.for.iter[[idx.iter]] <- df_res.list
+      
     }
   }else{
     for(idx.iter in 1:n.iter){
@@ -167,32 +159,24 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
         
         new_tree <- new_tree_single$tree
         
-        sig_2[idx.tree] <- new_tree_single$sig_2
+        sig_2[idx.tree] <- as.numeric(new_tree_single$df_res$sig2)
         
         last.tree.list[[idx.tree]] <- new_tree
-        dt = get_depth(new_tree)
-        nt = get_num_terminal_nodes(new_tree)
-        # if(verbose){
-        cat('Depth: ', dt, '\n')
-        cat('Terminal Nodes: ', nt, '\n')
-        # }
+        df_res.list[[idx.tree]] <- new_tree_single$df_res
         theta_pred <- vapply(1:nrow(X), \(x) g.T(new_tree, X[x,]), 0)
         res_theta_list[[idx.tree]] <- theta_pred
         
-        nterm_tree[[idx.tree]] <- c(nterm_tree[[idx.tree]] , nt)
-        depth_tree[[idx.tree]] <- c(depth_tree[[idx.tree]] , nt)
-        # if(verbose){print('----------------')}
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
-      #average_res <- c(average_res, mean(Y - Reduce('+', res_theta_list)))
-      # if(verbose){print('##############')}
+      df_res.for.iter[[idx.iter]] <- df_res.list
+      
     }
   }
   
   time_diff <- Sys.time() - st_time
   print(time_diff)
   return(list(trees = trees.for.iter, 
-              time = time_diff))
+              df_res = df_res.for.iter))
 }
 
 BART_single_step <- function(X, res_theta, U1, U2, 
@@ -270,17 +254,6 @@ BART_single_step <- function(X, res_theta, U1, U2,
       }
   }
   
-  
-  # new.tree <- assign_term_node_values_cond_copula(tree_top = new.tree.list$tree,
-  #                                                 X = X, U1 = U1, U2 = U2, res_theta = res_theta,
-  #                                                 prop_mu = prop_mu,
-  #                                                 prop_sigma = prop_sigma,
-  #                                                 log_like_fun = log_like_fun,
-  #                                                 log_prior_fun = log_prior_fun,
-  #                                                 fisher_fun_log = fisher_fun_log,
-  #                                                 fd_fun_log = fd_fun_log,
-  #                                                 theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
-  
   new.tree_mu.old <- new.tree.list$tree
   term_node_old <- get_terminal_nodes_idx(new.tree_mu.old)
   term_val_old <- sapply(term_node_old, function(i)unique(get_value_tree(new.tree_mu.old, get_obs_at_node(i, X, new.tree_mu.old,1,X))))
@@ -316,7 +289,15 @@ BART_single_step <- function(X, res_theta, U1, U2,
   
   sig_2 <- rinvgamma(1, shape = (0.01 + length(term_vals)/2), rate = (0.01 + sum(term_vals^2)/2))
   
-  return(list("tree" = new.tree, "sig_2" = sig_2))
+  matrix.res <- matrix(c(move.type, get_depth(rt_old), get_num_terminal_nodes(rt_old),
+                         new.tree.list$prior.ratio, new.tree.list$lik.ratio, 
+                         new.tree.list$trans.ratio, new.tree.list$acc.prob, 
+                         new.tree.list$accepted, sig_2),nrow = 1)
+  
+  colnames(matrix.res) <- c('move', 'old.depth', 'old.nterm', 'prior.ratio', 
+                            'lik.ratio', 'trans.ratio', 'acc.prob', 'acceptance','sig2')
+  
+  return(list("tree" = new.tree, "df_res" = data.frame(matrix.res)))
   
 }
 
@@ -504,38 +485,6 @@ assign_term_node_values_cond_copula <- function(tree_top, # check input
                                                 theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
   }
   return(tree_top)
-}
-
-assign_term_node_proposal_cond_copula <- function(tree_top, # check input
-                                                  X, U1, U2, res_theta, 
-                                                  prop_mu, prop_sigma, 
-                                                  log_like_fun, 
-                                                  log_prior_fun,
-                                                  fisher_fun_log,
-                                                  fd_fun_log,
-                                                  theta_param_1, theta_param_2){
-  term.node.idx <- get_terminal_nodes_idx(tree_top)
-  
-  prop_par <- c()
-  for(node.idx in term.node.idx){
-    obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
-    U1.at.node <- U1[as.numeric(rownames(obs.at.node))]
-    U2.at.node <- U2[as.numeric(rownames(obs.at.node))]
-    res_theta.at.node <- res_theta[as.numeric(rownames(obs.at.node))]
-    c <- sample.cond.mu.copula(tree_top = tree_top, # check input
-                               node.idx = node.idx, 
-                               X = X, U1 = U1, U2 = U2, res_theta, U1.at.node=U1.at.node, 
-                               U2.at.node=U2.at.node, res_theta.at.node = res_theta.at.node,
-                               prop_mu = prop_mu, prop_sigma = prop_sigma, 
-                               log_like_fun = log_like_fun, 
-                               log_prior_fun = log_prior_fun,
-                               fisher_fun_log = fisher_fun_log,
-                               fd_fun_log = fd_fun_log,
-                               theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
-    
-    prop_par <- rbind(prop_par, unlist(c)[-1])
-  }
-  return(prop_par)
 }
 
 set_term_node_value_cond_copula <- function(node.idx, tree_top, # check input
@@ -938,11 +887,11 @@ set_term_node_value_copula <- function(node.idx, tree_top,
   if(is.null(tree_top$left) & is.null(tree_top$right)){
     if(tree_top$node.idx == node.idx){
       if(cop_type == "gauss" || cop_type == "t"){
-        tree_top$value = rnorm(1, mean = prop_mu, sd = prop_sigma)
+        tree_top$value = link_gauss(rnorm(1, mean = prop_mu, sd = prop_sigma))
       } else if(cop_type == "gumbel") {
-        tree_top$value = rnorm(1, mean = prop_mu, sd = prop_sigma)
+        tree_top$value = link_gumbel(rnorm(1, mean = prop_mu, sd = prop_sigma))
       } else if(cop_type == "clayton") {
-        tree_top$value = rnorm(1, mean = prop_mu, sd = prop_sigma) 
+        tree_top$value = link_clayton(rnorm(1, mean = prop_mu, sd = prop_sigma)) 
       }
       return(tree_top)
     } else {
@@ -1173,6 +1122,14 @@ depth_BART <- function(bart_tree_list){
                                                                              \(x) get_depth(x),
                                                                              0),
                                                                  trees = factor( 1:length(bart_tree_list$trees[[idx]]))))
+  Reduce(rbind, ll)
+}
+
+acc_BART <- function(bart_tree_list){
+  ll <- lapply(1:length(bart_tree_list$df.res), \(idx) data.frame(idx = idx,
+                                                                 nn = unlist(lapply(bart_tree_list$df.res[[idx]], 
+                                                                                    \(x)as.factor(x$acceptance))),
+                                                                 trees = factor( 1:length(bart_tree_list$df.res[[idx]]))))
   Reduce(rbind, ll)
 }
 

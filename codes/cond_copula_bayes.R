@@ -1,7 +1,8 @@
 # codes and packages
 source('code/import_functions.R')
 source('mclapply.R')
-source('MCMC_BART_copula.R')
+# source('MCMC_BART_copula.R')
+source('test_MCMC_copula_mult_tree.R')
 library(data.tree)
 library(dplyr)
 library(ggplot2)
@@ -26,7 +27,7 @@ set.seed(1e5)
 
 load("analysis_sim_dat_new.RData")
 
-if(T){
+if(F){
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
@@ -128,9 +129,9 @@ if(T){
   
   # mcmc params
   n.chain_par <- 100
-  n.iter_par <- 6000
+  n.iter_par <- 2000
   n.born.out.par <- 1000
-  n.thin <- 10
+  n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
   moves.prob_par <- c(0.1, 0.3, 0.3, 0.3)
@@ -145,6 +146,7 @@ if(F){
   for (i in 1:4) {
     assign(paste0("gauss_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                   n.iter = n.iter_par,
+                                                                  n.tree = 1,n.cores = 10,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -376,6 +378,7 @@ if(F){
   for (i in 1:4) {
     assign(paste0("t_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                               n.iter = n.iter_par,
+                                                              n.tree = 1,n.cores = 10,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -607,6 +610,7 @@ if(F){
   for (i in 1:4) {
     assign(paste0("gumbel_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
+                                                                   n.tree = 1,n.cores = 10,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -838,6 +842,7 @@ if(F){
   for (i in 3) {
     assign(paste0("clayton_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                     n.iter = n.iter_par,
+                                                                    n.tree = 1,n.cores = 10,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],

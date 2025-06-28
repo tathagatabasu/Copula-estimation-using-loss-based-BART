@@ -1,12 +1,12 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
-  n.iter_par <- 500
-  n.chain_par <- 1
-  test_case = 3
+  n.iter_par <- 2000
+  n.chain_par <- 10
+  test_case = 4
   for (i in test_case) {
-    assign(paste0("t_mcmc_lb.def_unif_",i), MCMC_copula(#n.chain = n.chain_par,
+    assign(paste0("t_mcmc_lb.def_unif_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
-                                                                   n.tree = 10,
+                                                                   n.tree = 1,n.cores = 10,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -41,10 +41,10 @@ if(T){
   
   pred_val = do.call(rbind,list_pred_lb_10)
   
-  n.born.out.par <- 250
+  n.born.out.par <- 1000
   n.thin <- 1
   
-  pred_val_vec = as.vector(pred_val[(n.born.out.par+1):nrow(pred_val),])
+  pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
@@ -80,14 +80,30 @@ if(T){
   
   pred_cond_summary = colMeans(pred_cond_stat[,-1])
   
+  # like
+  
+  like_val <- apply(pred_val, 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",i))[,1], get(paste0("copula_uu_t_",i))[,2], df = 3))
+  
+  
+  like_df <-data.frame("log-like" = like_val)
+  like_df$trees <- 1:(n.chain_par*n.iter_par)
+  
+  like_df_burn <- like_df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
+  
+  ggplot(like_df_burn, aes(trees, log.like)) + 
+    geom_line() + 
+    ylab('log-likelihood') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
   # nterm
   
   nt_lb_10.df <- nterm_BART(model.list.def$`LB - default - unif`)
-  nt_lb_10.df_burn <- nt_lb_10.df[nt_lb_10.df$idx >= n.born.out.par,]
+  nt_lb_10.df_burn <- nt_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
   
   pl_nl_10 <- ggplot(nt_lb_10.df_burn, aes(trees, nn)) + 
     geom_boxplot() + 
-    ylab('') + 
+    ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
   
@@ -96,11 +112,23 @@ if(T){
   # depth
   
   depth_lb_10.df <- depth_BART(model.list.def$`LB - default - unif`)
-  depth_lb_10.df_burn <- depth_lb_10.df[depth_lb_10.df$idx >= n.born.out.par,]
+  depth_lb_10.df_burn <- depth_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
   
   ggplot(depth_lb_10.df_burn, aes(trees, nn)) + 
     geom_boxplot() + 
-    ylab('Depth') +
+    ylab('depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  
+  # acceptance
+  
+  acc_lb_10.df <- acc_BART(model.list.def$`LB - default - unif`)
+  acc_lb_10.df_burn <- acc_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
+  
+  ggplot(acc_lb_10.df_burn, aes(trees, nn)) + 
+    geom_boxplot() + 
+    ylab('acceptance') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
   
