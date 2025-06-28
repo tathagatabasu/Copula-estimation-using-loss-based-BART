@@ -7,10 +7,7 @@ library(data.tree)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
-library(CondCopulas)
 library(VineCopula)
-library(latex2exp)
-library(ggplot2)
 library(MASS)   # For multivariate normal functions
 library(coda)   # For MCMC diagnostics
 library(plot3D)
@@ -27,7 +24,7 @@ set.seed(1e5)
 
 load("analysis_sim_dat_new.RData")
 
-if(F){
+if(T){
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
@@ -128,13 +125,13 @@ if(F){
   tau_true_pred_4 <- 0.6 - 0.3 * sin(2*X_obs_pred) + 0.2 * sin(4*X_obs_pred) + 0.3 * X_obs_pred^2
   
   # mcmc params
-  n.chain_par <- 100
-  n.iter_par <- 2000
+  n.chain_par <- 1
+  n.iter_par <- 6000
   n.born.out.par <- 1000
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
-  moves.prob_par <- c(0.1, 0.3, 0.3, 0.3)
+  moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
 }
@@ -142,11 +139,10 @@ if(F){
 ################################################################################
 # gaussian
 ################################################################################
-if(F){
+if(T){
   for (i in 1:4) {
-    assign(paste0("gauss_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
-                                                                  n.iter = n.iter_par,
-                                                                  n.tree = 1,n.cores = 10,
+    assign(paste0("gauss_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
+                                                                  n.tree = 1,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -155,10 +151,12 @@ if(F){
                                                                   starting.tree = NULL,
                                                                   cont.unif = cont.unif_par,
                                                                   include.split = incl.split_par,
-                                                                  prop_mu = 0, prop_sigma = .2,
-                                                                  theta_param_1 = 1.1, theta_param_2 = 1.1,
-                                                                  prior_type = "B",
+                                                                  prop_mu = 0, prop_sigma = 1,
+                                                                  theta_param_1 = 0, theta_param_2 = 1,
+                                                                  prior_type = "N",
                                                                   cop_type = "gauss"))
+    
+    cat('done case', i, '\n')
   }
   
 }
@@ -169,7 +167,7 @@ if(F){
   test_case = 3
   
   model.list.def <- list(
-    get(paste0("gauss_mcmc_lb.def_",test_case))
+    get(paste0("gauss_mcmc_lb.def_single_",test_case))
   )
   
   names(model.list.def) <- c(
@@ -376,9 +374,9 @@ if(F){
 if(F){
   
   for (i in 1:4) {
-    assign(paste0("t_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(
                                                               n.iter = n.iter_par,
-                                                              n.tree = 1,n.cores = 10,
+                                                              n.tree = 1,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -401,7 +399,7 @@ if(F){
   test_case = 1
   
   model.list.def <- list(
-    get(paste0("t_mcmc_lb.def_",test_case))
+    get(paste0("t_mcmc_lb.def_single_",test_case))
   )
   
   names(model.list.def) <- c(
@@ -608,9 +606,9 @@ if(F){
 if(F){
   
   for (i in 1:4) {
-    assign(paste0("gumbel_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(
                                                                    n.iter = n.iter_par,
-                                                                   n.tree = 1,n.cores = 10,
+                                                                   n.tree = 1,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -633,7 +631,7 @@ if(F){
   test_case = 4
   
   model.list.def <- list(
-    get(paste0("gumbel_mcmc_lb.def_",test_case))
+    get(paste0("gumbel_mcmc_lb.def_single_",test_case))
   )
   
   names(model.list.def) <- c(
@@ -840,9 +838,9 @@ if(F){
 if(F){
   
   for (i in 3) {
-    assign(paste0("clayton_mcmc_lb.def_",i), multichain_MCMC_copula(n.chain = n.chain_par,
+    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(
                                                                     n.iter = n.iter_par,
-                                                                    n.tree = 1,n.cores = 10,
+                                                                    n.tree = 1,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -868,7 +866,7 @@ if(F){
   test_case <- 3
   
   model.list.def <- list(
-    get(paste0("clayton_mcmc_lb.def_",test_case))
+    get(paste0("clayton_mcmc_lb.def_single_",test_case))
   )
   
   names(model.list.def) <- c(

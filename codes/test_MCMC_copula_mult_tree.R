@@ -3,33 +3,33 @@ library(mc2d)
 library(pracma)
 library(invgamma)
 multichain_MCMC_copula <- function(n.iter, n.chain,n.tree = 10,
-                                   X, U1, U2, 
-                                   prior_list, 
+                                   X, U1, U2,
+                                   prior_list,
                                    moves.prob = NULL, starting.tree = NULL,
                                    n.cores = min(n.chain, 5),
                                    cont.unif = TRUE,
                                    include.split,
-                                   prop_mu, prop_sigma, 
+                                   prop_mu, prop_sigma,
                                    theta_param_1, theta_param_2,
                                    prior_type, cop_type){
-  chain.list <- mclapply(1:n.chain, 
+  chain.list <- mclapply(1:n.chain,
                          \(x) MCMC_copula(n.iter = n.iter, n.tree = n.tree,
-                                          X = X, 
+                                          X = X,
                                           U1 = U1,
-                                          U2 = U2, 
-                                          prior_list = prior_list, 
-                                          moves.prob = moves.prob, 
+                                          U2 = U2,
+                                          prior_list = prior_list,
+                                          moves.prob = moves.prob,
                                           starting.tree = starting.tree,
                                           cont.unif = cont.unif,
                                           include.split = include.split,
-                                          prop_mu = prop_mu, prop_sigma = prop_sigma,  
-                                          theta_param_1 = theta_param_1, theta_param_2 = theta_param_2, 
+                                          prop_mu = prop_mu, prop_sigma = prop_sigma,
+                                          theta_param_1 = theta_param_1, theta_param_2 = theta_param_2,
                                           prior_type = prior_type, cop_type = cop_type),
                          mc.cores = n.cores)
   tree_list <- lapply(chain.list, function(x) x$trees)
   tree_list_comb <- Reduce(c, tree_list)
-  
-  df_list <- lapply(chain.list, 
+
+  df_list <- lapply(chain.list,
                     function(x) x$df_res)
   df.res <- Reduce(c, df_list)
   return(list(trees = tree_list_comb, df.res = df.res))

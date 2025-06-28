@@ -1,15 +1,15 @@
 if(T){
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944))
-  n.iter_par <- 2000
-  n.chain_par <- 10
-  test_case = 4
+  n.iter_par <- 200
+  n.chain_par <- 5
+  test_case = 1
   for (i in test_case) {
     assign(paste0("t_mcmc_lb.def_unif_",i), multichain_MCMC_copula(n.chain = n.chain_par,
                                                                    n.iter = n.iter_par,
-                                                                   n.tree = 1,n.cores = 10,
+                                                                   n.tree = 1,
                                                                    X = X_obs.norm,
-                                                                   U1 = get(paste0("copula_uu_t_",i))[,1],
-                                                                   U2 = get(paste0("copula_uu_t_",i))[,2],
+                                                                   U1 = get(paste0("copula_uu_clayton_",i))[,1],
+                                                                   U2 = get(paste0("copula_uu_clayton_",i))[,2],
                                                                    prior_list = lb.prior.def, 
                                                                    moves.prob = moves.prob_par, 
                                                                    starting.tree = NULL,
@@ -18,7 +18,7 @@ if(T){
                                                                    prop_mu = 0, prop_sigma = 1,
                                                                    theta_param_1 = 0, theta_param_2 = 1,
                                                                    prior_type = "N",
-                                                                   cop_type = "t"))
+                                                                   cop_type = "clayton"))
   }
 }
 
@@ -41,19 +41,19 @@ if(T){
   
   pred_val = do.call(rbind,list_pred_lb_10)
   
-  n.born.out.par <- 1000
+  n.born.out.par <- 0
   n.thin <- 1
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_t(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep(param_clayton(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_t(pred_val_vec)
+  pred_cond$y = link_clayton(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
