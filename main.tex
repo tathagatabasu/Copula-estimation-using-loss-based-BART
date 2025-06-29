@@ -24,7 +24,8 @@
 \usepackage[capitalise]{cleveref}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{corollary}{Corollary}[theorem]
-\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{lemma}{Lemma}[theorem]
+\newtheorem{definition}{Definition}[section]
 %
 
 \usepackage[numbers]{natbib}
@@ -46,40 +47,42 @@
 \subsection{Conditional copula}
 
 Copulas are extremely useful  for modelling the dependence structure between random variables when we wish to separate the marginals from their joint distribution. \citet{sklar:1959} showed the existence of such unique copulas $C:[0,1]^p\to [0,1]$ such that
-\begin{equation}
+\begin{equation*}
 	H(Y_1,Y_2,\cdots, Y_p) = C(F_1(Y_1),F_2(Y_2),\cdots,F_p(Y_p)).
-\end{equation}
+\end{equation*}
 In some cases, there might be additional confounding random variable $X$ that influences the dependence between $Y_1,Y_2,\cdots, Y_p$. 
 
 In such cases, a conditional copula is used to understand the dependence structure. A conditional copula was first formalised by \citet{patton2006}. For simplicity we present the formulation for two variables. Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable that might affect the relationship between $Y_1$ and $Y_2$. Then according to Sklar’s theorem there exists a unique copula such that:
-\begin{equation}
+\begin{equation*}
     H(Y_1,Y_2\mid X) = C_X(F_{1X}(Y_1\mid X),F_{1X}(Y_2\mid X)); \quad \forall (y_1,y_2) \in \mathbb{R}^2
-\end{equation}
+\end{equation*}
 where $C_X \coloneqq C(\cdot\mid \theta(X))$ is the copula function that varies with respect to $X$ through the copula parameter $\theta$ and $F_{iX}(Y_i\mid X)$ is the cdf of $Y_i$ conditional on $X$ for $i=1,2$.
 
 This gives us the following copula distribution function
-\begin{equation}
+\begin{equation*}
     C_X(u_1,u_2) = H\left(F_{1X}^{-1}(Y_1\mid X),F_{2X}^{-1}(Y_2\mid X)\mid X\right)
-\end{equation}
+\end{equation*}
 where $u_k = F_{1X}(Y_k\mid X)$ for $i=1,2$.
 
 \subsection{Loss-based BART}
 
 Let, $Z$ be an outcome data such that 
-\begin{equation}
+\begin{equation*}
 	Z_i \sim \mathcal{N}\left(r(x_i),\sigma^2\right);\qquad 1\le i\le n.
-\end{equation}
+\end{equation*}
 Then we can approximate this function $r(x)$ with sum of regression trees such such that,
-\begin{equation}
+\begin{equation*}
 	r(x_i) = \sum_{t=1}^m g(x_i, T_t, M_t).
-\end{equation}
+\end{equation*}
 where $T_t$ denotes the $t$-th tree, $M_t$ denotes the vector of terminal node values $M_t = \{\mu_1,\mu_2, \cdots, \mu_{n_L(T_t)}\}$ of the $t$-th tree and $n_L(T_t)$ denotes the number of terminal nodes of the $t$-th tree. 
 
 Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed a loss-based prior for BART in the following way:
 \begin{align}
-	T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
+	\begin{split}
+	    T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
 	T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
 	\pi(M_t\mid T_t) & = \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t).
+	\end{split}
 \end{align}
 where $\Delta(T_t)$ is the difference between right terminal nodes and left terminal nodes of $t$-th given tree.
 
@@ -89,10 +92,12 @@ For the choice of prior on $\mu_j\mid T_t$ \citet{chipman_BART,serafini2024lossb
 
 We wish to employ this loss-based prior for BART for the estimation of $\theta(x)$. Let $c(u_1,u_2\mid \theta(x))$ denote the conditional copula density function. Then we can define the following hierarchical model
 \begin{align}
-	u_{1i},u_{2i} \mid \theta(x_i) & \sim c(u_{1i},u_{2i}\mid \sum_{t=1}^m g(x_i, T_t, M_t))\\
+	\begin{split}
+	    u_{1i},u_{2i} \mid \theta(x_i) & \sim c(u_{1i},u_{2i}\mid \sum_{t=1}^m g(x_i, T_t, M_t))\\
 	T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
 	\pi(M_t\mid T_t) &\propto \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\\
 	t & = 1,2,\cdots m.
+	\end{split}
 \end{align}
 
 This gives us the following posterior:
@@ -101,13 +106,15 @@ This gives us the following posterior:
 \end{equation}
 
 To sample from the posterior we use backfitting algorithm where we sample $(T_j, M_j)$ conditional on the other $m-1$ pairs of $(T_k,M_k)$. Therefore, we define $R_{ij}$ such that
-\begin{equation}
+\begin{equation*}
 	R_{ij} = \sum_{t\not=j}g(x_i, T_t, M_t)
-\end{equation}
+\end{equation*}
 Then the posterior of $j$-th pair conditional on $R_j$ is given by:
 \begin{align}\label{eq:post:res}
-	\pi(T_j,M_j \mid R_j, X) &\propto \prod_{i=1}^{n}c\left(u_{1},u_{2}\mid R_j+g(x, T_j, M_j)\right)\pi(T_j)\pi(M_j\mid T_j)\\
+	\begin{split}
+	    \pi(T_j,M_j \mid R_j, U_1,U_2 X) &\propto \prod_{i=1}^{n}c\left(u_{1},u_{2}\mid R_j+g(x, T_j, M_j)\right)\pi(T_j)\pi(M_j\mid T_j)\\
 	&\propto \pi(T_j)\prod_{i=1}^{n}c\left(u_{1},u_{2}\mid R_j+g(x, T_j, M_j)\right)\prod_{k=1}^{n_L(T_j)}\pi(\mu_k\mid T_j)
+	\end{split}
 \end{align}
 
 \section{MCMC for Parameter Estimation}
@@ -120,25 +127,53 @@ Unfortunately, we do not have the conjugacy property in our case. So we use a Me
 
 For that, we first choose a proposal distribution, $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ to generate a proposal at the $k$-th step.
 
-\begin{align}
+\begin{align}\label{eq:prop}
 	q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right) = q\left(T_t^k;T_t^\ast\right) q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right).
 \end{align}
-For $q\left(T_t^k;T_t^\ast\right)$ a detailed explanation is given by \citet{serafini2024lossbasedpriortreetopologies}. For $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ we generate new terminal node values based on the terminal node values of the previous tree.
+
+\subsection{proposal for tree}
+For $q\left(T_t^k;T_t^\ast\right)$ we follow the steps given by \citet{serafini2024lossbasedpriortreetopologies}. 
+
+\begin{itemize}
+	\item \textsc{grow}: Randomly choose a terminal node and split it into two terminal nodes
+	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn into a terminal node
+	\item \textsc{change}: Randomly choose an internal node and assign a new splitting rule
+    \item \textsc{swap}: Randomly choose a parent-child pair of internal node and swap their splitting rules
+\end{itemize}
+
+The moves are performed to ensure that $T_t^\ast$ yields a valid partition defined as followed.
+
+\begin{definition}[Cell size] Given a $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the sell size $S(\Omega_k)$ of $\Omega_k$
+is the fraction of observations contained in $\Omega_k$.
+\begin{equation*}
+    S(\Omega_k) = \frac{1}{n}\sum_{j=1}^n \mathbb{I}(x_j\in \Omega_k).
+\end{equation*}
+\end{definition}
+
+\begin{definition}[Valid partition]
+    A partition is said to be valid if
+    \begin{equation*}
+        S(\Omega_k) \ge \frac{C^2}{n}, \quad\text{for any } k=1,2,\cdots, N
+    \end{equation*}
+    for a constant $C^2\ge 1$.
+\end{definition}
+
+For $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ we generate new terminal node values based on the terminal node values of the previous tree.
 
 For instance;
 
 \begin{itemize}
 	\item For \textsc{grow} we consider the $j$-th leaf to be grown so,
-	$q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi(\mu_j)*\pi(\mu_j)$
-	\item For \textsc{prune} we consider the $j$th and $(j+1)$th leaves to be pruned then $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi((\mu_j + \mu_{j+1})/2)$
-	\item For \textsc{change} we consider the split condition will change the terminal node value of $j$th and $(j+1)$th leaves to be changed then $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi(\mu_j)*\pi(\mu_{j+1})$
+	$q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi_{prop}(\mu_j)*\pi_{prop}(\mu_j)$
+	\item For \textsc{prune} we consider the $j$th and $(j+1)$th leaves to be pruned then $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi_{prop}((\mu_j + \mu_{j+1})/2)$
+	\item For \textsc{change} we consider the split condition will change the terminal node value of $j$th and $(j+1)$th leaves then $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi_{prop}(\mu_j)*\pi_{prop}(\mu_{j+1})$
 \end{itemize}
 
 Using $q$, we calculate the acceptance probability such that
-\begin{equation}
+\begin{equation}\label{eq:acc:prob}
 	\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)
-	= \frac{\pi(T_t^\ast,M_t^\ast \mid R_t, X)q\left(T_t^\ast, M_t^\ast;T_t^k,M_t^k\right)}
-	{\pi(T_t^k,M_t^k \mid R_t, X)q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)}
+	= \frac{\pi(T_t^\ast,M_t^\ast \mid R_t, U_1, U_2, X)q\left(T_t^\ast, M_t^\ast;T_t^k,M_t^k\right)}
+	{\pi(T_t^k,M_t^k \mid R_t, U_1, U_2, X)q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)}
 \end{equation}
 
 \begin{algorithm}
@@ -150,13 +185,14 @@ Using $q$, we calculate the acceptance probability such that
 		\For{$t = 1, \ldots, m$}
 		\State Set $R_{it} \leftarrow \sum_{j\not=t}g(x_i, T_j^k, M_j^k)$ for $i = 1, \ldots, n$
 		
-		\State Sample $(T_t^\ast, M_t^\ast)$ using $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{swap}, and \textsc{change} 
+		\State Sample $(T_t^\ast, M_t^\ast)$ using $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{swap}, and \textsc{change} 
 		
-		\State Compute acceptance probability using $\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$.
+		\State Compute acceptance probability using $\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ in \cref{eq:acc:prob}.
 		
 		\State Set $(T_t^{k+1}, M_t^{k+1})=(T_t^\ast, M_t^\ast)$ with probability $\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ or $(T_t^{k+1}, M_t^{k+1})=(T_t^k,M_t^k)$.
 		\State Set $\theta_i \leftarrow R_{it} + g(x_i T_t^{k+1}, M_t^{k+1})$ for $i = 1, \ldots, N$
 		\EndFor
+        \State Sample $M\coloneqq (M_1, M_2, \cdots, M_m)$ from the full conditional using MH step once all the new trees are formed.
 	\end{algorithmic}
 \end{algorithm}
 
@@ -226,7 +262,7 @@ Then using these values of conditional Kendall's $\tau$, we generate the copula 
 There after we check the root mean squared error with respect to the true copula parameter used in the data generation phase. Given by:
 
 \begin{equation}
-	\text{RMSE} = \sqrt{\frac{1}{nC}\sum_{j=1}^C \sum_{i=1}^n (\theta_{ij} - \overline{\theta}^*_{ij})^2}
+	\text{RMSE} = \sqrt{\frac{1}{nC}\sum_{j=1}^C \sum_{i=1}^n (\theta_{i} - \overline{\theta}^*_{ij})^2}
 \end{equation}
 where $\overline{\theta}^*_i$ is posterior sample mean of copula parameter conditional on $x_i$ and $C$ is the total number of parallel chains.
 
@@ -236,7 +272,7 @@ For credible interval coverage, check whether the true copula parameter is conta
 	\text{CI coverage} = \frac{\sum_{j=1}^C\sum_{i=1}^n\mathbb{I}\left(Q_{2.5}(\theta^*_{ij}) \le \theta_i \le Q_{97.5}(\theta^*_{ij})\right)}{nC}.
 \end{equation}
 
-Additionally, we check for credible interval length using $\left(Q_{97.5}(\theta^*_i) - Q_{2.5}(\theta^*_i)\right)$.
+Additionally, we check for credible interval length using $\frac{1}{nC}\left(Q_{97.5}(\theta^*_i) - Q_{2.5}(\theta^*_i)\right)$.
 
 \subsection{Results}
 
@@ -247,7 +283,7 @@ Additionally, we check for credible interval length using $\left(Q_{97.5}(\theta
 \end{equation}
 for $a,b>0$ and $\mathcal{B}$ denotes beta function. 
 
-For the student-t copula we are only interested in estimating $\rho$ which lies within $(-1,1)$. Therefore, similar to Gaussian copula, we use a transformed beta distribution as a prior on $\mu_j$. The copula parameter of the Clayton copula lies in the open interval $(0,\infty)$ and the copula parameter of the Gumbel copula lies in the open interval $[1,\infty)$. So we consider log-normal and inverse-gamma distribution for $\mu_j$ for these two cases
+For the student-t copula we are only interested in estimating $\rho$ which lies within $(-1,1)$. Therefore, similar to Gaussian copula, we use a transformed beta distribution as a prior on $\mu_j$. The copula parameter of the Clayton copula lies in the open interval $(0,\infty)$ and the copula parameter of the Gumbel copula lies in the open interval $[1,\infty)$. So we consider log-normal for $\mu_j$ for these two cases
 
 We present the summary of our analyses with different copulas in \cref{tab:gauss:summary}. 
 
