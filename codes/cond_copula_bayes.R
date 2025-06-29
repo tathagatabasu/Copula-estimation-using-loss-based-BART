@@ -22,9 +22,9 @@ require(doParallel)
 ################################################################################
 set.seed(1e5)
 
-load("analysis_sim_dat_new.RData")
+# load("analysis_sim_dat_new.RData")
 
-if(T){
+if(F){
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
@@ -131,7 +131,7 @@ if(T){
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
-  moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
+  moves.prob_par <- c(0.1, 0.3, 0.3, 0.3)
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
 }
@@ -140,7 +140,7 @@ if(T){
 # gaussian
 ################################################################################
 if(T){
-  for (i in 1:4) {
+  for (i in 3:4) {
     assign(paste0("gauss_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                                   n.tree = 1,
                                                                   X = X_obs.norm,
@@ -161,168 +161,111 @@ if(T){
   
 }
 
+# save(gauss_mcmc_lb.def_single_4, file = "gauss_mcmc_lb.def_single_4.Rdata")
+# rm(gauss_mcmc_lb.def_single_1,gauss_mcmc_lb.def_single_2,gauss_mcmc_lb.def_single_3,gauss_mcmc_lb.def_single_4)
+
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
-  model.list.def <- list(
-    get(paste0("gauss_mcmc_lb.def_single_",test_case))
-  )
+  load(paste0("gauss_mcmc_lb.def_single_",test_case,".Rdata"))
   
-  names(model.list.def) <- c(
-    'LB - default - TBeta(1.1,1.1)'
-  )
+  model <- get(paste0("gauss_mcmc_lb.def_single_",test_case))
   
-  # extract depth, number of terminal nodes and loglik of all the trees
-  depth.df <- apply_fun_models(fun_ = get_depth,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
-  depth.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val = do.call(rbind,list_pred_lb)
   
-  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  n.thin <- 10
   
-  nterm.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_gauss_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_gauss_",i))[,2],
-                                                              X = X_obs.norm, 
-                                                              log_like_fun = loglik_gaussian), 
-                              mcmc.list = model.list.def, 
-                              born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  like.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  theta_true = rep(param_gauss(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  acc.df <- apply_fun_models_res(fun_ = \(x) (as.factor(x) == TRUE),
-                                 mcmc.list = model.list.def,
-                                 born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
-  
-  acc.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
-  
-  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 10)))
-  
-  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 10)))
-  
-  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 10)))
-  
-  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
-  
-  depth.df_thin <- na.omit((depth.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  nterm.df_thin <- na.omit((nterm.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  like.df_thin <- na.omit((like.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  acc.df_thin <- na.omit((acc.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  
-  df.sum.def <- data.frame(tree = nterm.df$x,
-                           panel.name = nterm.df$panel.name,
-                           loglik = like.df$y,
-                           nterm = nterm.df$y,
-                           depth = depth.df$y,
-                           acc_rate = acc.df$y)
-  
-  df.sum.def_thin <- data.frame(tree = nterm.df_thin$x,
-                                panel.name = nterm.df_thin$panel.name,
-                                loglik = like.df_thin$y,
-                                nterm = nterm.df_thin$y,
-                                depth = depth.df_thin$y,
-                                acc_rate = acc.df_thin$y)
-  
-  hist.nl <- ggplot(nterm.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab(~n[L]) +
-    ylab('PMF') +
-    theme_classic()
-  
-  hist.depth <- ggplot(depth.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Depth') +
-    ylab('PMF') +
-    theme_classic()
-  
-  trace.nl <- ggplot(nterm.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab(~n[L]) +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.depth <- ggplot(depth.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab('Depth') +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.loglik <- ggplot(like.df, aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) + 
-    geom_line() + 
-    facet_wrap(facets = ~panel.name) + 
-    theme_classic() + 
-    theme(legend.position = "none")+
-    xlab('Iteration') + 
-    ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  # plots
-  hist.nl
-  hist.depth
-  trace.nl
-  trace.depth
-  trace.loglik
-  
-  # prediction
-  
-  pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
-                                                                          mcmc.list = model.list.def,
-                                                                          born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
-  
-  
-  pred_cond = do.call(rbind,pred_cond)
-  
-  pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_gauss(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond <- data.frame("obs" = pred_obs)
+  pred_cond$obs = pred_obs
+  pred_cond$theta_true = theta_true
+  pred_cond$y = link_gauss(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
-    group_by(panel.name, obs, theta_true) %>%
-    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025))  
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
+    # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
     ylab('estimated rho') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
-    group_by(panel.name)%>%
     mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
     mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
     mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
     dplyr::select(c(RMSE, CI.length, CI.cov))
   
-  pred_cond_summary = pred_cond_stat %>%
-    group_by(panel.name)%>%
-    summarise_all(mean)
+  pred_cond_summary = colMeans(pred_cond_stat[,-1])
   
-  tree_stat_summary = df.sum.def_thin %>%
-    group_by(panel.name)%>%
-    summarise_at(c("nterm","depth","acc_rate"),mean)
+  # like
   
-  xtable(cbind(tree_stat_summary, pred_cond_summary[,-1]) , digits = 4)
+  like_val <- apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",i))[,1], get(paste0("copula_uu_gauss_",i))[,2]))
+  
+  like_df <-data.frame("nn" = like_val)
+  like_df$idx <- 1:(n.chain_par*n.iter_par)
+  
+  pl_like <- ggplot(like_df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('log-likelihood') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_like
+  
+  # nterm
+  
+  nt_lb.df <- nterm_BART(model)
+  
+  pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('nterm') + 
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_nl
+  
+  # depth
+  
+  depth_lb.df <- depth_BART(model)
+  
+  pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_dp
+  
+  # acceptance
+  
+  acc_lb.df <- acc_BART(model)
+  
+  tree_stat_summary = c(mean(nt_lb.df$nn), mean(depth_lb.df$nn), mean(acc_lb.df$nn==TRUE))
+  
+  names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  
+  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  xtable(conv_diag_sum)
+  
   
   if(F){
     copula_uu_gauss_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 1, par = pred_cond_mod$theta_mean)
@@ -373,7 +316,7 @@ if(F){
 ################################################################################
 if(T){
   
-  for (i in 1:4) {
+  for (i in 2:3) {
     assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                               n.tree = 1,
                                                               X = X_obs.norm,
@@ -392,168 +335,112 @@ if(T){
   
 }
 
+# save(t_mcmc_lb.def_single_4, file = "t_mcmc_lb.def_single_4.Rdata")
+# rm(t_mcmc_lb.def_single_1,t_mcmc_lb.def_single_2,t_mcmc_lb.def_single_3,t_mcmc_lb.def_single_4)
+
 # results
 
 if(F){
-  test_case = 1
+  test_case = 4
   
-  model.list.def <- list(
-    get(paste0("t_mcmc_lb.def_single_",test_case))
-  )
+  load(paste0("t_mcmc_lb.def_single_",test_case,".Rdata"))
   
-  names(model.list.def) <- c(
-    'LB - default - TBeta(1.1,1.1)'
-  )
+  model <- get(paste0("t_mcmc_lb.def_single_",test_case))
   
-  # extract depth, number of terminal nodes and loglik of all the trees
-  depth.df <- apply_fun_models(fun_ = get_depth,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
-  depth.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val = do.call(rbind,list_pred_lb)
   
-  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  n.thin <- 10
   
-  nterm.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_t_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_t_",i))[,2],
-                                                              X = X_obs.norm, 
-                                                              log_like_fun = loglik_t), 
-                              mcmc.list = model.list.def, 
-                              born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  like.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  theta_true = rep(param_t(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  acc.df <- apply_fun_models_res(fun_ = \(x) (as.factor(x) == TRUE),
-                                 mcmc.list = model.list.def,
-                                 born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
-  
-  acc.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
-  
-  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, n.thin)))
-  
-  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, n.thin)))
-  
-  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, n.thin)))
-  
-  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
-  
-  depth.df_thin <- na.omit((depth.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  nterm.df_thin <- na.omit((nterm.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  like.df_thin <- na.omit((like.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  acc.df_thin <- na.omit((acc.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  
-  df.sum.def <- data.frame(tree = nterm.df$x,
-                           panel.name = nterm.df$panel.name,
-                           loglik = like.df$y,
-                           nterm = nterm.df$y,
-                           depth = depth.df$y,
-                           acc_rate = acc.df$y)
-  
-  df.sum.def_thin <- data.frame(tree = nterm.df_thin$x,
-                                panel.name = nterm.df_thin$panel.name,
-                                loglik = like.df_thin$y,
-                                nterm = nterm.df_thin$y,
-                                depth = depth.df_thin$y,
-                                acc_rate = acc.df_thin$y)
-  
-  hist.nl <- ggplot(nterm.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab(~n[L]) +
-    ylab('PMF') +
-    theme_classic()
-  
-  hist.depth <- ggplot(depth.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Depth') +
-    ylab('PMF') +
-    theme_classic()
-  
-  trace.nl <- ggplot(nterm.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab(~n[L]) +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.depth <- ggplot(depth.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab('Depth') +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.loglik <- ggplot(like.df, aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) + 
-    geom_line() + 
-    facet_wrap(facets = ~panel.name) + 
-    theme_classic() + 
-    theme(legend.position = "none")+
-    xlab('Iteration') + 
-    ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  # plots
-  hist.nl
-  hist.depth
-  trace.nl
-  trace.depth
-  trace.loglik
-  
-  # prediction
-  
-  pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
-                                                                          mcmc.list = model.list.def,
-                                                                          born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
-  
-  
-  pred_cond = do.call(rbind,pred_cond)
-  
-  pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_t(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond <- data.frame("obs" = pred_obs)
+  pred_cond$obs = pred_obs
+  pred_cond$theta_true = theta_true
+  pred_cond$y = link_t(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
-    group_by(panel.name, obs, theta_true) %>%
-    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025))  
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
+    # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
     ylab('estimated rho') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
-    group_by(panel.name)%>%
     mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
     mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
     mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
     dplyr::select(c(RMSE, CI.length, CI.cov))
   
-  pred_cond_summary = pred_cond_stat %>%
-    group_by(panel.name)%>%
-    summarise_all(mean)
+  pred_cond_summary = colMeans(pred_cond_stat[,-1])
   
-  tree_stat_summary = df.sum.def_thin %>%
-    group_by(panel.name)%>%
-    summarise_at(c("nterm","depth","acc_rate"),mean)
+  # like
   
-  xtable(cbind(tree_stat_summary, pred_cond_summary[,-1]) , digits = 4)
+  like_val <- apply(pred_val, 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",i))[,1], get(paste0("copula_uu_t_",i))[,2]))
+  
+  like_df <-data.frame("nn" = like_val)
+  like_df$idx <- 1:(n.chain_par*n.iter_par)
+  
+  pl_like <- ggplot(like_df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('log-likelihood') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_like
+  
+  # nterm
+  
+  nt_lb.df <- nterm_BART(model)
+  
+  pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('nterm') + 
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_nl
+  
+  # depth
+  
+  depth_lb.df <- depth_BART(model)
+  
+  pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_dp
+  
+  # acceptance
+  
+  acc_lb.df <- acc_BART(model)
+  
+  tree_stat_summary = c(mean(nt_lb.df$nn), mean(depth_lb.df$nn), mean(acc_lb.df$nn==TRUE))
+  
+  names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  
+  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  xtable(conv_diag_sum)
+  
+  
   
   if(F){
     copula_uu_t_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 2, par = pred_cond_mod$theta_mean)
@@ -604,7 +491,7 @@ if(F){
 ################################################################################
 if(T){
   
-  for (i in 1:4) {
+  for (i in c(1,3:4)) {
     assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                                    n.tree = 1,
                                                                    X = X_obs.norm,
@@ -623,168 +510,112 @@ if(T){
   
 }
 
+# save(gumbel_mcmc_lb.def_single_4, file = "gumbel_mcmc_lb.def_single_4.Rdata")
+# rm(gumbel_mcmc_lb.def_single_1,gumbel_mcmc_lb.def_single_2,gumbel_mcmc_lb.def_single_3,gumbel_mcmc_lb.def_single_4)
+
 # results
 
 if(F){
-  test_case = 4
+  test_case = 1
   
-  model.list.def <- list(
-    get(paste0("gumbel_mcmc_lb.def_single_",test_case))
-  )
+  load(paste0("gumbel_mcmc_lb.def_single_",test_case,".Rdata"))
   
-  names(model.list.def) <- c(
-    'LB - default - TBeta(1.1,1.1)'
-  )
+  model <- get(paste0("gumbel_mcmc_lb.def_single_",test_case))
   
-  # extract depth, number of terminal nodes and loglik of all the trees
-  depth.df <- apply_fun_models(fun_ = get_depth,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
-  depth.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val = do.call(rbind,list_pred_lb)
   
-  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  n.thin <- 10
   
-  nterm.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_gumbel_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_gumbel_",i))[,2],
-                                                              X = X_obs.norm, 
-                                                              log_like_fun = loglik_gumbel), 
-                              mcmc.list = model.list.def, 
-                              born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  like.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  theta_true = rep(param_gumbel(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  acc.df <- apply_fun_models_res(fun_ = \(x) (as.factor(x) == TRUE),
-                                 mcmc.list = model.list.def,
-                                 born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
-  
-  acc.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
-  
-  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 10)))
-  
-  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 10)))
-  
-  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 10)))
-  
-  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
-  
-  depth.df_thin <- na.omit((depth.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  nterm.df_thin <- na.omit((nterm.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  like.df_thin <- na.omit((like.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  acc.df_thin <- na.omit((acc.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  
-  df.sum.def <- data.frame(tree = nterm.df$x,
-                           panel.name = nterm.df$panel.name,
-                           loglik = like.df$y,
-                           nterm = nterm.df$y,
-                           depth = depth.df$y,
-                           acc_rate = acc.df$y)
-  
-  df.sum.def_thin <- data.frame(tree = nterm.df_thin$x,
-                                panel.name = nterm.df_thin$panel.name,
-                                loglik = like.df_thin$y,
-                                nterm = nterm.df_thin$y,
-                                depth = depth.df_thin$y,
-                                acc_rate = acc.df_thin$y)
-  
-  hist.nl <- ggplot(nterm.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab(~n[L]) +
-    ylab('PMF') +
-    theme_classic()
-  
-  hist.depth <- ggplot(depth.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Depth') +
-    ylab('PMF') +
-    theme_classic()
-  
-  trace.nl <- ggplot(nterm.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab(~n[L]) +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.depth <- ggplot(depth.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab('Depth') +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.loglik <- ggplot(like.df, aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) + 
-    geom_line() + 
-    facet_wrap(facets = ~panel.name) + 
-    theme_classic() + 
-    theme(legend.position = "none")+
-    xlab('Iteration') + 
-    ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  # plots
-  hist.nl
-  hist.depth
-  trace.nl
-  trace.depth
-  trace.loglik
-  
-  # prediction
-  
-  pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
-                                                                          mcmc.list = model.list.def,
-                                                                          born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
-  
-  
-  pred_cond = do.call(rbind,pred_cond)
-  
-  pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_gumbel(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond <- data.frame("obs" = pred_obs)
+  pred_cond$obs = pred_obs
+  pred_cond$theta_true = theta_true
+  pred_cond$y = link_gumbel(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
-    group_by(panel.name, obs, theta_true) %>%
-    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025))  
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
+    # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
     ylab('estimated rho') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
-    group_by(panel.name)%>%
     mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
     mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
     mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
     dplyr::select(c(RMSE, CI.length, CI.cov))
   
-  pred_cond_summary = pred_cond_stat %>%
-    group_by(panel.name)%>%
-    summarise_all(mean)
+  pred_cond_summary = colMeans(pred_cond_stat[,-1])
   
-  tree_stat_summary = df.sum.def_thin %>%
-    group_by(panel.name)%>%
-    summarise_at(c("nterm","depth","acc_rate"),mean)
+  # like
   
-  xtable(cbind(tree_stat_summary, pred_cond_summary[,-1]) , digits = 4)
+  like_val <- apply(pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), get(paste0("copula_uu_gumbel_",i))[,1], get(paste0("copula_uu_gumbel_",i))[,2]))
+  
+  like_df <-data.frame("nn" = like_val)
+  like_df$idx <- 1:(n.chain_par*n.iter_par)
+  
+  pl_like <- ggplot(like_df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('log-likelihood') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_like
+  
+  # nterm
+  
+  nt_lb.df <- nterm_BART(model)
+  
+  pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('nterm') + 
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_nl
+  
+  # depth
+  
+  depth_lb.df <- depth_BART(model)
+  
+  pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_dp
+  
+  # acceptance
+  
+  acc_lb.df <- acc_BART(model)
+  
+  tree_stat_summary = c(mean(nt_lb.df$nn), mean(depth_lb.df$nn), mean(acc_lb.df$nn==TRUE))
+  
+  names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  
+  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  xtable(conv_diag_sum)
+  
+  
   
   if(F){
     copula_uu_gumbel_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 1, par = pred_cond_mod$theta_mean)
@@ -835,7 +666,7 @@ if(F){
 ################################################################################
 if(T){
   
-  for (i in 1:4) {
+  for (i in 2:4) {
     assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                                     n.tree = 1,
                                                                     X = X_obs.norm,
@@ -856,169 +687,111 @@ if(T){
   # 3 prop_mu = 0, prop_sigma = 3,
   
 }
+# save(clayton_mcmc_lb.def_single_4, file = "clayton_mcmc_lb.def_single_4.Rdata")
+# rm(clayton_mcmc_lb.def_single_1,clayton_mcmc_lb.def_single_2,clayton_mcmc_lb.def_single_3,clayton_mcmc_lb.def_single_4)
 
 # results
 
 if(F){
-  test_case <- 3
+  test_case = 4
   
-  model.list.def <- list(
-    get(paste0("clayton_mcmc_lb.def_single_",test_case))
-  )
+  load(paste0("clayton_mcmc_lb.def_single_",test_case,".Rdata"))
   
-  names(model.list.def) <- c(
-    'LB - default - TBeta(1.1,1.1)'
-  )
+  model <- get(paste0("clayton_mcmc_lb.def_single_",test_case))
   
-  # extract depth, number of terminal nodes and loglik of all the trees
-  depth.df <- apply_fun_models(fun_ = get_depth,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
-  depth.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val = do.call(rbind,list_pred_lb)
   
-  nterm.df <- apply_fun_models(fun_ = get_num_terminal_nodes,
-                               mcmc.list = model.list.def,
-                               born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  n.thin <- 10
   
-  nterm.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  like.df <- apply_fun_models(fun_ = \(x) cart_log_lik_copula(tree_top = x, U1 = get(paste0("copula_uu_clayton_",i))[,1],
-                                                              U2 = get(paste0("copula_uu_clayton_",i))[,2],
-                                                              X = X_obs.norm, 
-                                                              log_like_fun = loglik_clayton), 
-                              mcmc.list = model.list.def, 
-                              born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
+  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  like.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
+  theta_true = rep(param_clayton(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  acc.df <- apply_fun_models_res(fun_ = \(x) (as.factor(x) == TRUE),
-                                 mcmc.list = model.list.def,
-                                 born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par)
-  
-  acc.df$n.chain <- rep(1:n.chain_par, each = (n.iter_par- n.born.out.par))
-  
-  depth_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(depth.df, i, 0, 10)))
-  
-  nterm_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(nterm.df, i, 0, 10)))
-  
-  like_conv_all <- do.call(rbind,lapply(names(model.list.def), function(i)conv_diag(like.df, i, 0, 10)))
-  
-  xtable(cbind(depth_conv_all, nterm_conv_all, like_conv_all))
-  
-  depth.df_thin <- na.omit((depth.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  nterm.df_thin <- na.omit((nterm.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  like.df_thin <- na.omit((like.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  acc.df_thin <- na.omit((acc.df[(n.born.out.par+1:n.iter_par),])[c(rep(NA,(n.thin-1)), TRUE),])
-  
-  df.sum.def <- data.frame(tree = nterm.df$x,
-                           panel.name = nterm.df$panel.name,
-                           loglik = like.df$y,
-                           nterm = nterm.df$y,
-                           depth = depth.df$y,
-                           acc_rate = acc.df$y)
-  
-  df.sum.def_thin <- data.frame(tree = nterm.df_thin$x,
-                                panel.name = nterm.df_thin$panel.name,
-                                loglik = like.df_thin$y,
-                                nterm = nterm.df_thin$y,
-                                depth = depth.df_thin$y,
-                                acc_rate = acc.df_thin$y)
-  
-  hist.nl <- ggplot(nterm.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab(~n[L]) +
-    ylab('PMF') +
-    theme_classic()
-  
-  hist.depth <- ggplot(depth.df) +
-    geom_histogram(aes(x = y, y = after_stat(density)),
-                   binwidth = 1, color = 'black', fill = 'white') +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Depth') +
-    ylab('PMF') +
-    theme_classic()
-  
-  trace.nl <- ggplot(nterm.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab(~n[L]) +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.depth <- ggplot(depth.df) +
-    geom_line(aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
-    xlab('Iteration') +
-    ylab('Depth') +
-    theme_classic()  + 
-    theme(legend.position = "none")+
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  trace.loglik <- ggplot(like.df, aes(x/n.thin, y, group = factor(n.chain), colour =factor(n.chain))) + 
-    geom_line() + 
-    facet_wrap(facets = ~panel.name) + 
-    theme_classic() + 
-    theme(legend.position = "none")+
-    xlab('Iteration') + 
-    ylab('Log likelihood') + 
-    scale_x_continuous(breaks = seq(0,((n.chain_par * (n.iter_par-n.born.out.par))/n.thin),by = (n.chain_par * (n.iter_par-n.born.out.par))/(5*n.thin)))
-  
-  # plots
-  hist.nl
-  hist.depth
-  trace.nl
-  trace.depth
-  trace.loglik
-  
-  # prediction
-  
-  pred_cond = lapply(1:nrow(X_obs_pred.norm), function(i)apply_fun_models(fun_ = function(x)get_value_tree(x, X_obs_pred.norm[i,,drop = FALSE]),
-                                                                          mcmc.list = model.list.def,
-                                                                          born.out.pc = n.born.out.par, n.chain = n.chain_par, sample.pc = n.iter_par))
-  
-  
-  pred_cond = do.call(rbind,pred_cond)
-  
-  pred_cond$obs = as.vector(apply(X_obs_pred.norm, 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
-  pred_cond$theta_true = as.vector(apply(param_clayton(get(paste0("tau_true_pred_",test_case))), 1, function(x)rep(x, (length(model.list.def) * n.chain_par * (n.iter_par - n.born.out.par)))))
+  pred_cond <- data.frame("obs" = pred_obs)
+  pred_cond$obs = pred_obs
+  pred_cond$theta_true = theta_true
+  pred_cond$y = link_clayton(pred_val_vec)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
   pred_cond_mod = pred_cond_thin %>%
-    group_by(panel.name, obs, theta_true) %>%
-    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025))  
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
-    facet_wrap(facets = ~panel.name, ncol = 2) +
+    # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
     ylab('estimated rho') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
-    group_by(panel.name)%>%
     mutate(RMSE = mean((theta_true - theta_mean)^2)) %>%
     mutate(CI.length = mean(theta_q975 - theta_q025)) %>%
     mutate(CI.cov = mean((theta_true < theta_q975) & (theta_true > theta_q025))) %>%
     dplyr::select(c(RMSE, CI.length, CI.cov))
   
-  pred_cond_summary = pred_cond_stat %>%
-    group_by(panel.name)%>%
-    summarise_all(mean)
+  pred_cond_summary = colMeans(pred_cond_stat[,-1])
   
-  tree_stat_summary = df.sum.def_thin %>%
-    group_by(panel.name)%>%
-    summarise_at(c("nterm","depth","acc_rate"),mean)
+  # like
   
-  xtable(cbind(tree_stat_summary, pred_cond_summary[,-1]) , digits = 4)
+  like_val <- apply(pred_val, 1, function(x)loglik_clayton(link_clayton(x), get(paste0("copula_uu_clayton_",i))[,1], get(paste0("copula_uu_clayton_",i))[,2]))
+  
+  like_df <-data.frame("nn" = like_val)
+  like_df$idx <- 1:(n.chain_par*n.iter_par)
+  
+  pl_like <- ggplot(like_df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('log-likelihood') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_like
+  
+  # nterm
+  
+  nt_lb.df <- nterm_BART(model)
+  
+  pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('nterm') + 
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_nl
+  
+  # depth
+  
+  depth_lb.df <- depth_BART(model)
+  
+  pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
+    geom_line() + 
+    ylab('depth') +
+    theme_classic() + 
+    theme(panel.grid.major = element_line())
+  
+  pl_dp
+  
+  # acceptance
+  
+  acc_lb.df <- acc_BART(model)
+  
+  tree_stat_summary = c(mean(nt_lb.df$nn), mean(depth_lb.df$nn), mean(acc_lb.df$nn==TRUE))
+  
+  names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  
+  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  xtable(conv_diag_sum)
+  
   
   if(F){
     copula_uu_clayton_pred <- BiCopSim(N = nrow(pred_cond_mod), family = 1, par = pred_cond_mod$theta_mean)

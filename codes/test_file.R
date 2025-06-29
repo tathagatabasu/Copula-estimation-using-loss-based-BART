@@ -37,9 +37,9 @@ if(T){
   )
   
   
-  list_pred_lb_10 <- lapply(1:length(model.list.def$`LB - default - unif`$trees), \(idx) BART_calculate_pred(model.list.def$`LB - default - unif`$trees[[idx]], X_obs_pred.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
-  pred_val = do.call(rbind,list_pred_lb_10)
+  pred_val = do.call(rbind,list_pred_lb)
   
   n.born.out.par <- 0
   n.thin <- 1
@@ -98,10 +98,10 @@ if(T){
   
   # nterm
   
-  nt_lb_10.df <- nterm_BART(model.list.def$`LB - default - unif`)
-  nt_lb_10.df_burn <- nt_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
+  nt_lb.df <- nterm_BART(model)
+  nt_lb.df_burn <- nt_lb.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
   
-  pl_nl_10 <- ggplot(nt_lb_10.df_burn, aes(trees, nn)) + 
+  pl_nl_10 <- ggplot(nt_lb.df_burn, aes(trees, nn)) + 
     geom_boxplot() + 
     ylab('nterm') + 
     theme_classic() + 
@@ -111,10 +111,10 @@ if(T){
   
   # depth
   
-  depth_lb_10.df <- depth_BART(model.list.def$`LB - default - unif`)
-  depth_lb_10.df_burn <- depth_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
+  depth_lb.df <- depth_BART(model)
+  depth_lb.df_burn <- depth_lb.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
   
-  ggplot(depth_lb_10.df_burn, aes(trees, nn)) + 
+  ggplot(depth_lb.df_burn, aes(trees, nn)) + 
     geom_boxplot() + 
     ylab('depth') +
     theme_classic() + 
@@ -123,10 +123,10 @@ if(T){
   
   # acceptance
   
-  acc_lb_10.df <- acc_BART(model.list.def$`LB - default - unif`)
-  acc_lb_10.df_burn <- acc_lb_10.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
+  acc_lb.df <- acc_BART(model)
+  acc_lb.df_burn <- acc_lb.df[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],]
   
-  ggplot(acc_lb_10.df_burn, aes(trees, nn)) + 
+  ggplot(acc_lb.df_burn, aes(trees, nn)) + 
     geom_boxplot() + 
     ylab('acceptance') +
     theme_classic() + 
