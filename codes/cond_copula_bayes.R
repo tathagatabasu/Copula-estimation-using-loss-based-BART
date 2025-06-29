@@ -140,9 +140,9 @@ if(F){
 # gaussian
 ################################################################################
 if(T){
-  for (i in 3:4) {
+  for (i in 3) {
     assign(paste0("gauss_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                  n.tree = 1,
+                                                                  n.tree = 10,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -161,13 +161,13 @@ if(T){
   
 }
 
-# save(gauss_mcmc_lb.def_single_4, file = "gauss_mcmc_lb.def_single_4.Rdata")
+# save(gauss_mcmc_lb.def_single_3, file = "gauss_mcmc_lb.def_single_3.Rdata")
 # rm(gauss_mcmc_lb.def_single_1,gauss_mcmc_lb.def_single_2,gauss_mcmc_lb.def_single_3,gauss_mcmc_lb.def_single_4)
 
 # results
 
 if(F){
-  test_case = 1
+  test_case = 3
   
   load(paste0("gauss_mcmc_lb.def_single_",test_case,".Rdata"))
   
@@ -318,7 +318,7 @@ if(T){
   
   for (i in 2:3) {
     assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                              n.tree = 1,
+                                                              n.tree = 10,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -493,7 +493,7 @@ if(T){
   
   for (i in c(1,3:4)) {
     assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                   n.tree = 1,
+                                                                   n.tree = 10,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -516,7 +516,7 @@ if(T){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 3
   
   load(paste0("gumbel_mcmc_lb.def_single_",test_case,".Rdata"))
   
@@ -668,7 +668,7 @@ if(T){
   
   for (i in 2:4) {
     assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                    n.tree = 1,
+                                                                    n.tree = 10,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
