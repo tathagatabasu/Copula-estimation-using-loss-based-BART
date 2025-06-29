@@ -371,24 +371,23 @@ if(F){
 ################################################################################
 # t
 ################################################################################
-if(F){
+if(T){
   
   for (i in 1:4) {
-    assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(
-                                                              n.iter = n.iter_par,
+    assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                               n.tree = 1,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
-                                                              prior_list = lb.prior.def, 
-                                                              moves.prob = moves.prob_par, 
-                                                              starting.tree = NULL,
-                                                              cont.unif = cont.unif_par,
-                                                              include.split = incl.split_par,
-                                                              prop_mu = 0, prop_sigma = .2,
-                                                              theta_param_1 = 1.1, theta_param_2 = 1.1,
-                                                              prior_type = "B",
-                                                              cop_type = "t"))
+                                                          prior_list = lb.prior.def, 
+                                                          moves.prob = moves.prob_par, 
+                                                          starting.tree = NULL,
+                                                          cont.unif = cont.unif_par,
+                                                          include.split = incl.split_par,
+                                                          prop_mu = 0, prop_sigma = 1,
+                                                          theta_param_1 = 0, theta_param_2 = 1,
+                                                          prior_type = "N",
+                                                          cop_type = "t"))
   }
   
 }
@@ -603,24 +602,23 @@ if(F){
 ################################################################################
 # Gumbel
 ################################################################################
-if(F){
+if(T){
   
   for (i in 1:4) {
-    assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(
-                                                                   n.iter = n.iter_par,
+    assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                                    n.tree = 1,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
-                                                                   prior_list = lb.prior.def, 
-                                                                   moves.prob = moves.prob_par, 
-                                                                   starting.tree = NULL,
-                                                                   cont.unif = cont.unif_par,
-                                                                   include.split = incl.split_par,
-                                                                   prop_mu = 1, prop_sigma = 1,
-                                                                   theta_param_1 = 0, theta_param_2 = 2,
-                                                                   prior_type = "LN",
-                                                                   cop_type = "gumbel"))
+                                                               prior_list = lb.prior.def, 
+                                                               moves.prob = moves.prob_par, 
+                                                               starting.tree = NULL,
+                                                               cont.unif = cont.unif_par,
+                                                               include.split = incl.split_par,
+                                                               prop_mu = 0, prop_sigma = 1,
+                                                               theta_param_1 = 0, theta_param_2 = 1,
+                                                               prior_type = "N",
+                                                               cop_type = "gumbel"))
   }
   
 }
@@ -835,24 +833,23 @@ if(F){
 ################################################################################
 # clayton
 ################################################################################
-if(F){
+if(T){
   
-  for (i in 3) {
-    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(
-                                                                    n.iter = n.iter_par,
+  for (i in 1:4) {
+    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
                                                                     n.tree = 1,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
-                                                                    prior_list = lb.prior.def, 
-                                                                    moves.prob = moves.prob_par, 
-                                                                    starting.tree = NULL,
-                                                                    cont.unif = cont.unif_par,
-                                                                    include.split = incl.split_par,
-                                                                    prop_mu = 0, prop_sigma = .2,
-                                                                    theta_param_1 = 0, theta_param_2 = 1,
-                                                                    prior_type = "LN",
-                                                                    cop_type = "clayton"))
+                                                                prior_list = lb.prior.def, 
+                                                                moves.prob = moves.prob_par, 
+                                                                starting.tree = NULL,
+                                                                cont.unif = cont.unif_par,
+                                                                include.split = incl.split_par,
+                                                                prop_mu = 0, prop_sigma = 1,
+                                                                theta_param_1 = 0, theta_param_2 = 1,
+                                                                prior_type = "N",
+                                                                cop_type = "clayton"))
   }
   
   # all prop_mu = 0, prop_sigma = .2,
