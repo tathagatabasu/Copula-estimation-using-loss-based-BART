@@ -32,7 +32,7 @@ multichain_MCMC_copula <- function(n.iter, n.chain,n.tree = 10,
   df_list <- lapply(chain.list,
                     function(x) x$df_res)
   df.res <- Reduce(c, df_list)
-  return(list(trees = tree_list_comb, df.res = df.res))
+  return(list(trees = tree_list_comb, df_res = df.res))
 }
 
 MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
@@ -101,13 +101,13 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
   
   if(n.tree>1){
     for(idx.iter in 1:n.iter){
-      cat('Iteration: ', idx.iter, '\n')
+      # cat('Iteration: ', idx.iter, '\n')
       pred_at_obs <- Reduce('+', res_theta_list)
       
       for(idx.tree in idx.tree.vec){
         res_theta <- Reduce('+', res_theta_list[idx.tree.vec != idx.tree])
         
-        cat('Tree: ', idx.tree, '\n')
+        # cat('Tree: ', idx.tree, '\n')
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
@@ -137,13 +137,13 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
     }
   }else{
     for(idx.iter in 1:n.iter){
-      cat('Iteration: ', idx.iter, '\n')
+      # cat('Iteration: ', idx.iter, '\n')
       pred_at_obs <- Reduce('+', res_theta_list)
       
       for(idx.tree in idx.tree.vec){
         res_theta <- rep(0,length(X))
         
-        cat('Tree: ', idx.tree, '\n')
+        # cat('Tree: ', idx.tree, '\n')
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
@@ -325,14 +325,15 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, res_theta,
                                     fd_fun_log= fd_fun_log,
                                     theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
       
-      cat('move=',move.list$move, ',idx = ',move.list$node.idx[1,1],',',move.list$node.idx[1,2],'\n')
+      # cat('move=',move.list$move, ',idx = ',move.list$node.idx[1,1],',',move.list$node.idx[1,2],'\n')
       
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
                                                         tree_top = move.list$tree, X.orig = X)), 0)
       if(sum(nobs.per.term == 0) > 0){
         empty.count = empty.count + 1
-        cat('empty count: ', empty.count, '\n') }
+        # cat('empty count: ', empty.count, '\n') 
+        }
       else{empty.flag = FALSE}
     }
     
@@ -349,14 +350,15 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, res_theta,
                                       fd_fun_log = fd_fun_log,
                                       theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
       
-      cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
+      # cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
       
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
                                                         tree_top = move.list$tree, X.orig = X)), 0)
       if(sum(nobs.per.term == 0) > 0){
         empty.count = empty.count + 1
-        cat('empty count: ', empty.count, '\n') }
+        # cat('empty count: ', empty.count, '\n') 
+        }
       else{empty.flag = FALSE}  
     }
   }
@@ -374,14 +376,15 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, res_theta,
                                     fd_fun_log = fd_fun_log,
                                     theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
       
-      cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
+      # cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
       
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
                                                         tree_top = move.list$tree, X.orig = X)), 0)
       if(sum(nobs.per.term == 0) > 0){
         empty.count = empty.count + 1
-        cat('empty count: ', empty.count, '\n') }
+        # cat('empty count: ', empty.count, '\n') 
+        }
       else{empty.flag = FALSE}  
     }
   }
@@ -397,14 +400,15 @@ tree_step_copula <- function(move.type, old_tree, X, U1, U2, res_theta,
                                      fd_fun_log = fd_fun_log,
                                      theta_param_1 = theta_param_1, theta_param_2 = theta_param_2)
       
-      cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
+      # cat('move=',move.list$move, ',idx = ',move.list$node.idx,'\n')
       
       nobs.per.term <- vapply(get_terminal_nodes_idx(move.list$tree), 
                               \(x) nrow(get_obs_at_node(node.idx = x, X = X, 
                                                         tree_top = move.list$tree, X.orig = X)), 0)
       if(sum(nobs.per.term == 0) > 0){
         empty.count = empty.count + 1
-        cat('empty count: ', empty.count, '\n') }
+        # cat('empty count: ', empty.count, '\n') 
+        }
       else{empty.flag = FALSE}
     }
     
@@ -1093,7 +1097,7 @@ laplace_approx <- function(prop_mu, theta_param_2, u, v, fisher_fun_log, fd_fun_
   prior_fisher <- function(mu) (fisher_fun_log(mu, u, v) + 1/(theta_param_2)^2)
   prior_fd <- function(mu) (fd_fun_log(mu, u, v) - mu/(theta_param_2)^2)
   
-  prop_mu <- optim(prop_mu, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))$par
+  prop_mu <- optim(0, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))$par
   
   # n.iter <- 1
   # while((n.iter<21)&(abs(prior_fd(prop_mu)) > (sqrt(abs(prior_fisher(prop_mu)))/10))){

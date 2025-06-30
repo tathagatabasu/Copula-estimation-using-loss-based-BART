@@ -183,7 +183,7 @@ To ensure that the proposal is accurate and can explore the parameter space effi
 		\State Find the maximum posterior mode: $\hat{\mu}_k = \arg\max_{\mu_k}\log p(\mu_k\mid U_1,U_2, X)$
 		
 		\State Compute the observed information matrix at the MAP:
-		$J(\hat{\mu}_k) = -\nabla^2\ell(\mu_k)+\frac{1}{\sigma_t^2}\mid_{\mu_k = \hat{\mu}_k}$
+		$J(\hat{\mu}_k) = -\nabla^2\ell(\mu_k)\mid_{\mu_k = \hat{\mu}_k}+\frac{1}{\sigma_t^2}$
 		
 		\State Compute variance of the approximate posterior distribution: $\hat{\sigma}^2 = -(J(\hat{\mu}_k))^{-1}$
 		
@@ -316,14 +316,17 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 		\midrule
 		Case 1 & 1 & 3.2958 & 2.0413 & 0.4457 & 0.0047 & 0.1719 & 0.9820 \\ 
 		Case 2 & 1 & 2.1382 & 1.1323 & 0.1523 & 0.0028 & 0.1152 & 0.9060 \\ 
-		Case 3 & 1 & 3.0315 & 2.0072 & 0.1273 & 0.0023 & 0.0554 & 0.5060 \\ 
+		Case 3 & 1 & 3.0315 & 2.0072 & 0.1273 & 0.0023 & 0.0554 & 0.5060 \\
+		Case 3 & 5 & -- & -- & 0.2485 & 0.0015 & 0.0829 & 0.7660 \\ 
 		Case 4 & 1 & 2.0148 & 1.0148 & 0.0722 & 0.0006 & 0.0809 & 0.9500 \\ 
 		\midrule
 		\multicolumn{8}{c}{Student t} \\
 		\midrule
 		Case 1 & 1 & 3.0792 & 2.0195 & 0.4302 & 0.0017 & 0.1412 & 0.9440 \\ 
 		Case 2 & 1 & 2.3683 & 1.3438 & 0.2757 & 0.0018 & 0.2140 & 0.6800 \\ 
+		Case 2 & 5 & -- & -- & 0.3321 & 0.0055 & 0.2424 & 0.9420 \\
 		Case 3 & 1 & 3.1178 & 2.0320 & 0.4413 & 0.0074 & 0.1023 & 0.4000 \\ 
+		Case 3 & 5 & -- & -- & 0.3165 & 0.0032 & 0.1308 & 0.8860 \\
 		Case 4 & 1 & 2.0758 & 1.0685 & 0.2165 & 0.0009 & 0.1172 & 0.9680 \\ 
 		\midrule
 		\multicolumn{8}{c}{Clayton} \\
@@ -336,8 +339,10 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 		\multicolumn{8}{c}{Gumbel} \\
 		\midrule
 		Case 1 & 1 & 2.1182 & 1.1173 & 0.0915 & 0.2654 & 0.5034 & 0.3980 \\ 
+		Case 1 & 5 & -- & -- & 0.2648 & 0.1148 & 0.8510 & 0.8780 \\
 		Case 2 & 1 & 2.1218 & 1.1198 & 0.1262 & 0.0427 & 0.8122 & 0.9300 \\ 
 		Case 3 & 1 & 3.1997 & 2.0167 & 0.4438 & 0.1313 & 1.2414 & 0.8120 \\ 
+		Case 3 & 5 & -- & -- & 0.2643 & 0.0607 & 1.4935 & 0.9860 \\
 		Case 4 & 1 & 2.0287 & 1.0287 & 0.1182 & 0.0492 & 0.5881 & 0.6920 \\ 
 		\bottomrule
 		\end{tabular}}
@@ -390,6 +395,30 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 \caption{Posterior convergence diagnostic for Different copulas. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood.}\label{tab:gauss:convergence}}
 \end{table}
 
+\appendix
+
+\section{Derivatives}
+Let $\log(f(h(\mu)))\coloneqq \log(f(h(\mu)\mid U_1,U_2,X)) = \sum\log\left(c(u_1,u_2\mid h(R_j+\mu))\right)$ denote the copula likelihood at a terminal node. Then the first derivative is given by:
+\begin{align}
+	\begin{split}
+		\frac{\partial \log(f(h(\mu)))}{\partial \mu} 
+		& = \frac{\partial f(h(\mu))}{\partial \mu}\frac{\partial \log(f(h(\mu)))}{\partial f(h(\mu))}\\
+		& = \frac{\partial h(\mu)}{\partial \mu}\frac{\partial f(h(\mu))}{\partial h(\mu)}\frac{1}{f(h(\mu))} \\
+		& = h'(\mu)\frac{f'(h(\mu))}{f(h(\mu))}.
+	\end{split}
+\end{align}
+
+Similarly, the second derivative is given by:
+\begin{align}
+	\begin{split}
+		\frac{\partial^2 \log(f(h(\mu)))}{\partial \mu^2}
+		& = \frac{\partial}{\partial \mu}\left[h'(\mu)\frac{f'(h(\mu))}{f(h(\mu))}\right]\\
+		& = h''(\mu)\frac{f'(h(\mu))}{f(h(\mu))} 
+			+ h'(\mu)\frac{\partial}{\partial \mu}\left[\frac{f'(h(\mu))}{f(h(\mu))}\right]\\
+		& = h''(\mu)\frac{f'(h(\mu))}{f(h(\mu))} 
+		+ \left(h'(\mu)\right)^2\left[\frac{f''(h(\mu))}{f(h(\mu))} - \left(\frac{f'(h(\mu))}{f(h(\mu))}\right)^2\right]
+	\end{split}
+\end{align}
 
 \bibliographystyle{plainnat}
 \bibliography{example}

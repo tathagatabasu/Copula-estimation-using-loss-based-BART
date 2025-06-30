@@ -126,12 +126,12 @@ if(F){
   
   # mcmc params
   n.chain_par <- 1
-  n.iter_par <- 6000
+  n.iter_par <- 2000
   n.born.out.par <- 1000
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
-  moves.prob_par <- c(0.1, 0.3, 0.3, 0.3)
+  moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
   lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
   
 }
@@ -139,10 +139,10 @@ if(F){
 ################################################################################
 # gaussian
 ################################################################################
-if(T){
+if(F){
   for (i in 3) {
     assign(paste0("gauss_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                  n.tree = 10,
+                                                                  n.tree = 5,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -177,7 +177,7 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 10
+  n.thin <- 1
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
@@ -314,11 +314,11 @@ if(F){
 ################################################################################
 # t
 ################################################################################
-if(T){
+if(F){
   
-  for (i in 2:3) {
+  for (i in 3) {
     assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                              n.tree = 10,
+                                                              n.tree = 5,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -331,17 +331,19 @@ if(T){
                                                           theta_param_1 = 0, theta_param_2 = 1,
                                                           prior_type = "N",
                                                           cop_type = "t"))
+    
+    cat('done case', i, '\n')
   }
   
 }
 
-# save(t_mcmc_lb.def_single_4, file = "t_mcmc_lb.def_single_4.Rdata")
+# save(t_mcmc_lb.def_single_3, file = "t_mcmc_lb.def_single_3.Rdata")
 # rm(t_mcmc_lb.def_single_1,t_mcmc_lb.def_single_2,t_mcmc_lb.def_single_3,t_mcmc_lb.def_single_4)
 
 # results
 
 if(F){
-  test_case = 4
+  test_case = 3
   
   load(paste0("t_mcmc_lb.def_single_",test_case,".Rdata"))
   
@@ -351,7 +353,7 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 10
+  n.thin <- 1
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
@@ -491,9 +493,9 @@ if(F){
 ################################################################################
 if(T){
   
-  for (i in c(1,3:4)) {
+  for (i in c(3:4)) {
     assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                   n.tree = 10,
+                                                                   n.tree = 5,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -506,11 +508,13 @@ if(T){
                                                                theta_param_1 = 0, theta_param_2 = 1,
                                                                prior_type = "N",
                                                                cop_type = "gumbel"))
+    
+    cat('done case', i, '\n')
   }
   
 }
 
-# save(gumbel_mcmc_lb.def_single_4, file = "gumbel_mcmc_lb.def_single_4.Rdata")
+# save(gumbel_mcmc_lb.def_single_1, file = "gumbel_mcmc_lb.def_single_1.Rdata")
 # rm(gumbel_mcmc_lb.def_single_1,gumbel_mcmc_lb.def_single_2,gumbel_mcmc_lb.def_single_3,gumbel_mcmc_lb.def_single_4)
 
 # results
@@ -526,7 +530,7 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 10
+  n.thin <- 1
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
@@ -668,7 +672,7 @@ if(T){
   
   for (i in 2:4) {
     assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                    n.tree = 10,
+                                                                    n.tree = 5,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -681,6 +685,8 @@ if(T){
                                                                 theta_param_1 = 0, theta_param_2 = 1,
                                                                 prior_type = "N",
                                                                 cop_type = "clayton"))
+    
+    cat('done case', i, '\n')
   }
   
   # all prop_mu = 0, prop_sigma = .2,
