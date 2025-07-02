@@ -12,6 +12,9 @@ multichain_MCMC_copula <- function(n.iter, n.chain,n.tree = 10,
                                    prop_mu, prop_sigma,
                                    theta_param_1, theta_param_2,
                                    prior_type, cop_type){
+  
+  st_time = Sys.time()
+  
   chain.list <- mclapply(1:n.chain,
                          \(x) MCMC_copula(n.iter = n.iter, n.tree = n.tree,
                                           X = X,
@@ -32,6 +35,9 @@ multichain_MCMC_copula <- function(n.iter, n.chain,n.tree = 10,
   df_list <- lapply(chain.list,
                     function(x) x$df_res)
   df.res <- Reduce(c, df_list)
+  
+  time_diff <- Sys.time() - st_time
+  print(time_diff)
   return(list(trees = tree_list_comb, df_res = df.res))
 }
 
@@ -101,7 +107,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
   
   if(n.tree>1){
     for(idx.iter in 1:n.iter){
-      # cat('Iteration: ', idx.iter, '\n')
+      cat('Iteration: ', idx.iter, '\n')
       pred_at_obs <- Reduce('+', res_theta_list)
       
       for(idx.tree in idx.tree.vec){
@@ -137,7 +143,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
     }
   }else{
     for(idx.iter in 1:n.iter){
-      # cat('Iteration: ', idx.iter, '\n')
+      cat('Iteration: ', idx.iter, '\n')
       pred_at_obs <- Reduce('+', res_theta_list)
       
       for(idx.tree in idx.tree.vec){
@@ -983,36 +989,47 @@ FD_log_t <- function(theta, u, v, df = 3) {
   return(sum(FD))
 }
 
+clayton_density <- function(u, v, theta) {
+  if(any(theta<=0)) return(0)
+  A <- exp(-theta*log(u)) + exp(-theta*log(v)) - 1
+  density <- (theta + 1) * exp((-theta - 1)*log(u * v) + (-2 - 1/theta)*log(A))
+  return(density)
+}
+
 loglik_clayton <- function(theta, u, v) {
-  if(any(theta<=0)||any(theta>=28)) return(-Inf)
+  if(any(theta<=0)) return(-Inf)
   
-  log_density <- log(BiCopPDF(u,v,3,theta))
+  log_density <- log(clayton_density(u, v, theta))
   
   return(sum(log_density))
 }
 
 FI_clayton <- function(theta, u, v) {
-  if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
+  # if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
   
-  f_deriv <- BiCopDeriv(u,v,3,link_clayton(theta))
-  f_deriv2 <- BiCopDeriv2(u,v,3,link_clayton(theta))
+  vec_fun <- Vectorize(clayton_density)
   
-  f<- BiCopPDF(u,v,3,link_clayton(theta))
+  f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
+  f_deriv2 <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))), order = 2)
   
-  FI <- -(f_deriv2 / f - f_deriv^2/f^2) * (28*sigmoid(theta) * (1-sigmoid(theta)))^2 - (f_deriv/f) * (28*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+  f<- clayton_density(u,v,link_clayton(theta))
+  
+  FI <- -(sign(f_deriv2/f)*exp(log(abs(f_deriv2)) - log(abs(f))) - exp(2*log(abs(f_deriv)) - 2*log(abs(f)))) * (exp(theta))^2 - sign(f_deriv/f) * exp(log(abs(f_deriv)) - log(abs(f))) * exp(theta) #(28*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
   
   return(sum(FI))
 }
 
 FD_log_clayton <- function(theta, u, v) {
   
-  if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
+  # if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
   
-  f_deriv <- BiCopDeriv(u,v,3,link_clayton(theta))
+  vec_fun <- Vectorize(clayton_density)
   
-  f<- BiCopPDF(u,v,3,link_clayton(theta))
+  f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
   
-  FD <- (f_deriv / f) * (28*sigmoid(theta) * (1-sigmoid(theta)))
+  f<- clayton_density(u,v,link_clayton(theta))
+  
+  FD <- sign(f_deriv/f) * exp(log(abs(f_deriv)) - log(abs(f))) * exp(theta)#(28*sigmoid(theta) * (1-sigmoid(theta)))
   
   return(sum(FD))
 }
@@ -1097,7 +1114,7 @@ laplace_approx <- function(prop_mu, theta_param_2, u, v, fisher_fun_log, fd_fun_
   prior_fisher <- function(mu) (fisher_fun_log(mu, u, v) + 1/(theta_param_2)^2)
   prior_fd <- function(mu) (fd_fun_log(mu, u, v) - mu/(theta_param_2)^2)
   
-  prop_mu <- optim(0, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))$par
+  prop_optim <- optim(0, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))
   
   # n.iter <- 1
   # while((n.iter<21)&(abs(prior_fd(prop_mu)) > (sqrt(abs(prior_fisher(prop_mu)))/10))){
@@ -1105,9 +1122,9 @@ laplace_approx <- function(prop_mu, theta_param_2, u, v, fisher_fun_log, fd_fun_
   #   n.iter <- n.iter + 1
   # }
   
-  prop_sd <- 1/sqrt(abs(prior_fisher(prop_mu))) #+ 1e-4
+  prop_sd <- 1/sqrt(abs(prior_fisher(prop_optim$par))) #+ 1e-4
   
-  return(list("prop_mu" = prop_mu, "prop_sd" = prop_sd))
+  return(list("prop_mu" = prop_optim$par, "prop_sd" = prop_sd))
 }
 
 nterm_BART <- function(bart_tree_list){
@@ -1150,7 +1167,7 @@ link_t <- function(rho) {
 }
 
 link_clayton <- function(x) {
-  return(28 / (1 + exp(-x)))
+  return(exp(x))
 }
 
 link_gumbel <- function(x) {
