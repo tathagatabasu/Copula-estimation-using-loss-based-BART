@@ -16,6 +16,7 @@ library(xtable)
 require(foreach)
 require(parallel)
 require(doParallel)
+library(calculus)
 
 ################################################################################
 # data generation
@@ -491,11 +492,11 @@ if(F){
 ################################################################################
 # Gumbel
 ################################################################################
-if(T){
+if(F){
   
   for (i in 1) {
     assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 2000,
-                                                                   n.tree = 1,
+                                                                   n.tree = 5,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -531,7 +532,8 @@ if(F){
   pred_val = do.call(rbind,list_pred_lb)
   
   n.thin <- 1
-  
+  n.iter_par <- 2000
+  n.born.out.par <- 0
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
@@ -668,11 +670,11 @@ if(F){
 ################################################################################
 # clayton
 ################################################################################
-if(T){
+if(F){
   
   for (i in 2) {
-    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 15000,
-                                                                    n.tree = 2, #n.cores = 10,
+    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 6000,
+                                                                    n.tree = 5, #n.cores = 10,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -709,9 +711,9 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 1
-  n.iter_par <- 15000
-  n.born.out.par <-10000
+  n.thin <- 50
+  n.iter_par <- 6000
+  n.born.out.par <-1000
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
@@ -754,7 +756,11 @@ if(F){
   like_df <-data.frame("nn" = like_val)
   like_df$idx <- 1:(n.chain_par*n.iter_par)
   
-  pl_like <- ggplot(like_df[10001:15000,], aes(idx, nn)) + 
+  like_df_thin <- like_df[c((1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))]),]
+  
+  like_df_thin = na.omit(like_df_thin[c(rep(NA,(n.thin-1)), TRUE),])
+  
+  pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
     ylab('log-likelihood') +
     theme_classic() + 

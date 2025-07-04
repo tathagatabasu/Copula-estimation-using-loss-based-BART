@@ -96,7 +96,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
   idx.tree.vec <- 1:n.tree
   res_theta_list <- lapply(1:n.tree, \(x) rep(0, length(X)))
   
-  sig_2 <- rinvgamma(n.tree, shape = 0.01, rate = 0.01)
+  sig_2 <- rinvgamma(n.tree, shape = 1, rate = 1)
   
   # params for computation
   
@@ -293,7 +293,7 @@ BART_single_step <- function(X, res_theta, U1, U2,
   
   term_vals <- sapply(term_nodes, function(i)unique(get_value_tree(new.tree, get_obs_at_node(i, X, new.tree,1,X))))
   
-  sig_2 <- rinvgamma(1, shape = (0.01 + length(term_vals)/2), rate = (0.01 + sum(term_vals^2)/2))
+  sig_2 <- rinvgamma(1, shape = (1 + length(term_vals)/2), rate = (1 + sum(term_vals^2)/2))
   
   matrix.res <- matrix(c(move.type, get_depth(rt_old), get_num_terminal_nodes(rt_old),
                          new.tree.list$prior.ratio, new.tree.list$lik.ratio, 
@@ -989,7 +989,7 @@ FD_log_t <- function(theta, u, v, df = 3) {
   return(sum(FD))
 }
 
-clayton_density <- function(u, v, theta) {
+clayton_density <- function(theta, u, v) {
   if(any(theta<=0)) return(0)
   A <- exp(-theta*log(u)) + exp(-theta*log(v)) - 1
   density <- (theta + 1) * exp((-theta - 1)*log(u * v) + (-2 - 1/theta)*log(A))
@@ -999,7 +999,7 @@ clayton_density <- function(u, v, theta) {
 loglik_clayton <- function(theta, u, v) {
   if(any(theta<=0)) return(-Inf)
   
-  log_density <- log(clayton_density(u, v, theta))
+  log_density <- log(clayton_density(theta, u, v))
   
   return(sum(log_density))
 }
@@ -1007,14 +1007,19 @@ loglik_clayton <- function(theta, u, v) {
 FI_clayton <- function(theta, u, v) {
   # if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
   
-  vec_fun <- Vectorize(clayton_density)
+  # vec_fun <- Vectorize(clayton_density)
+  vec_fun <- Vectorize(loglik_clayton)
   
-  f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
-  f_deriv2 <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))), order = 2)
+  # f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
+  # f_deriv2 <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))), order = 2)
+  # 
+  # f<- clayton_density(u,v,link_clayton(theta))
   
-  f<- clayton_density(u,v,link_clayton(theta))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_clayton(theta))))
+  f_deriv2_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_clayton(theta))), order = 2)
   
-  FI <- -(sign(f_deriv2/f)*exp(log(abs(f_deriv2)) - log(abs(f))) - exp(2*log(abs(f_deriv)) - 2*log(abs(f)))) * (exp(theta))^2 - sign(f_deriv/f) * exp(log(abs(f_deriv)) - log(abs(f))) * exp(theta) #(28*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+  
+  FI <- -sign(f_deriv2_log) * exp(log(abs(f_deriv2_log)) + 2*theta) - sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + theta) #(28*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
   
   return(sum(FI))
 }
@@ -1023,49 +1028,78 @@ FD_log_clayton <- function(theta, u, v) {
   
   # if(any(link_clayton(theta)<=1e-10)||any(link_clayton(theta)>=28)) return(0)
   
-  vec_fun <- Vectorize(clayton_density)
+  # vec_fun <- Vectorize(clayton_density)
+  vec_fun <- Vectorize(loglik_clayton)
   
-  f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
+  # f_deriv <- derivative(function(x)vec_fun(u,v,x), var = c(x=mean(link_clayton(theta))))
   
-  f<- clayton_density(u,v,link_clayton(theta))
+  # f<- clayton_density(u,v,link_clayton(theta))
   
-  FD <- sign(f_deriv/f) * exp(log(abs(f_deriv)) - log(abs(f))) * exp(theta)#(28*sigmoid(theta) * (1-sigmoid(theta)))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_clayton(theta))))
+  
+  # FD <- sign(f_deriv/f) * exp(log(abs(f_deriv)) - log(abs(f))) * exp(theta)#(28*sigmoid(theta) * (1-sigmoid(theta)))
+  
+  FD <- sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + theta)
   
   return(sum(FD))
 }
 
+gumbel_density <- function(theta, u, v) {
+  # Basic checks
+  if (any(theta <= 1)) return(0)
+  
+  # Compute the generator term
+  A <- exp(theta * log(-log(u))) + exp(theta * log(-log(v)))
+  C_uv <- exp(-exp((1/theta)*log(A)))
+  
+  part1 <- exp((2/theta - 2)*log(A))
+  part2 <- (-log(u))^(theta - 1) * (-log(v))^(theta - 1)
+  part3 <- 1 + (theta - 1) * exp(-(1/theta)*log(A))
+  
+  density <- exp(log(C_uv) + log(part1) + log(part2) + log(part3) - log(u) - log(v))
+  return(density)
+}
+
 loglik_gumbel <- function(theta, u, v) {
   
-  if(any(theta<=1)||any(theta>=17)) return(-Inf)
+  if (any(theta <= 1)) return(-Inf)
   
-  log_density <- log(BiCopPDF(u,v,4,theta))
+  log_density <- log(gumbel_density(theta, u, v))
   
   return(sum(log_density))
 }
 
 FI_gumbel <- function(theta, u, v) {
   
-  if(any(link_gumbel(theta)<=1)||any(link_gumbel(theta) >=17)) return(0)
+  # if(any(link_gumbel(theta)<=1)||any(link_gumbel(theta) >=17)) return(0)
   
-  f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
-  f_deriv2 <- BiCopDeriv2(u,v,4,(link_gumbel(theta)))
+  vec_fun <- Vectorize(loglik_gumbel)
   
-  f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
+  # f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
+  # f_deriv2 <- BiCopDeriv2(u,v,4,(link_gumbel(theta)))
+  # 
+  # f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
   
-  FI <- -(f_deriv2 / f - f_deriv^2/f^2) * (16*sigmoid(theta) * (1-sigmoid(theta)))^2 - (f_deriv/f) * (16*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))))
+  f_deriv2_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))), order = 2)
+  
+  FI <- -sign(f_deriv2_log) * exp(log(abs(f_deriv2_log)) + 2*log(59) + 2*log(sigmoid(theta)) + 2* log((1-sigmoid(theta)))) - sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + log(59) + log(sigmoid(theta)) + log((1-sigmoid(theta))) + log((1-2*sigmoid(theta))))
   
   return(sum(FI))
 }
 
 FD_log_gumbel <- function(theta, u, v) {
   
-  if(any(link_gumbel(theta)<=1)||any(link_gumbel(theta) >=17)) return(0)
+  # if(any(link_gumbel(theta)<=1)||any(link_gumbel(theta) >=17)) return(0)
+  vec_fun <- Vectorize(loglik_gumbel)
   
-  f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
+  # f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
+  # 
+  # f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
   
-  f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))))
   
-  FD <- (f_deriv / f) * (16*sigmoid(theta) * (1-sigmoid(theta)))
+  FD <- sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + log(59) + log(sigmoid(theta)) + log((1-sigmoid(theta))))
   
   return(sum(FD))
 }
@@ -1114,7 +1148,7 @@ laplace_approx <- function(prop_mu, theta_param_2, u, v, fisher_fun_log, fd_fun_
   prior_fisher <- function(mu) (fisher_fun_log(mu, u, v) + 1/(theta_param_2)^2)
   prior_fd <- function(mu) (fd_fun_log(mu, u, v) - mu/(theta_param_2)^2)
   
-  prop_optim <- optim(0, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))
+  prop_optim <- optim(prop_mu, fn = log_post, gr = prior_fd, method = "BFGS", control = list(fnscale = -1))
   
   # n.iter <- 1
   # while((n.iter<21)&(abs(prior_fd(prop_mu)) > (sqrt(abs(prior_fisher(prop_mu)))/10))){
@@ -1171,5 +1205,5 @@ link_clayton <- function(x) {
 }
 
 link_gumbel <- function(x) {
-  return(16 / (1 + exp(-x)) + 1)
+  return(59*sigmoid(x)+1)
 }
