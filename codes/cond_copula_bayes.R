@@ -531,9 +531,9 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 1
+  n.thin <- 10
   n.iter_par <- 2000
-  n.born.out.par <- 0
+  n.born.out.par <- 1000
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
