@@ -32,7 +32,7 @@
 \usepackage{url} % not crucial - just used below for the URL 
 \usepackage{doi}
 
-\title{Copula estimation using loss-based Bayesian Additive Regression Trees}
+\title{Conditional Copula models using loss-based Bayesian Additive Regression Trees}
 \author{**}
 \date{\today}
 
@@ -180,7 +180,7 @@ To ensure that the proposal is accurate and can explore the parameter space effi
 		
 		\State Calculate log-posterior given by: $\log p(\mu_k\mid U_1,U_2, X) = \ell(\mu_k) - \frac{\mu_k^2}{2\sigma_{t}^2}$
 		
-		\State Find the maximum posterior mode: $\hat{\mu}_k = \arg\max_{\mu_k}\log p(\mu_k\mid U_1,U_2, X)$
+		\State Find the maximum aposteriori estimate : $\hat{\mu}_k = \arg\max_{\mu_k}\log p(\mu_k\mid U_1,U_2, X)$
 		
 		\State Compute the observed information matrix at the MAP:
 		$J(\hat{\mu}_k) = -\nabla^2\ell(\mu_k)\mid_{\mu_k = \hat{\mu}_k}+\frac{1}{\sigma_t^2}$
@@ -316,34 +316,34 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 		\midrule
 		Case 1 & 1 & 3.2958 & 2.0413 & 0.4457 & 0.0047 & 0.1719 & 0.9820 \\ 
 		Case 2 & 1 & 2.1382 & 1.1323 & 0.1523 & 0.0028 & 0.1152 & 0.9060 \\ 
-		Case 3 & 1 & 3.0315 & 2.0072 & 0.1273 & 0.0023 & 0.0554 & 0.5060 \\
+		Case 3 & 1 & 3.0315 & 2.0072 & 0.1273 & 0.0023 & 0.0554 & \textbf{0.5060} \\
 		Case 3 & 5 & -- & -- & 0.2485 & 0.0015 & 0.0829 & 0.7660 \\ 
 		Case 4 & 1 & 2.0148 & 1.0148 & 0.0722 & 0.0006 & 0.0809 & 0.9500 \\ 
 		\midrule
 		\multicolumn{8}{c}{Student t} \\
 		\midrule
 		Case 1 & 1 & 3.0792 & 2.0195 & 0.4302 & 0.0017 & 0.1412 & 0.9440 \\ 
-		Case 2 & 1 & 2.3683 & 1.3438 & 0.2757 & 0.0018 & 0.2140 & 0.6800 \\ 
+		Case 2 & 1 & 2.3683 & 1.3438 & 0.2757 & 0.0018 & 0.2140 & \textbf{0.6800} \\ 
 		Case 2 & 5 & -- & -- & 0.3321 & 0.0055 & 0.2424 & 0.9420 \\
-		Case 3 & 1 & 3.1178 & 2.0320 & 0.4413 & 0.0074 & 0.1023 & 0.4000 \\ 
+		Case 3 & 1 & 3.1178 & 2.0320 & 0.4413 & 0.0074 & 0.1023 & \textbf{0.4000} \\ 
 		Case 3 & 5 & -- & -- & 0.3165 & 0.0032 & 0.1308 & 0.8860 \\
 		Case 4 & 1 & 2.0758 & 1.0685 & 0.2165 & 0.0009 & 0.1172 & 0.9680 \\ 
 		\midrule
 		\multicolumn{8}{c}{Clayton} \\
 		\midrule
 		Case 1 & 1 & 3.0160 & 2.0095 & 0.4128 & 0.0220 & 0.7504 & 1.0000 \\ 
-		Case 2 & 1 & 2.0278 & 1.0278 & 0.0472 & 0.1862 & 0.8522 & 0.7420 \\ 
-		Case 3 & 1 & 2.8338 & 1.7613 & 0.3493 & 1.1694 & 2.5060 & 0.6620 \\ 
-		Case 4 & 1 & 2.0277 & 1.0277 & 0.1670 & 0.1396 & 0.9837 & 0.6920 \\
+		Case 2 & 1 & 2.0278 & 1.0278 & 0.0472 & 0.1862 & 0.8522 & \textbf{0.7420} \\ 
+		Case 3 & 1 & 2.8338 & 1.7613 & 0.3493 & 1.1694 & 2.5060 & \textbf{0.6620} \\ 
+		Case 4 & 1 & 2.0277 & 1.0277 & 0.1670 & 0.1396 & 0.9837 & \textbf{0.6920} \\
 		\midrule
 		\multicolumn{8}{c}{Gumbel} \\
 		\midrule
-		Case 1 & 1 & 2.1182 & 1.1173 & 0.0915 & 0.2654 & 0.5034 & 0.3980 \\ 
+		Case 1 & 1 & 2.1182 & 1.1173 & 0.0915 & 0.2654 & 0.5034 & \textbf{0.3980} \\ 
 		Case 1 & 5 & -- & -- & 0.2648 & 0.1148 & 0.8510 & 0.8780 \\
 		Case 2 & 1 & 2.1218 & 1.1198 & 0.1262 & 0.0427 & 0.8122 & 0.9300 \\ 
-		Case 3 & 1 & 3.1997 & 2.0167 & 0.4438 & 0.1313 & 1.2414 & 0.8120 \\ 
+		Case 3 & 1 & 3.1997 & 2.0167 & 0.4438 & 0.1313 & 1.2414 & \textbf{0.8120} \\ 
 		Case 3 & 5 & -- & -- & 0.2643 & 0.0607 & 1.4935 & 0.9860 \\
-		Case 4 & 1 & 2.0287 & 1.0287 & 0.1182 & 0.0492 & 0.5881 & 0.6920 \\ 
+		Case 4 & 1 & 2.0287 & 1.0287 & 0.1182 & 0.0492 & 0.5881 & \textbf{0.6920} \\ 
 		\bottomrule
 		\end{tabular}}
 	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 100 different chains with 6000 samples in a single chain. We discard 1000 samples and then it is thinned by 10.}
