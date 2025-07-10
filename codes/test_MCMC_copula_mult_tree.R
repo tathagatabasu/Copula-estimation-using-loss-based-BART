@@ -79,9 +79,9 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
   }
   
   if(cop_type == "gauss"){
-    opt_bound <- c(log(0.001), log(18.999))
+    opt_bound <- c(-5.2, 5.2)
   }else if(cop_type == "t"){
-    opt_bound <- c(log(0.001), log(18.999))
+    opt_bound <- c(-5.2, 5.2)
   }else if(cop_type == "clayton"){
     opt_bound <- c(log(0.001), log(18.999))
   }else if(cop_type == "gumbel"){
@@ -120,6 +120,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
       cat('Iteration: ', idx.iter, '\n')
       
       for(idx.tree in idx.tree.vec){
+        
         res_theta <- Reduce('+', res_theta_list[idx.tree.vec != idx.tree])
         
         # cat('Tree: ', idx.tree, '\n')
@@ -143,7 +144,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
         
         last.tree.list[[idx.tree]] <- new_tree
         df_res.list[[idx.tree]] <- new_tree_single$df_res
-        theta_pred <- vapply(1:nrow(X), \(x) g.T(new_tree, X[x,]), 0)
+        theta_pred <- get_value_tree(new_tree, X)
         res_theta_list[[idx.tree]] <- theta_pred
         
       }
@@ -179,7 +180,7 @@ MCMC_copula <- function(n.iter, n.tree = 10, X, U1, U2, prior_list,
         
         last.tree.list[[idx.tree]] <- new_tree
         df_res.list[[idx.tree]] <- new_tree_single$df_res
-        theta_pred <- vapply(1:nrow(X), \(x) g.T(new_tree, X[x,]), 0)
+        theta_pred <- get_value_tree(new_tree, X)
         res_theta_list[[idx.tree]] <- theta_pred
         
       }
@@ -962,36 +963,85 @@ set_term_node_value_copula <- function(node.idx, tree_top,
 }
 
 loglik_gauss <- function(rho, u, v) {
-  
+
   if(any(abs(rho)>=1)) return(-Inf)
-  
+
   log_lik <- sum(log(BiCopPDF(u,v,1,rho)))
   return(log_lik)
 }
 
+# gauss_density <- function(rho, u, v){
+#   # Inverse standard normal CDF
+#   z1 <- qnorm(u)
+#   z2 <- qnorm(v)
+#   
+#   # Bivariate normal PDF numerator term
+#   exponent <- - (z1^2 - 2*rho*z1*z2 + z2^2) / (2 * (1 - rho^2))
+#   
+#   # Marginal standard normal PDFs
+#   phi1 <- dnorm(z1)
+#   phi2 <- dnorm(z2)
+#   
+#   # Copula density
+#   c_uv <- (1 / sqrt(1 - rho^2)) * 
+#     exp(exponent) / (phi1 * phi2)
+# }
+
+# loglik_gauss <- function(rho, u, v) {
+#   
+#   if(any(abs(rho)>1)) return(-Inf)
+#   
+#   log_lik = sum(log(gauss_density(rho, u, v)))
+#   
+#   return(log_lik)
+# }
+
+# FI_gauss <- function(theta, u, v) {
+#   
+#   if(any(abs(link_gauss(theta))>=1)) return(0)
+#   
+#   f_deriv <- BiCopDeriv(u,v,1,link_gauss(theta))
+#   f_deriv2 <- BiCopDeriv2(u,v,1,link_gauss(theta))
+#   
+#   f<- BiCopPDF(u,v,1,link_gauss(theta))
+#   
+#   FI <- -(f_deriv2 / f - f_deriv^2/f^2) * (2*sigmoid(theta) * (1-sigmoid(theta)))^2 - (f_deriv/f) * (2*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+#   
+#   return(sum(FI))
+# }
+
 FI_gauss <- function(theta, u, v) {
   
-  if(any(abs(link_gauss(theta))>=1)) return(0)
+  vec_fun <- Vectorize(loglik_gauss)
   
-  f_deriv <- BiCopDeriv(u,v,1,link_gauss(theta))
-  f_deriv2 <- BiCopDeriv2(u,v,1,link_gauss(theta))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gauss(theta))))
+  f_deriv2_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gauss(theta))), order = 2)
   
-  f<- BiCopPDF(u,v,1,link_gauss(theta))
-  
-  FI <- -(f_deriv2 / f - f_deriv^2/f^2) * (2*sigmoid(theta) * (1-sigmoid(theta)))^2 - (f_deriv/f) * (2*sigmoid(theta) * (1-sigmoid(theta)) * (1-2*sigmoid(theta)))
+  FI <- -sign(f_deriv2_log) * exp(log(abs(f_deriv2_log))) * (2*sigmoid(theta) * (1-sigmoid(theta)))^2 - sign(f_deriv_log) * exp(log(abs(f_deriv_log))) * (2*sigmoid(theta)*(1-sigmoid(theta))*(1-2*sigmoid(theta)))
   
   return(sum(FI))
 }
 
+# FD_log_gauss <- function(theta, u, v) {
+#   
+#   if(any(abs(link_gauss(theta))>=1)) return(0)
+#   
+#   f_deriv <- BiCopDeriv(u,v,1,link_gauss(theta))
+#   
+#   f<- BiCopPDF(u,v,1,link_gauss(theta))
+#   
+#   FD <- (f_deriv / f) * (2*sigmoid(theta) * (1-sigmoid(theta)))
+#   
+#   return(sum(FD))
+# }
+
 FD_log_gauss <- function(theta, u, v) {
   
-  if(any(abs(link_gauss(theta))>=1)) return(0)
+  vec_fun <- Vectorize(loglik_gauss)
   
-  f_deriv <- BiCopDeriv(u,v,1,link_gauss(theta))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gauss(theta))))
   
-  f<- BiCopPDF(u,v,1,link_gauss(theta))
-  
-  FD <- (f_deriv / f) * (2*sigmoid(theta) * (1-sigmoid(theta)))
+  FD <- sign(f_deriv_log) * exp(log(abs(f_deriv_log))) * (2*sigmoid(theta) * (1-sigmoid(theta)))
   
   return(sum(FD))
 }
@@ -1087,38 +1137,84 @@ FD_log_clayton <- function(theta, u, v) {
   return(sum(FD))
 }
 
+gumbel_density <- function(theta, u, v) {
+  
+  # Compute the generator term
+  A <- exp(theta * log(-log(u))) + exp(theta * log(-log(v)))
+  C_uv <- exp(-exp((1/theta)*log(A)))
+  
+  part1 <- exp((2/theta - 2)*log(A))
+  part2 <- (-log(u))^(theta - 1) * (-log(v))^(theta - 1)
+  part3 <- 1 + (theta - 1) * exp(-(1/theta)*log(A))
+  
+  density <- exp(log(C_uv) + log(part1) + log(part2) + log(part3) - log(u) - log(v))
+  return(density)
+}
+
 loglik_gumbel <- function(theta, u, v) {
+  
   if(any(abs(theta - 9)>8)) return(-Inf)
   
-  log_density <- log(BiCopPDF(u,v,4,theta))
+  log_density <- log(gumbel_density(theta, u, v))
   
   return(sum(log_density))
 }
 
-FI_gumbel <- function(theta, u, v) {
-  if(any(abs(link_gumbel(theta) - 9)>8)) return(-Inf)
-  
-  f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
-  f_deriv2 <- BiCopDeriv2(u,v,4,(link_gumbel(theta)))
+# loglik_gumbel <- function(theta, u, v) {
+#   if(any(abs(theta - 9)>8)) return(-Inf)
+#   
+#   log_density <- log(BiCopPDF(u,v,4,theta))
+#   
+#   return(sum(log_density))
+# }
 
-  f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
+FI_gumbel <- function(theta, u, v) {
   
-  FI <- -sign(f_deriv2 / f) * exp(log(abs(f_deriv2)) - log(abs(f)) + 2*theta) + exp(2*log(abs(f_deriv)) - 2*log(abs(f)) + 2*theta) - sign((f_deriv/f)) * exp(log(abs(f_deriv)) - log(abs(f)) + theta)
+  vec_fun <- Vectorize(loglik_gumbel)
+  
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))))
+  f_deriv2_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))), order = 2)
+  
+  FI <- -sign(f_deriv2_log) * exp(log(abs(f_deriv2_log)) + 2*theta) - sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + theta)
   
   return(sum(FI))
 }
 
+# FI_gumbel <- function(theta, u, v) {
+#   if(any(abs(link_gumbel(theta) - 9)>8)) return(-Inf)
+#   
+#   f_deriv <- BiCopDeriv(u,v,4,(link_gumbel(theta)))
+#   f_deriv2 <- BiCopDeriv2(u,v,4,(link_gumbel(theta)))
+# 
+#   f<- BiCopPDF(u,v,4,(link_gumbel(theta)))
+#   
+#   FI <- -sign(f_deriv2 / f) * exp(log(abs(f_deriv2)) - log(abs(f)) + 2*theta) + exp(2*log(abs(f_deriv)) - 2*log(abs(f)) + 2*theta) - sign((f_deriv/f)) * exp(log(abs(f_deriv)) - log(abs(f)) + theta)
+#   
+#   return(sum(FI))
+# }
+
 FD_log_gumbel <- function(theta, u, v) {
-  if(any(abs(link_gumbel(theta) - 9)>8)) return(-Inf)
   
-  f_deriv <- BiCopDeriv(u,v,4,link_gumbel(theta))
+  vec_fun <- Vectorize(loglik_gumbel)
   
-  f<- BiCopPDF(u,v,4,link_gumbel(theta))
+  f_deriv_log <- derivative(function(x)vec_fun(x,u,v), var = c(x=mean(link_gumbel(theta))))
   
-  FD <- sign(f_deriv / f) * exp(log(abs(f_deriv)) - log(abs(f)) + theta)
+  FD <- sign(f_deriv_log) * exp(log(abs(f_deriv_log)) + theta)
   
   return(sum(FD))
 }
+
+# FD_log_gumbel <- function(theta, u, v) {
+#   if(any(abs(link_gumbel(theta) - 9)>8)) return(-Inf)
+#   
+#   f_deriv <- BiCopDeriv(u,v,4,link_gumbel(theta))
+#   
+#   f<- BiCopPDF(u,v,4,link_gumbel(theta))
+#   
+#   FD <- sign(f_deriv / f) * exp(log(abs(f_deriv)) - log(abs(f)) + theta)
+#   
+#   return(sum(FD))
+# }
 
 log_prior_tbeta <- function(rho, bound = 1, theta_param_1, theta_param_2) {
   if (any(abs(rho) >= 1)) {
@@ -1221,18 +1317,6 @@ link_clayton <- function(x) {
   return(19*sigmoid(x)+1.001)
 }
 
-# link_gumbel <- function(x) {
-#   return((exp(x)+1)/(0.025*exp(x) + 0.975))
-# }
-
 link_gumbel <- function(x) {
   return(exp(x) + 1.0001)
-}
-
-link_gumbel_prime <- function(x){
-  exp(x)
-}
-
-link_gumbel_double_prime <- function(x) {
-  exp(x)
 }

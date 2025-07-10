@@ -52,9 +52,9 @@ if(F){
   get_tree_plot.idx(tree_ex)
   
   # assign first splitting rule
-  tree_ex$cond <- list(x.idx = 1, x.val = 0.6)
+  tree_ex$cond <- list(x.idx = 1, x.val = 0.66)
   # assign second splitting rule
-  tree_ex$left$cond <- list(x.idx = 1, x.val = 0.25)
+  tree_ex$left$cond <- list(x.idx = 1, x.val = 0.33)
   # set mu_3
   tree_ex$left$left$cond <- NULL
   tree_ex$left$left$value <- .5
@@ -496,7 +496,7 @@ if(F){
   
   for (i in 1) {
     assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 2000,
-                                                                   n.tree = 5,
+                                                                   n.tree = 20,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -505,7 +505,7 @@ if(F){
                                                                starting.tree = NULL,
                                                                cont.unif = cont.unif_par,
                                                                include.split = incl.split_par,
-                                                               prop_mu = 0, prop_sigma = 1,
+                                                               prop_mu = 0, prop_sigma = 1.1,
                                                                theta_param_1 = 0, theta_param_2 = 1,
                                                                prior_type = "N",
                                                                cop_type = "gumbel"))
@@ -513,7 +513,7 @@ if(F){
     cat('done case', i, '\n')
   }
   
-}
+  }
 
 # save(gumbel_mcmc_lb.def_single_1, file = "gumbel_mcmc_lb.def_single_1.Rdata")
 # rm(gumbel_mcmc_lb.def_single_1,gumbel_mcmc_lb.def_single_2,gumbel_mcmc_lb.def_single_3,gumbel_mcmc_lb.def_single_4)
@@ -531,9 +531,9 @@ if(F){
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 10
+  n.thin <- 1
   n.iter_par <- 2000
-  n.born.out.par <- 1000
+  n.born.out.par <- 0
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
