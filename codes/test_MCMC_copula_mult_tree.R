@@ -972,28 +972,24 @@ loglik_gauss <- function(rho, u, v) {
 
 # gauss_density <- function(rho, u, v){
 #   # Inverse standard normal CDF
-#   z1 <- qnorm(u)
-#   z2 <- qnorm(v)
+#   # Transform to standard normal scores
+#   z <- qnorm(u)
+#   w <- qnorm(v)
 #   
-#   # Bivariate normal PDF numerator term
-#   exponent <- - (z1^2 - 2*rho*z1*z2 + z2^2) / (2 * (1 - rho^2))
+#   denom_log <- -0.5 * log(1 - rho^2)
+#   quad_term <- -sign(1 / (2 * (1 - rho^2)) * (rho^2*z^2 + rho^2*w^2 - 2 * rho * z * w))*exp(-log(abs((2 * (1 - rho^2)))) + log(abs((rho^2*z^2 + rho^2*w^2 - 2 * rho * z * w))))
 #   
-#   # Marginal standard normal PDFs
-#   phi1 <- dnorm(z1)
-#   phi2 <- dnorm(z2)
+#   density <- exp(denom_log + quad_term)
 #   
-#   # Copula density
-#   c_uv <- (1 / sqrt(1 - rho^2)) * 
-#     exp(exponent) / (phi1 * phi2)
+#   return(density)
 # }
 
 # loglik_gauss <- function(rho, u, v) {
+#   # Sanity checks
+#   if (any(abs(rho) >= 1)) return(-Inf)
 #   
-#   if(any(abs(rho)>1)) return(-Inf)
-#   
-#   log_lik = sum(log(gauss_density(rho, u, v)))
-#   
-#   return(log_lik)
+#   log_likelihood <- log(gauss_density(rho,u,v))
+#   return(sum(log_likelihood))
 # }
 
 # FI_gauss <- function(theta, u, v) {
