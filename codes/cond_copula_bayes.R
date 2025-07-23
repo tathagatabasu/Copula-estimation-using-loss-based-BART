@@ -1,8 +1,4 @@
-# codes and packages
-source('code/import_functions.R')
-source('mclapply.R')
-# source('MCMC_BART_copula.R')
-source('test_MCMC_copula_mult_tree.R')
+# packages
 library(data.tree)
 library(dplyr)
 library(ggplot2)
@@ -35,74 +31,48 @@ if(F){
   rownames(X_obs.norm) <- 1:nrow(X_obs)
   
   # tau with tree structure
-  # initialize list
-  tree_ex <- list()
-  # one split on the left branch
-  tree_ex$left <- list(left = list(left = NULL,
-                                   right = NULL),
-                       right = list(left = NULL,
-                                    right = NULL))
-  # no split on the right branch
-  tree_ex$right <-  list(left = NULL,
-                         right = NULL)
+  tau_true_tree <- rep(0,nrow(X_obs))
+  tau_true_tree[X_obs<0.33] <- 0.1
+  tau_true_tree[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
+  tau_true_tree[(X_obs>=0.66)] <- 0.3
   
-  # assign node index
-  tree_ex <- assign_node_idx(tree_ex)
-  # plot the tree
-  get_tree_plot.idx(tree_ex)
-  
-  # assign first splitting rule
-  tree_ex$cond <- list(x.idx = 1, x.val = 0.66)
-  # assign second splitting rule
-  tree_ex$left$cond <- list(x.idx = 1, x.val = 0.33)
-  # set mu_3
-  tree_ex$left$left$cond <- NULL
-  tree_ex$left$left$value <- .5
-  # set mu_4
-  tree_ex$left$right$cond <- NULL
-  tree_ex$left$right$value <- .7
-  # set mu_5
-  tree_ex$right$cond <- NULL
-  tree_ex$right$value <- .3
-  # plot the tree
-  get_tree_plot(tree_ex)
-  tau_true_1 <- sample_CART(tree_ex, X_obs, sigma_ = 0.001) 
+  tau_true_1 <- tau_true_tree #+ rnorm(length(tau_true_tree), sd = 0.01)
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
   
   # monotone
-  tau_true_2 <- 0.3 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2
+  tau_true_2 <- 0.3 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2 #+ rnorm(length(tau_true_1), sd = 0.01)
   # convex
-  tau_true_3 <- 0.5 + 0.3 * sin(3*X_obs)
+  tau_true_3 <- 0.5 + 0.3 * sin(3*X_obs) #+ rnorm(length(tau_true_1), sd = 0.01)
   # non-convex
-  tau_true_4 <- 0.6 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2
+  tau_true_4 <- 0.6 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2 #+ rnorm(length(tau_true_1), sd = 0.01)
   
   plot(X_obs, tau_true_1, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_2, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_3, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_4, xlab = "Observations", ylab = "tau")
   
-  # gauss
+  # gauss # sin(tau*pi/2)
   
   for (i in 1:4) {
-    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = param_gauss(get(paste0("tau_true_",i)))))
+    assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = sin(get(paste0("tau_true_",i)) * pi/2)))
   }
   
-  # t
+  # t # sin(tau*pi/2)
   
   for (i in 1:4) {
-    assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = param_gauss(get(paste0("tau_true_",i))), par2 = 3))
+    assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = sin(get(paste0("tau_true_",i)) * pi/2), par2 = 3))
   }
   
-  # gumbel 
+  # gumbel # 1/(1-tau)
   
   for (i in 1:4) {
-    assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = param_gumbel(get(paste0("tau_true_",i)))))
+    assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = 1/(1-get(paste0("tau_true_",i)))))
   }
   
-  # clayton
+  # clayton # (2*tau)/(1-tau)
   
   for (i in 1:4) {
-    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = param_clayton(get(paste0("tau_true_",i)))))
+    assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = (2*get(paste0("tau_true_",i)))/(1-get(paste0("tau_true_",i)))))
   }
   
   # dataset for prediction
@@ -115,35 +85,52 @@ if(F){
   rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
   
   # tau with tree structure
-  tau_true_pred_1 <- sample_CART(tree_ex, X_obs_pred, sigma_ = 0.001) 
+  tau_true_tree_pred <- rep(0,nrow(X_obs))
+  tau_true_tree_pred[X_obs_pred<0.33] <- 0.1
+  tau_true_tree_pred[(X_obs_pred>=0.33)&(X_obs_pred<0.66)] <- 0.7
+  tau_true_tree_pred[(X_obs_pred>=0.66)] <- 0.3
+  
+  tau_true_pred_1 <- tau_true_tree_pred #+ rnorm(length(tau_true_tree_pred), sd = 0.01)
   tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
   
   # monotone
-  tau_true_pred_2 <- 0.3 + 0.2 * sin(3*X_obs_pred) + 0.3*X_obs_pred^2
+  tau_true_pred_2 <- 0.3 + 0.2 * sin(3*X_obs_pred) + 0.3*X_obs_pred^2 #+ rnorm(length(tau_true_1), sd = 0.01)
   # convex
-  tau_true_pred_3 <- 0.5 + 0.3 * sin(3*X_obs_pred)
+  tau_true_pred_3 <- 0.5 + 0.3 * sin(3*X_obs_pred) #+ rnorm(length(tau_true_1), sd = 0.01)
   # non-convex
-  tau_true_pred_4 <- 0.6 - 0.3 * sin(2*X_obs_pred) + 0.2 * sin(4*X_obs_pred) + 0.3 * X_obs_pred^2
+  tau_true_pred_4 <- 0.6 - 0.3 * sin(2*X_obs_pred) + 0.2 * sin(4*X_obs_pred) + 0.3 * X_obs_pred^2 #+ rnorm(length(tau_true_1), sd = 0.01)
   
   # mcmc params
   n.chain_par <- 1
-  n.iter_par <- 2000
+  n.iter_par <- 6000
   n.born.out.par <- 1000
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
   moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
-  lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
-  
 }
 
+################################################################################
+# source files
+################################################################################
+
+# source('mclapply.R') # if run on windows uncomment it
+
+# source('MCMC_BART_copula.R')
+source('import_functions.R')
+source('test_MCMC_copula_mult_tree.R')
+
+
+lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ################################################################################
 # gaussian
 ################################################################################
 if(F){
-  for (i in 3) {
-    assign(paste0("gauss_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                                  n.tree = 5,
+  n.tree <- 1
+  
+  for (i in 1) {
+    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                                  n.tree = n.tree,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -152,7 +139,7 @@ if(F){
                                                                   starting.tree = NULL,
                                                                   cont.unif = cont.unif_par,
                                                                   include.split = incl.split_par,
-                                                                  prop_mu = 0, prop_sigma = 1,
+                                                                  prop_mu = 0, prop_sigma = .2,
                                                                   theta_param_1 = 0, theta_param_2 = 1,
                                                                   prior_type = "N",
                                                                   cop_type = "gauss"))
@@ -162,17 +149,17 @@ if(F){
   
 }
 
-# save(gauss_mcmc_lb.def_single_3, file = "gauss_mcmc_lb.def_single_3.Rdata")
-# rm(gauss_mcmc_lb.def_single_1,gauss_mcmc_lb.def_single_2,gauss_mcmc_lb.def_single_3,gauss_mcmc_lb.def_single_4)
+save("gauss_mcmc_3_tree_10", file = "gauss_mcmc_3_tree_10.Rdata")
+# rm(gauss_mcmc_1_tree_10,gauss_mcmc_2_tree_10,gauss_mcmc_3_tree_10,gauss_mcmc_4_tree_10)
 
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
-  load(paste0("gauss_mcmc_lb.def_single_",test_case,".Rdata"))
+  # load(paste0("gauss_mcmc_",test_case,"_tree_5.Rdata"))
   
-  model <- get(paste0("gauss_mcmc_lb.def_single_",test_case))
+  model <- get(paste0("gauss_mcmc_",test_case,"_tree_1"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -198,8 +185,8 @@ if(F){
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
+    geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
-    geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
@@ -316,10 +303,11 @@ if(F){
 # t
 ################################################################################
 if(F){
+  n.tree <- 1
   
   for (i in 3) {
-    assign(paste0("t_mcmc_lb.def_single_",i), MCMC_copula(n.iter = n.iter_par,
-                                                              n.tree = 5,
+    assign(paste0("t_mcmc_",i,"_tree_1"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                              n.tree = n.tree,
                                                               X = X_obs.norm,
                                                               U1 = get(paste0("copula_uu_t_",i))[,1],
                                                               U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -328,7 +316,7 @@ if(F){
                                                           starting.tree = NULL,
                                                           cont.unif = cont.unif_par,
                                                           include.split = incl.split_par,
-                                                          prop_mu = 0, prop_sigma = 1,
+                                                          prop_mu = 0, prop_sigma = .2,
                                                           theta_param_1 = 0, theta_param_2 = 1,
                                                           prior_type = "N",
                                                           cop_type = "t"))
@@ -338,17 +326,17 @@ if(F){
   
 }
 
-# save(t_mcmc_lb.def_single_3, file = "t_mcmc_lb.def_single_3.Rdata")
-# rm(t_mcmc_lb.def_single_1,t_mcmc_lb.def_single_2,t_mcmc_lb.def_single_3,t_mcmc_lb.def_single_4)
+save("t_mcmc_4_tree_1", file = "t_mcmc_4_tree_1.Rdata")
+# rm(t_mcmc_1_tree_1,t_mcmc_2_tree_1,t_mcmc_3_tree_1,t_mcmc_4_tree_1)
 
 # results
 
 if(F){
   test_case = 3
   
-  load(paste0("t_mcmc_lb.def_single_",test_case,".Rdata"))
+  load(paste0("t_mcmc_",test_case,"_tree_1.Rdata"))
   
-  model <- get(paste0("t_mcmc_lb.def_single_",test_case))
+  model <- get(paste0("t_mcmc_",test_case,"_tree_1"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -374,8 +362,8 @@ if(F){
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
+    geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
-    geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
@@ -493,10 +481,11 @@ if(F){
 # Gumbel
 ################################################################################
 if(F){
+  n.tree <- 2
   
   for (i in 1) {
-    assign(paste0("gumbel_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 2000,
-                                                                   n.tree = 20,
+    assign(paste0("gumbel_mcmc_",i,"_tree_5"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                                   n.tree = n.tree, #n.chain = 10, n.cores = 10,
                                                                    X = X_obs.norm,
                                                                    U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                    U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -505,35 +494,35 @@ if(F){
                                                                starting.tree = NULL,
                                                                cont.unif = cont.unif_par,
                                                                include.split = incl.split_par,
-                                                               prop_mu = 0, prop_sigma = 1.1,
+                                                               prop_mu = 0, prop_sigma = .2,
                                                                theta_param_1 = 0, theta_param_2 = 1,
+                                                               var_param_1 = 1, var_param_2 = 2,
                                                                prior_type = "N",
                                                                cop_type = "gumbel"))
     
     cat('done case', i, '\n')
   }
   
-  }
+}
 
-# save(gumbel_mcmc_lb.def_single_1, file = "gumbel_mcmc_lb.def_single_1.Rdata")
-# rm(gumbel_mcmc_lb.def_single_1,gumbel_mcmc_lb.def_single_2,gumbel_mcmc_lb.def_single_3,gumbel_mcmc_lb.def_single_4)
+save("gumbel_mcmc_4_tree_1", file = "gumbel_mcmc_4_tree_1.Rdata")
+# rm(gumbel_mcmc_1_tree_1,gumbel_mcmc_2_tree_1,gumbel_mcmc_3_tree_1,gumbel_mcmc_4_tree_1)
 
 # results
 
 if(F){
   test_case = 1
   
-  load(paste0("gumbel_mcmc_lb.def_single_",test_case,".Rdata"))
+  load(paste0("gumbel_mcmc_",test_case,"_tree_5.Rdata"))
   
-  model <- get(paste0("gumbel_mcmc_lb.def_single_",test_case))
+  model <- get(paste0("gumbel_mcmc_",test_case,"_tree_5"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
   n.thin <- 1
-  n.iter_par <- 2000
-  n.born.out.par <- 0
+  
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
@@ -552,8 +541,8 @@ if(F){
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
+    geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
-    geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
@@ -584,6 +573,7 @@ if(F){
   
   pl_like
   
+  conv_diag(like_df,1000,1)
   # nterm
   
   nt_lb.df <- nterm_BART(model)
@@ -671,10 +661,11 @@ if(F){
 # clayton
 ################################################################################
 if(F){
+  n.tree <- 1
   
-  for (i in 2) {
-    assign(paste0("clayton_mcmc_lb.def_single_",i), MCMC_copula(n.iter = 6000,
-                                                                    n.tree = 5, #n.cores = 10,
+  for (i in 1) {
+    assign(paste0("clayton_mcmc_",i,"_tree_1"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                                    n.tree = n.tree, #n.cores = 10,
                                                                     X = X_obs.norm,
                                                                     U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                     U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -683,7 +674,7 @@ if(F){
                                                                 starting.tree = NULL,
                                                                 cont.unif = cont.unif_par,
                                                                 include.split = incl.split_par,
-                                                                prop_mu = 0, prop_sigma = 1,
+                                                                prop_mu = 0, prop_sigma = .2,
                                                                 theta_param_1 = 0, theta_param_2 = 1,
                                                                 prior_type = "N",
                                                                 cop_type = "clayton"))
@@ -695,25 +686,25 @@ if(F){
   # 3 prop_mu = 0, prop_sigma = 3,
   
 }
-# save(clayton_mcmc_lb.def_single_4, file = "clayton_mcmc_lb.def_single_4.Rdata")
-# rm(clayton_mcmc_lb.def_single_1,clayton_mcmc_lb.def_single_2,clayton_mcmc_lb.def_single_3,clayton_mcmc_lb.def_single_4)
+
+save("clayton_mcmc_4_tree_1", file = "clayton_mcmc_4_tree_1.Rdata")
+# rm(clayton_mcmc_1_tree_1,clayton_mcmc_2_tree_1,clayton_mcmc_3_tree_1,clayton_mcmc_4_tree_1)
 
 # results
 
 if(F){
   test_case = 2
   
-  load(paste0("clayton_mcmc_lb.def_single_",test_case,".Rdata"))
+  load(paste0("clayton_mcmc_",test_case,"_tree_1.Rdata"))
   
-  model <- get(paste0("clayton_mcmc_lb.def_single_",test_case))
+  model <- get(paste0("clayton_mcmc_",test_case,"_tree_1"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
-  n.thin <- 50
-  n.iter_par <- 6000
-  n.born.out.par <-1000
+  n.thin <- 1
+  
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
   pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
@@ -732,8 +723,8 @@ if(F){
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
   ggplot(pred_cond_mod) +
+    geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
-    geom_line(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_q975), col = 3) +
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
