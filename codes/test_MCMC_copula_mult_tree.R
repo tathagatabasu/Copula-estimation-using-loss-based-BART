@@ -1,7 +1,7 @@
 library(parallel)
 library(mc2d)
 library(pracma)
-library(invgamma)
+library(MCMCpack)
 multichain_MCMC_copula <- function(n.iter, n.burn, n.chain,n.tree = 10,
                                    X, U1, U2,
                                    prior_list,
@@ -79,7 +79,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
   idx.tree.vec <- 1:n.tree
   res_theta_list <- lapply(1:n.tree, \(x) rep(0, length(X)))
   
-  sig_2 <- 1/rgamma(n.tree, shape = var_param_1, rate = var_param_2)
+  sig_2 <- rinvgamma(n.tree, shape = var_param_1, scale = var_param_2)
   
   # params for computation
   
@@ -101,7 +101,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
-                                            prop_mu = prop_mu, prop_sigma = prop_sigma, prior_list = prior_list,
+                                            prop_mu = prop_mu, prop_sigma = prop_sigma[idx.tree], prior_list = prior_list,
                                             moves.prob = moves.prob, starting.tree = old_tree, 
                                             diag = diag, cont.unif = cont.unif, include.split = include.split,
                                             obs.per.term = 1, empty.count.lim = 10, cop_type =  cop_type,
@@ -122,7 +122,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
       df_res.for.iter[[idx.iter]] <- df_res.list
-      theta_pred_list[[idx.iter]] <- Reduce('+', res_theta_list)
+      theta_pred_list[[idx.iter]] <- do.call(cbind,res_theta_list)
       
     }
     
@@ -139,7 +139,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
-                                            prop_mu = prop_mu, prop_sigma = prop_sigma, prior_list = prior_list,
+                                            prop_mu = prop_mu, prop_sigma = prop_sigma[idx.tree], prior_list = prior_list,
                                             moves.prob = moves.prob, starting.tree = old_tree, 
                                             diag = diag, cont.unif = cont.unif, include.split = include.split,
                                             obs.per.term = 1, empty.count.lim = 10, cop_type =  cop_type,
@@ -160,7 +160,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
       df_res.for.iter[[idx.iter]] <- df_res.list
-      theta_pred_list[[idx.iter]] <- Reduce('+', res_theta_list)
+      theta_pred_list[[idx.iter]] <- do.call(cbind,res_theta_list)
       prop_sigma <- var_adapt(theta_pred_list) * 2.4^2 
       
     }
@@ -175,7 +175,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
-                                            prop_mu = prop_mu, prop_sigma = prop_sigma, prior_list = prior_list,
+                                            prop_mu = prop_mu, prop_sigma = prop_sigma[idx.tree], prior_list = prior_list,
                                             moves.prob = moves.prob, starting.tree = old_tree, 
                                             diag = diag, cont.unif = cont.unif, include.split = include.split,
                                             obs.per.term = 1, empty.count.lim = 10, cop_type =  cop_type,
@@ -196,7 +196,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
       df_res.for.iter[[idx.iter]] <- df_res.list
-      theta_pred_list[[idx.iter]] <- Reduce('+', res_theta_list)
+      theta_pred_list[[idx.iter]] <- do.call(cbind,res_theta_list)
       
     }
     
@@ -212,7 +212,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
         old_tree <- last.tree.list[[idx.tree]]
         
         new_tree_single <- BART_single_step(X = X, res_theta = res_theta, U1 = U1, U2 = U2, 
-                                            prop_mu = prop_mu, prop_sigma = prop_sigma, prior_list = prior_list,
+                                            prop_mu = prop_mu, prop_sigma = prop_sigma[idx.tree], prior_list = prior_list,
                                             moves.prob = moves.prob, starting.tree = old_tree, 
                                             diag = diag, cont.unif = cont.unif, include.split = include.split,
                                             obs.per.term = 1, empty.count.lim = 10, cop_type =  cop_type,
@@ -233,7 +233,7 @@ MCMC_copula <- function(n.iter, n.burn, n.tree = 10, X, U1, U2, prior_list,
       }
       trees.for.iter[[idx.iter]] <- last.tree.list
       df_res.for.iter[[idx.iter]] <- df_res.list
-      theta_pred_list[[idx.iter]] <- Reduce('+', res_theta_list)
+      theta_pred_list[[idx.iter]] <- do.call(cbind,res_theta_list)
       prop_sigma <- var_adapt(theta_pred_list) * 2.4^2 
       
     }
@@ -348,7 +348,7 @@ BART_single_step <- function(X, res_theta, U1, U2,
   
   term_vals <- sapply(term_nodes, function(i)unique(get_value_tree(new.tree, get_obs_at_node(i, X, new.tree,1,X))))
   
-  sig_2 <- 1/rgamma(1, shape = (var_param_1 + length(term_vals)/2), rate = (var_param_2 + sum(term_vals^2)/2))
+  sig_2 <- rinvgamma(1, shape = (var_param_1 + length(term_vals)/2), scale = (var_param_2 + sum(term_vals^2)/2))
   
   matrix.res <- matrix(c(move.type, get_depth(rt_old), get_num_terminal_nodes(rt_old),
                          new.tree.list$prior.ratio, new.tree.list$lik.ratio, 
@@ -1091,9 +1091,13 @@ link_gumbel <- function(x) {
 }
 
 var_adapt <- function(theta_pred_list){
-  pred_mat <- colMeans(do.call(cbind,theta_pred_list))
+  n.tree <- max(ncol(theta_pred_list[[1]]),1)
+  output <- rep(0, max(ncol(theta_pred_list[[1]]),1))
   
-  output <- (t(pred_mat) %*% pred_mat - (length(theta_pred_list)) * mean(pred_mat) %*% t(mean(pred_mat)))/(length(theta_pred_list)-1)
+  for (j in 1:n.tree) {
+    pred_mat <- colMeans(sapply(1:length(theta_pred_list), (function(i)theta_pred_list[[i]][,j])))
+    output[j] <- (t(pred_mat) %*% pred_mat - (length(theta_pred_list)) * mean(pred_mat) %*% t(mean(pred_mat)))/(length(theta_pred_list)-1)
+  }
   
   return(output)
 }

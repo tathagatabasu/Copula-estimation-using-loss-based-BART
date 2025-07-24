@@ -481,7 +481,7 @@ if(F){
 # Gumbel
 ################################################################################
 if(F){
-  n.tree <- 2
+  n.tree <- 1
   
   for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_5"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -494,7 +494,7 @@ if(F){
                                                                starting.tree = NULL,
                                                                cont.unif = cont.unif_par,
                                                                include.split = incl.split_par,
-                                                               prop_mu = 0, prop_sigma = .2,
+                                                               prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
                                                                theta_param_1 = 0, theta_param_2 = 1,
                                                                var_param_1 = 1, var_param_2 = 2,
                                                                prior_type = "N",
@@ -573,7 +573,7 @@ if(F){
   
   pl_like
   
-  conv_diag(like_df,1000,1)
+  conv_diag(like_df,2000,20)
   # nterm
   
   nt_lb.df <- nterm_BART(model)
