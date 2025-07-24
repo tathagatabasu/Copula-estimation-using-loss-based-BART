@@ -928,65 +928,34 @@ set_term_node_value_copula <- function(node.idx, tree_top,
   }
 }
 
-# gauss copula
+# manual doesn't work for pseudo observations (u or v = 0 or 1)
+# gauss copula 
 
 loglik_gauss <- function(rho, u, v) {
-  # Sanity checks
-  if (any(abs(rho) >= 1)) return(-Inf)
   
-  z <- qnorm(u)
-  w <- qnorm(v)
+  if(any(abs(rho)>=1)) return(-Inf)
   
-  denom_log <- -0.5 * log(1 - rho^2)
-  quad_term <- -sign(1 / (2 * (1 - rho^2)) * (rho^2*z^2 + rho^2*w^2 - 2 * rho * z * w))*exp(-log(abs((2 * (1 - rho^2)))) + log(abs((rho^2*z^2 + rho^2*w^2 - 2 * rho * z * w))))
-  
-  density <- exp(denom_log + quad_term)
-  
-  log_likelihood <- log(density)
-  return(sum(log_likelihood))
+  log_lik <- sum(log(BiCopPDF(u,v,1,rho)))
+  return(log_lik)
 }
 
 # t copula
 
-loglik_t <- function(theta, u, v, df = 3) {
-  rho <- theta
-  nu <- df
+loglik_t <- function(rho, u, v, df = 3) {
   
   if(any(abs(rho)>=1)) return(-Inf)
   
+  log_lik <- sum(log(BiCopPDF(u,v,2,rho, par2 = df)))
   
-  # Quantiles
-  x <- qt(u, df = nu)
-  y <- qt(v, df = nu)
-  
-  # Precompute constants
-  log_const <- lgamma((nu + 2) / 2) - lgamma(nu / 2) - log(pi * nu) - 0.5 * log(1 - rho^2)
-  
-  # Compute Mahalanobis distance term
-  Q <- (x^2 - 2 * rho * x * y + y^2) / (nu * (1 - rho^2))
-  
-  # Bivariate t log density
-  log_joint_dens <- log_const - ((nu + 2) / 2) * log(1 + Q)
-  
-  # Marginal log t densities
-  log_marg_x <- dt(x, df = nu, log = TRUE)
-  log_marg_y <- dt(y, df = nu, log = TRUE)
-  
-  # Copula log density
-  log_copula <- log_joint_dens - log_marg_x - log_marg_y
-  
-  return(sum(log_copula))
+  return(log_lik)
 }
 
 # clayton copula
 
 loglik_clayton <- function(theta, u, v) {
-  if(any(theta<=0)) return(-Inf)
+  if(any(abs(theta - 14)>=14)) return(-Inf)
   
-  A <- exp(-theta*log(u)) + exp(-theta*log(v)) - 1
-  density <- (theta + 1) * exp((-theta - 1)*log(u * v) + (-2 - 1/theta)*log(A))
-  
-  log_density <- log(density)
+  log_density <- log(BiCopPDF(u,v,4,theta))
   
   return(sum(log_density))
 }
@@ -994,19 +963,9 @@ loglik_clayton <- function(theta, u, v) {
 # gumbel copula
 
 loglik_gumbel <- function(theta, u, v) {
-  
   if(any(abs(theta - 9)>8)) return(-Inf)
   
-  A <- exp(theta * log(-log(u))) + exp(theta * log(-log(v)))
-  C_uv <- exp(-exp((1/theta)*log(A)))
-  
-  part1 <- exp((2/theta - 2)*log(A))
-  part2 <- (-log(u))^(theta - 1) * (-log(v))^(theta - 1)
-  part3 <- 1 + (theta - 1) * exp(-(1/theta)*log(A))
-  
-  density <- exp(log(C_uv) + log(part1) + log(part2) + log(part3) - log(u) - log(v))
-  
-  log_density <- log(density)
+  log_density <- log(BiCopPDF(u,v,4,theta))
   
   return(sum(log_density))
 }

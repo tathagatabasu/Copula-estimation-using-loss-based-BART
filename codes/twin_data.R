@@ -28,10 +28,17 @@ rownames(M_ed) <- 1:nrow(M_ed)
 
 plot(U1,U2)
 
+n.chain_par <- 1
+n.iter_par <- 6000
+n.born.out.par <- 1000
+n.thin <- 1
+incl.split_par <- TRUE
+cont.unif_par <- TRUE
+moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
 ##########################################################
 
-gauss_M_ed_tree_1 <- MCMC_copula(n.iter = 2000,
-            n.tree = 10,
+gauss_M_ed_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                 n.tree = 1,
             X = M_ed,
             U1 = U1,
             U2 = U2,
@@ -40,8 +47,9 @@ gauss_M_ed_tree_1 <- MCMC_copula(n.iter = 2000,
             starting.tree = NULL,
             cont.unif = cont.unif_par,
             include.split = incl.split_par,
-            prop_mu = 0, prop_sigma = 1,
-            theta_param_1 = 0, theta_param_2 = 1,
+            prop_mu = 0, prop_sigma = .2,
+            theta_param_1 = 0, theta_param_2 = .3,
+            var_param_1 = 1, var_param_2 = 2,
             prior_type = "N",
             cop_type = "gauss")
 
@@ -53,7 +61,7 @@ list_pred_lb <- lapply(1:length(model_twin$trees), \(idx) BART_calculate_pred(mo
 pred_val = do.call(rbind,list_pred_lb)
 
 n.thin <- 1
-n.iter_par <- 2000
+n.iter_par <- 6000
 n.born.out.par <- 1000
 
 pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
