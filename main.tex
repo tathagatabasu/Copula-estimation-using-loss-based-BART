@@ -19,7 +19,6 @@
 \usepackage{amsthm}
 \usepackage{soul}
 \usepackage{color}
-
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref}
 \newtheorem{theorem}{Theorem}[section]
@@ -32,11 +31,13 @@
 \usepackage{url} % not crucial - just used below for the URL 
 \usepackage{doi}
 
+\newcommand{\dashrule}{\hdashline\noalign{\vskip 0.5ex}}
+
 \title{Conditional Copula models using loss-based Bayesian Additive Regression Trees}
 \author{**}
 \date{\today}
 
-\begin{document}
+	\begin{document}
 
 \begin{abstract}
 	 We present a novel semi-parametric Bayesian approach for modelliing conditional copulas to understand the dependence structure between two random variables when it is influenced by a different covariate. We propose the use of Bayesian additive regression trees to model the conditional copulas. We specify a loss based prior for the BART model suggested by \citet{serafini2024lossbasedpriortreetopologies}, which is designed to reduce the loss in information and complexity for tree misspecification giving us a parsimonious model that avoids over-fitting, a common issue of BART models. We present our results with both simulated and real dataset to show the applicability and efficiency of our method.
@@ -318,36 +319,47 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 		\midrule
 		\multicolumn{8}{c}{Gaussian} \\
 		\midrule
-		Case 1 & 1 & 3.2958 & 2.0413 & 0.4457 & 0.0047 & 0.1719 & 0.9820 \\ 
-		Case 2 & 1 & 2.1382 & 1.1323 & 0.1523 & 0.0028 & 0.1152 & 0.9060 \\ 
-		Case 3 & 1 & 3.0315 & 2.0072 & 0.1273 & 0.0023 & 0.0554 & \textbf{0.5060} \\
-		Case 3 & 5 & -- & -- & 0.2485 & 0.0015 & 0.0829 & 0.7660 \\ 
-		Case 4 & 1 & 2.0148 & 1.0148 & 0.0722 & 0.0006 & 0.0809 & 0.9500 \\ 
+		Case 1 & 1 & 3.0870 & 1.9988 & 0.4245 & 0.0031 & 0.1879 & 0.8520 \\ 
+		Case 1 & 5 & 2.2083 & 1.1993 & 0.2405 & 0.0042 & 0.2568 & 0.9020 \\ 
+		Case 2 & 1 & 2.1405 & 1.1378 & 0.1185 & 0.0069 & 0.1278 & 0.5020 \\ 
+		Case 2 & 5 & 2.1980 & 1.1911 & 0.2875 & 0.0045 & 0.2232 & 0.9580 \\ 
+		Case 3 & 1 & 2.9807 & 1.9513 & 0.4065 & 0.0014 & 0.0860 & 0.6540 \\
+		Case 3 & 5 & 2.2292 & 1.2097 & 0.2627 & 0.0009 & 0.1235 & 0.8760 \\ 
+		Case 4 & 1 & 2.0493 & 1.0480 & 0.0873 & 0.0017 & 0.1126 & 0.8520 \\ 
+		Case 4 & 5 & 2.2187 & 1.2044 & 0.3144 & 0.0019 & 0.2002 & 0.9440 \\ 
 		\midrule
 		\multicolumn{8}{c}{Student t} \\
 		\midrule
 		Case 1 & 1 & 3.0792 & 2.0195 & 0.4302 & 0.0017 & 0.1412 & 0.9440 \\ 
+		Case 1 & 5 & 3.0792 & 2.0195 & 0.4302 & 0.0017 & 0.1412 & 0.9440 \\ 
 		Case 2 & 1 & 2.3683 & 1.3438 & 0.2757 & 0.0018 & 0.2140 & \textbf{0.6800} \\ 
 		Case 2 & 5 & -- & -- & 0.3321 & 0.0055 & 0.2424 & 0.9420 \\
 		Case 3 & 1 & 3.1178 & 2.0320 & 0.4413 & 0.0074 & 0.1023 & \textbf{0.4000} \\ 
 		Case 3 & 5 & -- & -- & 0.3165 & 0.0032 & 0.1308 & 0.8860 \\
 		Case 4 & 1 & 2.0758 & 1.0685 & 0.2165 & 0.0009 & 0.1172 & 0.9680 \\ 
+		Case 4 & 5 & 2.0758 & 1.0685 & 0.2165 & 0.0009 & 0.1172 & 0.9680 \\ 
 		\midrule
 		\multicolumn{8}{c}{Clayton} \\
 		\midrule
 		Case 1 & 1 & 3.0160 & 2.0095 & 0.4128 & 0.0220 & 0.7504 & 1.0000 \\ 
+		Case 1 & 5 & 3.0160 & 2.0095 & 0.4128 & 0.0220 & 0.7504 & 1.0000 \\ 
 		Case 2 & 1 & 2.0278 & 1.0278 & 0.0472 & 0.1862 & 0.8522 & \textbf{0.7420} \\ 
+		Case 2 & 5 & 2.0278 & 1.0278 & 0.0472 & 0.1862 & 0.8522 & \textbf{0.7420} \\ 
 		Case 3 & 1 & 2.8338 & 1.7613 & 0.3493 & 1.1694 & 2.5060 & \textbf{0.6620} \\ 
+		Case 3 & 5 & 2.8338 & 1.7613 & 0.3493 & 1.1694 & 2.5060 & \textbf{0.6620} \\ 
 		Case 4 & 1 & 2.0277 & 1.0277 & 0.1670 & 0.1396 & 0.9837 & \textbf{0.6920} \\
+		Case 4 & 5 & 2.0277 & 1.0277 & 0.1670 & 0.1396 & 0.9837 & \textbf{0.6920} \\
 		\midrule
 		\multicolumn{8}{c}{Gumbel} \\
 		\midrule
 		Case 1 & 1 & 2.1182 & 1.1173 & 0.0915 & 0.2654 & 0.5034 & \textbf{0.3980} \\ 
 		Case 1 & 5 & -- & -- & 0.2648 & 0.1148 & 0.8510 & 0.8780 \\
 		Case 2 & 1 & 2.1218 & 1.1198 & 0.1262 & 0.0427 & 0.8122 & 0.9300 \\ 
+		Case 2 & 5 & 2.1218 & 1.1198 & 0.1262 & 0.0427 & 0.8122 & 0.9300 \\ 
 		Case 3 & 1 & 3.1997 & 2.0167 & 0.4438 & 0.1313 & 1.2414 & \textbf{0.8120} \\ 
 		Case 3 & 5 & -- & -- & 0.2643 & 0.0607 & 1.4935 & 0.9860 \\
 		Case 4 & 1 & 2.0287 & 1.0287 & 0.1182 & 0.0492 & 0.5881 & \textbf{0.6920} \\ 
+		Case 4 & 5 & 2.0287 & 1.0287 & 0.1182 & 0.0492 & 0.5881 & \textbf{0.6920} \\ 
 		\bottomrule
 		\end{tabular}}
 	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 100 different chains with 6000 samples in a single chain. We discard 1000 samples and then it is thinned by 10.}
@@ -369,14 +381,19 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 			\midrule
 			\multicolumn{11}{c}{Gaussian} \\
 			\midrule
-			Case 1 & 1 & 0.50 & 14.06 & 0.14 & 0.66 & 20.25 & -1.77 & 0.24 & 28.73 & -1.27 \\ 
-			Case 2 & 1 & 0.71 & 4.00 & -1.95 & 0.71 & 4.47 & -2.02 & 0.12 & 78.54 & 1.35 \\ 
-			Case 3 & 1 & 0.33 & 33.31 & -1.41 & 0.29 & 54.96 & 0.79 & 0.11 & 62.40 & -3.33 \\ 
-			Case 4 & 1 & -0.01 & 100.00 & -0.95 & -0.01 & 100.00 & -0.95 & -0.04 & 100.00 & -0.02 \\ 
+			Case 1 & 1 & 0.95 & 1.15 & 0.34 & 0.97 & 0.93 & 0.05 & 0.85 & 5.44 & 1.29 \\ 
+			Case 1 & 5 & -- & -- & -- & -- & -- & -- & 0.78 & 3.92 & -1.79 \\ 
+			Case 2 & 1 & 0.91 & 4.86 & 0.96 & 0.92 & 5.11 & 0.86 & 0.77 & 8.52 & 1.99 \\ 
+			Case 2 & 5 & -- & -- & -- & -- & -- & -- & 0.68 & 5.89 & 0.68 \\ 
+			Case 3 & 1 & 0.91 & 7.47 &  & 0.93 & 3.38 & -1.65 & 0.89 & 3.60 & 1.28 \\ 
+			Case 3 & 5 & -- & -- & -- & -- & -- & -- & 0.75 & 3.90 & 0.35 \\ 
+			Case 4 & 1 & 0.93 & 2.77 & 1.24 & 0.93 & 2.44 & 1.24 & 0.84 & 6.52 & 1.86 \\ 
+			Case 4 & 5 & -- & -- & -- & -- & -- & -- & 0.74 & 3.23 & 3.25 \\ 
 			\midrule
 			\multicolumn{11}{c}{Student t} \\
 			\midrule
 			Case 1 & 1 & 0.35 & 54.36 & 0.42 & 0.51 & 40.22 & 0.65 & 0.08 & 60.79 & 1.24 \\ 
+			Case 1 & 5 & 0.35 & 54.36 & 0.42 & 0.51 & 40.22 & 0.65 & 0.08 & 60.79 & 1.24 \\ 
 			Case 2 & 1 & 0.43 & 39.64 & -0.33 & 0.48 & 34.93 & -0.41 & 0.38 & 33.58 & 0.77 \\ 
 			Case 3 & 1 & 0.39 & 51.65 & -2.57 & 0.58 & 29.10 & -0.49 & 0.11 & 17.62 & -0.77 \\ 
 			Case 4 & 1 & 0.50 & 24.27 & -0.44 & 0.51 & 25.01 & -0.44 & -0.02 & 100.00 & 0.82 \\ 
@@ -384,16 +401,24 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 			\multicolumn{11}{c}{Clayton} \\
 			\midrule
 			Case 1 & 1 & 0.33 & 65.06 & -1.07 & 0.33 & 66.13 & 0.79 & 0.08 & 74.75 & -1.36 \\ 
+			Case 1 & 5 & 0.33 & 65.06 & -1.07 & 0.33 & 66.13 & 0.79 & 0.08 & 74.75 & -1.36 \\ 
 			Case 2 & 1 & 0.34 & 56.56 & -2.35 & 0.34 & 56.56 & -2.35 & 0.28 & 36.34 & -1.58 \\ 
+			Case 2 & 5 & 0.34 & 56.56 & -2.35 & 0.34 & 56.56 & -2.35 & 0.28 & 36.34 & -1.58 \\ 
 			Case 3 & 1 & 0.53 & 5.79 & -0.78 & 0.57 & 18.35 & -0.85 & 0.28 & 39.57 & -0.85 \\ 
+			Case 3 & 5 & 0.53 & 5.79 & -0.78 & 0.57 & 18.35 & -0.85 & 0.28 & 39.57 & -0.85 \\ 
 			Case 4 & 1 & 0.26 & 71.26 & -2.28 & 0.26 & 71.26 & -2.28 & 0.09 & 82.51 & -0.91 \\ 
+			Case 4 & 5 & 0.26 & 71.26 & -2.28 & 0.26 & 71.26 & -2.28 & 0.09 & 82.51 & -0.91 \\ 
 			\midrule
 			\multicolumn{11}{c}{Gumbel} \\
 			\midrule
 			Case 1 & 1 & 0.39 & 43.96 & -1.98 & 0.39 & 43.96 & -1.98 & 0.07 & 53.85 & 0.82 \\ 
+			Case 1 & 5 & 0.39 & 43.96 & -1.98 & 0.39 & 43.96 & -1.98 & 0.07 & 53.85 & 0.82 \\ 
 			Case 2 & 1 & 0.60 & 24.80 & 0.02 & 0.60 & 24.65 & 0.02 & 0.37 & 9.25 & 1.11 \\ 
+			Case 2 & 5 & 0.60 & 24.80 & 0.02 & 0.60 & 24.65 & 0.02 & 0.37 & 9.25 & 1.11 \\ 
 			Case 3 & 1 & 0.63 & 13.03 & -1.41 & 0.81 & 4.68 & -3.38 & 0.07 & 61.78 & 1.71 \\ 
+			Case 3 & 5 & 0.63 & 13.03 & -1.41 & 0.81 & 4.68 & -3.38 & 0.07 & 61.78 & 1.71 \\ 
 			Case 4 & 1 & 0.24 & 55.50 & -0.47 & 0.24 & 55.50 & -0.47 & 0.22 & 47.01 & -0.14 \\ 
+			Case 4 & 5 & 0.24 & 55.50 & -0.47 & 0.24 & 55.50 & -0.47 & 0.22 & 47.01 & -0.14 \\ 
 			\bottomrule
 	\end{tabular}
 \caption{Posterior convergence diagnostic for Different copulas. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood.}\label{tab:gauss:convergence}}

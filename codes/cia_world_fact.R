@@ -1,5 +1,20 @@
+# packages
+library(data.tree)
 library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(VineCopula)
+library(MASS)   # For multivariate normal functions
+library(coda)   # For MCMC diagnostics
+library(plot3D)
+library(gplots)
+library(xtable)
+require(foreach)
+require(parallel)
+require(doParallel)
+library(calculus)
 
+# dataset
 cia_wf_data <- read.csv("countries.csv")
 
 colnames_for_anlysis <- c("Country","People.and.Society..Life.expectancy.at.birth...male",
@@ -55,10 +70,24 @@ n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
 moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
+
+n.tree <- 10
+lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
+
+################################################################################
+# source files
+################################################################################
+
+# source('mclapply.R') # if run on windows uncomment it
+
+# source('MCMC_BART_copula.R')
+source('import_functions.R')
+source('test_MCMC_copula_mult_tree.R')
+
 ##########################################################
 
 gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                 n.tree = 5,
+                                 n.tree = n.tree,
                                  X = GDP,
                                  U1 = U1,
                                  U2 = U2,
@@ -67,101 +96,282 @@ gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                  starting.tree = NULL,
                                  cont.unif = cont.unif_par,
                                  include.split = incl.split_par,
-                                 prop_mu = 0, prop_sigma = .2,
+                                 prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
                                  theta_param_1 = 0, theta_param_2 = .3,
                                  var_param_1 = 1, var_param_2 = 2,
                                  prior_type = "N",
                                  cop_type = "gauss")
 
+frank_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                            n.tree = n.tree,
+                            X = GDP,
+                            U1 = U1,
+                            U2 = U2,
+                            prior_list = lb.prior.def, 
+                            moves.prob = moves.prob_par, 
+                            starting.tree = NULL,
+                            cont.unif = cont.unif_par,
+                            include.split = incl.split_par,
+                            prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                            theta_param_1 = 0, theta_param_2 = .3,
+                            var_param_1 = 1, var_param_2 = 2,
+                            prior_type = "N",
+                            cop_type = "frank")
+
 t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                n.tree = 5,
-                                X = GDP,
-                                U1 = U1,
-                                U2 = U2,
-                                prior_list = lb.prior.def, 
-                                moves.prob = moves.prob_par, 
-                                starting.tree = NULL,
-                                cont.unif = cont.unif_par,
-                                include.split = incl.split_par,
-                                prop_mu = 0, prop_sigma = .2,
-                                theta_param_1 = 0, theta_param_2 = .3,
-                                var_param_1 = 1, var_param_2 = 2,
-                                prior_type = "N",
-                                cop_type = "t")
+                            n.tree = n.tree,
+                            X = GDP,
+                            U1 = U1,
+                            U2 = U2,
+                            prior_list = lb.prior.def, 
+                            moves.prob = moves.prob_par, 
+                            starting.tree = NULL,
+                            cont.unif = cont.unif_par,
+                            include.split = incl.split_par,
+                            prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                            theta_param_1 = 0, theta_param_2 = .3,
+                            var_param_1 = 1, var_param_2 = 2,
+                            prior_type = "N",
+                            cop_type = "t")
 
+clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                  n.tree = n.tree,
+                                  X = GDP,
+                                  U1 = U1,
+                                  U2 = U2,
+                                  prior_list = lb.prior.def, 
+                                  moves.prob = moves.prob_par, 
+                                  starting.tree = NULL,
+                                  cont.unif = cont.unif_par,
+                                  include.split = incl.split_par,
+                                  prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                  theta_param_1 = 0, theta_param_2 = .3,
+                                  var_param_1 = 1, var_param_2 = 2,
+                                  prior_type = "N",
+                                  cop_type = "clayton")
 
-model_twin <- t_GDP_tree_1
+################################################################################
 
-list_pred_lb <- lapply(1:length(model_twin$trees), \(idx) BART_calculate_pred(model_twin$trees[[idx]], GDP))
+gauss_list_pred_lb <- lapply(1:length(gauss_GDP_tree_1$trees), \(idx) BART_calculate_pred(gauss_GDP_tree_1$trees[[idx]], GDP))
 
-pred_val = do.call(rbind,list_pred_lb)
+gauss_pred_val = do.call(rbind,gauss_list_pred_lb)
 
-n.thin <- 1
-n.iter_par <- 6000
-n.born.out.par <- 1000
+gauss_pred_val_vec = as.vector(gauss_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
 
-pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+frank_list_pred_lb <- lapply(1:length(frank_GDP_tree_1$trees), \(idx) BART_calculate_pred(frank_GDP_tree_1$trees[[idx]], GDP))
 
+frank_pred_val = do.call(rbind,frank_list_pred_lb)
+
+frank_pred_val_vec = as.vector(frank_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+
+t_list_pred_lb <- lapply(1:length(t_GDP_tree_1$trees), \(idx) BART_calculate_pred(t_GDP_tree_1$trees[[idx]], GDP))
+
+t_pred_val = do.call(rbind,t_list_pred_lb)
+
+t_pred_val_vec = as.vector(t_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+
+clayton_list_pred_lb <- lapply(1:length(clayton_GDP_tree_1$trees), \(idx) BART_calculate_pred(clayton_GDP_tree_1$trees[[idx]], GDP))
+
+clayton_pred_val = do.call(rbind,clayton_list_pred_lb)
+
+clayton_pred_val_vec = as.vector(clayton_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+
+# obs
 pred_obs = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par)))
 
 # like
 
-like_val <- apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1, U2))
+gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1, U2))
 
-like_df <-data.frame("nn" = like_val)
-like_df$idx <- 1:(n.chain_par*n.iter_par)
+gauss_like_df <-data.frame("nn" = gauss_like_val)
+gauss_like_df$idx <- 1:(n.chain_par*n.iter_par)
 
-pl_like <- ggplot(like_df, aes(idx, nn)) + 
+gauss_pl_like <- ggplot(gauss_like_df, aes(idx, nn)) + 
   geom_line() + 
   ylab('log-likelihood') +
   theme_classic() + 
   theme(panel.grid.major = element_line())
 
-pl_like
+gauss_pl_like
 
+frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1, U2))
 
-# theta_true = rep(param_gauss(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+frank_like_df <-data.frame("nn" = frank_like_val)
+frank_like_df$idx <- 1:(n.chain_par*n.iter_par)
 
+frank_pl_like <- ggplot(frank_like_df, aes(idx, nn)) + 
+  geom_line() + 
+  ylab('log-likelihood') +
+  theme_classic() + 
+  theme(panel.grid.major = element_line())
+
+frank_pl_like
+
+t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1, U2))
+
+t_like_df <-data.frame("nn" = t_like_val)
+t_like_df$idx <- 1:(n.chain_par*n.iter_par)
+
+t_pl_like <- ggplot(t_like_df, aes(idx, nn)) + 
+  geom_line() + 
+  ylab('log-likelihood') +
+  theme_classic() + 
+  theme(panel.grid.major = element_line())
+
+t_pl_like
+
+clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1, U2))
+
+clayton_like_df <-data.frame("nn" = clayton_like_val)
+clayton_like_df$idx <- 1:(n.chain_par*n.iter_par)
+
+clayton_pl_like <- ggplot(clayton_like_df, aes(idx, nn)) + 
+  geom_line() + 
+  ylab('log-likelihood') +
+  theme_classic() + 
+  theme(panel.grid.major = element_line())
+
+clayton_pl_like
+
+# dataframe for plotting
 pred_cond <- data.frame("obs" = pred_obs)
 pred_cond$obs = pred_obs
-# pred_cond$theta_true = theta_true
-pred_cond$y = link_gauss(pred_val_vec)
-pred_cond$tau = BiCopPar2Tau(1, pred_cond$y)
+pred_cond$gauss_y = link_gauss(gauss_pred_val_vec)
+pred_cond$gauss_tau = BiCopPar2Tau(1, pred_cond$gauss_y)
+pred_cond$frank_y = link_frank(frank_pred_val_vec)
+pred_cond$frank_tau = BiCopPar2Tau(5, pred_cond$frank_y)
+pred_cond$t_y = link_t(t_pred_val_vec)
+pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
+pred_cond$clayton_y = link_clayton(clayton_pred_val_vec)
+pred_cond$clayton_tau = BiCopPar2Tau(3, pred_cond$clayton_y)
 
 pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
 
 pred_cond_mod = pred_cond_thin %>%
   group_by(obs) %>%
-  summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
-
-ggplot(pred_cond_mod) +
-  geom_line(aes(obs, theta_mean)) +
-  # geom_line(aes(obs, theta_true), col = 2) +
-  geom_line(aes(obs, theta_q975), col = 3) +
-  geom_line(aes(obs, theta_q025), col = 3) +
-  # facet_wrap(facets = ~panel.name, ncol = 2) +
-  xlab('X') +
-  ylab('estimated rho') +
-  theme_classic()
+  summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
+            frank_theta_mean = mean(frank_y), frank_theta_q975 = quantile(frank_y, .975), frank_theta_q025 = quantile(frank_y, .025),
+            t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025),
+            clayton_theta_mean = mean(clayton_y), clayton_theta_q975 = quantile(clayton_y, .975), clayton_theta_q025 = quantile(clayton_y, .025)) 
 
 pred_cond_mod_tau = pred_cond_thin %>%
   group_by(obs) %>%
-  summarise(tau_mean = mean(tau), tau_q975 = quantile(tau, .975), tau_q025 = quantile(tau, .025)) 
+  summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
+            frank_tau_mean = mean(frank_tau), frank_tau_q975 = quantile(frank_tau, .975), frank_tau_q025 = quantile(frank_tau, .025),
+            t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025),
+            clayton_tau_mean = mean(clayton_tau), clayton_tau_q975 = quantile(clayton_tau, .975), clayton_tau_q025 = quantile(clayton_tau, .025)) 
 
 ggplot(pred_cond_mod_tau) +
-  geom_line(aes(obs, tau_mean)) +
-  # geom_line(aes(obs, theta_true), col = 2) +
-  geom_line(aes(obs, tau_q975), col = 3) +
-  geom_line(aes(obs, tau_q025), col = 3) +
-  # facet_wrap(facets = ~panel.name, ncol = 2) +
+  geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
+  geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
+  geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
+  geom_line(aes(obs, frank_tau_mean, col = "frank")) +
+  geom_line(aes(obs, frank_tau_q975, col = "frank"),linetype="dotted") +
+  geom_line(aes(obs, frank_tau_q025, col = "frank"),linetype="dotted") +
+  geom_line(aes(obs, t_tau_mean, col = "t")) +
+  geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
+  geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
+  geom_line(aes(obs, clayton_tau_mean, col = "clayton")) +
+  geom_line(aes(obs, clayton_tau_q975, col = "clayton"),linetype="dotted") +
+  geom_line(aes(obs, clayton_tau_q025, col = "clayton"),linetype="dotted") +
   xlab('X') +
   ylab('estimated tau') +
   theme_classic()
 
-GDP_gauss_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gauss(colMeans(pred_val)))
+cor(U1,U2, method = "kendall")
 
-pred_U1 = GDP_gauss_pred[,1]
-pred_U2 = GDP_gauss_pred[,2]
+GDP_gauss_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gauss(colMeans(gauss_pred_val)))
+
+gauss_pred_U1 = GDP_gauss_pred[,1]
+gauss_pred_U2 = GDP_gauss_pred[,2]
 
 plot(U1,U2)
-plot(pred_U1,pred_U2)
+plot(gauss_pred_U1,gauss_pred_U2)
+
+GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 5, par = link_frank(colMeans(frank_pred_val)))
+
+frank_pred_U1 = GDP_frank_pred[,1]
+frank_pred_U2 = GDP_frank_pred[,2]
+
+plot(U1,U2)
+plot(frank_pred_U1,frank_pred_U2)
+
+GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 2, par = link_t(colMeans(t_pred_val)),par2 = 3)
+
+t_pred_U1 = GDP_t_pred[,1]
+t_pred_U2 = GDP_t_pred[,2]
+
+plot(U1,U2)
+plot(t_pred_U1,t_pred_U2)
+
+GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 3, par = link_clayton(colMeans(clayton_pred_val)))
+
+clayton_pred_U1 = GDP_clayton_pred[,1]
+clayton_pred_U2 = GDP_clayton_pred[,2]
+
+plot(U1,U2)
+plot(clayton_pred_U1,clayton_pred_U2)
+################################################################################
+# helper for test statistics
+
+emp_copula_value <- function(u, sample_u) {
+  mean(apply(sample_u, 1, function(x) all(x <= u)))
+}
+
+grid_size <- 100
+grid_1d <- seq(0.05, 0.95, length.out = grid_size)
+grid_points <- expand.grid(rep(list(grid_1d), 2))
+
+emp_copula_on_grid <- function(sample_u, grid) {
+  apply(grid, 1, function(u) emp_copula_value(u, sample_u))
+}
+
+cop_data <- emp_copula_on_grid(cbind(U1,U2), grid_points)
+cop_gauss <- emp_copula_on_grid(cbind(gauss_pred_U1,gauss_pred_U2), grid_points)
+cop_frank <- emp_copula_on_grid(cbind(frank_pred_U1,frank_pred_U2), grid_points)
+cop_t <- emp_copula_on_grid(cbind(t_pred_U1,t_pred_U2), grid_points)
+cop_clayton <- emp_copula_on_grid(cbind(clayton_pred_U1,clayton_pred_U2), grid_points)
+
+library(twosamples)
+
+
+gauss_ks <- ks_test(cop_data,cop_gauss)
+frank_ks <- ks_test(cop_data,cop_frank)
+t_ks <- ks_test(cop_data,cop_t)
+clayton_ks <- ks_test(cop_data,cop_clayton)
+
+gauss_ad <- ad_test(cop_data,cop_gauss)
+frank_ad <- ad_test(cop_data,cop_frank)
+t_ad <- ad_test(cop_data,cop_t)
+clayton_ad <- ad_test(cop_data,cop_clayton)
+
+gauss_cvm <- cvm_test(cop_data,cop_gauss)
+frank_cvm <- cvm_test(cop_data,cop_frank)
+t_cvm <- cvm_test(cop_data,cop_t)
+clayton_cvm <- cvm_test(cop_data,cop_clayton)
+
+gauss_dts <- dts_test(cop_data,cop_gauss)
+frank_dts <- dts_test(cop_data,cop_frank)
+t_dts <- dts_test(cop_data,cop_t)
+clayton_dts <- dts_test(cop_data,cop_clayton)
+
+
+gauss_ks
+frank_ks
+t_ks
+clayton_ks
+
+gauss_cvm
+frank_cvm
+t_cvm
+clayton_cvm
+
+gauss_ad
+frank_ad
+t_ad
+clayton_ad
+
+gauss_dts
+frank_dts
+t_dts
+clayton_dts
