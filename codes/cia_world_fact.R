@@ -45,10 +45,10 @@ cia_wf_data_2023 = cia_wf_data_2023 %>%
 
 # commented as repating this will be problematic
 
-# cia_wf_data_2023$GDP_PPP[index_bil] = 1000 * cia_wf_data_2023$GDP_PPP[index_bil]
-# cia_wf_data_2023$GDP_PPP[index_tril] = 1000000 * cia_wf_data_2023$GDP_PPP[index_tril]
+cia_wf_data_2023$GDP_PPP[index_bil] = 1000 * cia_wf_data_2023$GDP_PPP[index_bil]
+cia_wf_data_2023$GDP_PPP[index_tril] = 1000000 * cia_wf_data_2023$GDP_PPP[index_tril]
 
-# cia_wf_data_2023 <- na.omit(cia_wf_data_2023)
+cia_wf_data_2023 <- na.omit(cia_wf_data_2023)
 
 plot(log(cia_wf_data_2023$GDP_PPP),cia_wf_data_2023$Life_expectancy_M)
 plot(log(cia_wf_data_2023$GDP_PPP),cia_wf_data_2023$Life_expectancy_F)
@@ -72,7 +72,6 @@ cont.unif_par <- TRUE
 moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
 
 n.tree <- 10
-lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 
 ################################################################################
 # source files
@@ -84,6 +83,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 source('import_functions.R')
 source('test_MCMC_copula_mult_tree.R')
 
+lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ##########################################################
 
 gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -145,7 +145,7 @@ clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   cont.unif = cont.unif_par,
                                   include.split = incl.split_par,
                                   prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                  theta_param_1 = 0, theta_param_2 = .3,
+                                  theta_param_1 = 0, theta_param_2 = .5,
                                   var_param_1 = 1, var_param_2 = 2,
                                   prior_type = "N",
                                   cop_type = "clayton")
@@ -314,64 +314,19 @@ plot(clayton_pred_U1,clayton_pred_U2)
 ################################################################################
 # helper for test statistics
 
-emp_copula_value <- function(u, sample_u) {
-  mean(apply(sample_u, 1, function(x) all(x <= u)))
-}
+library(cramer)
 
-grid_size <- 100
-grid_1d <- seq(0.05, 0.95, length.out = grid_size)
-grid_points <- expand.grid(rep(list(grid_1d), 2))
+cramer.test(cbind(U1,U2), cbind(U1,U2))
+cramer.test(cbind(U1,U2), cbind(t_pred_U1, t_pred_U2))
+cramer.test(cbind(U1,U2), cbind(gauss_pred_U1, gauss_pred_U2))
+cramer.test(cbind(U1,U2), cbind(frank_pred_U1, frank_pred_U2))
+cramer.test(cbind(U1,U2), cbind(clayton_pred_U1, clayton_pred_U2))
 
-emp_copula_on_grid <- function(sample_u, grid) {
-  apply(grid, 1, function(u) emp_copula_value(u, sample_u))
-}
+library(fasano.franceschini.test)
 
-cop_data <- emp_copula_on_grid(cbind(U1,U2), grid_points)
-cop_gauss <- emp_copula_on_grid(cbind(gauss_pred_U1,gauss_pred_U2), grid_points)
-cop_frank <- emp_copula_on_grid(cbind(frank_pred_U1,frank_pred_U2), grid_points)
-cop_t <- emp_copula_on_grid(cbind(t_pred_U1,t_pred_U2), grid_points)
-cop_clayton <- emp_copula_on_grid(cbind(clayton_pred_U1,clayton_pred_U2), grid_points)
+fasano.franceschini.test(cbind(U1,U2), cbind(U1,U2))
+fasano.franceschini.test(cbind(U1,U2), cbind(t_pred_U1, t_pred_U2))
+fasano.franceschini.test(cbind(U1,U2), cbind(gauss_pred_U1, gauss_pred_U2))
+fasano.franceschini.test(cbind(U1,U2), cbind(frank_pred_U1, frank_pred_U2))
+fasano.franceschini.test(cbind(U1,U2), cbind(clayton_pred_U1, clayton_pred_U2))
 
-library(twosamples)
-
-
-gauss_ks <- ks_test(cop_data,cop_gauss)
-frank_ks <- ks_test(cop_data,cop_frank)
-t_ks <- ks_test(cop_data,cop_t)
-clayton_ks <- ks_test(cop_data,cop_clayton)
-
-gauss_ad <- ad_test(cop_data,cop_gauss)
-frank_ad <- ad_test(cop_data,cop_frank)
-t_ad <- ad_test(cop_data,cop_t)
-clayton_ad <- ad_test(cop_data,cop_clayton)
-
-gauss_cvm <- cvm_test(cop_data,cop_gauss)
-frank_cvm <- cvm_test(cop_data,cop_frank)
-t_cvm <- cvm_test(cop_data,cop_t)
-clayton_cvm <- cvm_test(cop_data,cop_clayton)
-
-gauss_dts <- dts_test(cop_data,cop_gauss)
-frank_dts <- dts_test(cop_data,cop_frank)
-t_dts <- dts_test(cop_data,cop_t)
-clayton_dts <- dts_test(cop_data,cop_clayton)
-
-
-gauss_ks
-frank_ks
-t_ks
-clayton_ks
-
-gauss_cvm
-frank_cvm
-t_cvm
-clayton_cvm
-
-gauss_ad
-frank_ad
-t_ad
-clayton_ad
-
-gauss_dts
-frank_dts
-t_dts
-clayton_dts
