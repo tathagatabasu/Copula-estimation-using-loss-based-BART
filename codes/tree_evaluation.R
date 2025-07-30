@@ -21,17 +21,18 @@
 #' cbind(XX[1,], tree_value = g.T(tree_top, XX[1,]))
 #' cbind(XX[10,], tree_value = g.T(tree_top, XX[10,]))
 
-g.T <- function(tree_top, x){
-  if(is.null(tree_top$cond)){
+g.T <- function(tree_top, x) {
+  cond <- tree_top$cond
+  
+  if (is.null(cond)) {
     return(tree_top$value)
   }
-  else(
-    if(eval_cond(tree_top$cond, x)){
-      g.T(tree_top$left, x)
-    } else{
-      g.T(tree_top$right, x)
-    }
-  )
+  
+  if (eval_cond(cond, x)) {
+    return(g.T(tree_top$left, x))
+  }
+  
+  g.T(tree_top$right, x)
 }
 
 #' Evaluate a tree on multiple observations

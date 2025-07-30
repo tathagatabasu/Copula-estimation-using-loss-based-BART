@@ -86,7 +86,7 @@ source('test_MCMC_copula_mult_tree.R')
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ##########################################################
 
-gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = 10,#n.born.out.par,
                                  n.tree = n.tree,
                                  X = GDP,
                                  U1 = U1,
@@ -96,7 +96,7 @@ gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                  starting.tree = NULL,
                                  cont.unif = cont.unif_par,
                                  include.split = incl.split_par,
-                                 prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                 prop_mu = 0, prop_sigma = .2/n.tree,
                                  theta_param_1 = 0, theta_param_2 = .3,
                                  var_param_1 = 1, var_param_2 = 2,
                                  prior_type = "N",
@@ -134,6 +134,8 @@ t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             prior_type = "N",
                             cop_type = "t")
 
+Rprof("profile_output.out")  # Start profiling
+
 clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   n.tree = n.tree,
                                   X = GDP,
@@ -149,6 +151,8 @@ clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   var_param_1 = 1, var_param_2 = 2,
                                   prior_type = "N",
                                   cop_type = "clayton")
+Rprof(NULL)                  # Stop profiling
+summaryRprof("profile_output.out")  # View results
 
 ################################################################################
 

@@ -25,13 +25,17 @@
 #' cond = list(x.idx = 2, x.val = 'C')
 #' eval_cond(cond, x)
 
-eval_cond <- function(cond, x){
-  if(is.character(cond$x.val)){
-    return(x[cond$x.idx] %in% cond$x.val)
-  } else if(is.numeric(cond$x.val)){
-    return(x[cond$x.idx] <= cond$x.val)
-  } else{
-    stop('Unknown condition value')
+eval_cond <- function(cond, x) {
+  val <- cond$x.val
+  idx <- cond$x.idx
+  xi <- x[idx]
+  
+  if (is.character(val)) {
+    xi %in% val
+  } else if (is.numeric(val)) {
+    xi <= val
+  } else {
+    stop("Unsupported type in cond$x.val")
   }
 }
 
