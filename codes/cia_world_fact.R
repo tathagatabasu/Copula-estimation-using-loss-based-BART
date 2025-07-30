@@ -118,6 +118,8 @@ frank_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             prior_type = "N",
                             cop_type = "frank")
 
+Rprof("profile_output.out")  # Start profiling
+
 t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             n.tree = n.tree,
                             X = GDP,
@@ -133,8 +135,8 @@ t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             var_param_1 = 1, var_param_2 = 2,
                             prior_type = "N",
                             cop_type = "t")
-
-Rprof("profile_output.out")  # Start profiling
+Rprof(NULL)                  # Stop profiling
+summaryRprof("profile_output.out")  # View results
 
 clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   n.tree = n.tree,
@@ -151,8 +153,6 @@ clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   var_param_1 = 1, var_param_2 = 2,
                                   prior_type = "N",
                                   cop_type = "clayton")
-Rprof(NULL)                  # Stop profiling
-summaryRprof("profile_output.out")  # View results
 
 ################################################################################
 
