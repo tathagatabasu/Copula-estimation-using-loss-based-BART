@@ -189,7 +189,7 @@ MCMC_copula <- function(n.iter,
                                           log_prior_fun = log_prior_fun,
                                           theta_param_1 = theta_param_1, theta_param_2 =  sqrt(sig_2[idx.tree]),
                                           var_param_1 = var_param_1, var_param_2 = var_param_2,
-                                          theta_pred_list = theta_pred_list[, , 1:(idx.iter-1)],
+                                          theta_pred_list = theta_pred_list[, , 1:(idx.iter-1), drop = FALSE],
                                           idx.tree = idx.tree)
       
       new_tree <- new_tree_single$tree

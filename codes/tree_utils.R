@@ -54,13 +54,9 @@ eval_cond <- function(cond, x) {
 #' tree_top <- generate_random_binary_tree(4,5)
 #' get_num_terminal_nodes(tree_top)
 get_num_terminal_nodes <- function(tree) {
-  if (is.null(tree)) {
-    return(0)
-  }
-  if (is.null(tree$left) && is.null(tree$right)) {
-    return(1)
-  }
-  return(get_num_terminal_nodes(tree$left) + get_num_terminal_nodes(tree$right))
+  if (is.null(tree)) return(0)
+  if (is.null(tree$left) && is.null(tree$right)) return(1)
+  get_num_terminal_nodes(tree$left) + get_num_terminal_nodes(tree$right)
 }
 
 #' Depth plus 1 of a binary tree
@@ -78,13 +74,8 @@ get_num_terminal_nodes <- function(tree) {
 #' tree_top <- generate_random_binary_tree(4,5)
 #' get_depth_plus1(tree_top)
 get_depth_plus1 <- function(tree) {
-  if (is.null(tree)) {
-    return(0)
-  } else {
-    left_depth <- get_depth_plus1(tree$left) 
-    right_depth <- get_depth_plus1(tree$right) 
-    return(max(left_depth, right_depth) + 1)
-  }
+  if (is.null(tree)) return(0)
+  max(get_depth_plus1(tree$left), get_depth_plus1(tree$right)) + 1
 }
 
 #' Depth of a binary tree
@@ -130,59 +121,40 @@ get_depth <- function(tree) {
 #' get_tree_plot(tree_top)
 #' XX.at.node <- get_obs_at_node(node.idx = 2, X = XX, tree_top = tree_top)
 #' nrow(XX.at.node)
-get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig){
-  X.sel = X
-  # this is needed because if X is matrix (which is way faster) then X[1,] is a numeric vector and nrow(X.sel) is NULL
-  if(class(X.sel)[1] == 'numeric'){
-    X.sel2 <- matrix(X.sel, byrow = TRUE, ncol = length(X.sel))
-    colnames(X.sel2) <- names(X.sel)
-    idx.obs <- which(apply(apply(X.orig, 1, \(x) x == X.sel2),2,all))
-    rownames(X.sel2) <- idx.obs
-    X.sel <- X.sel2
+get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig) {
+  # Handle edge case where X is a numeric vector (1-row matrix)
+  if (is.numeric(X) && is.null(dim(X))) {
+    X <- matrix(X, nrow = 1)
+    colnames(X) <- names(X.orig)
+    idx.obs <- which(apply(X.orig, 1, function(row) all(row == X)))
+    rownames(X) <- idx.obs
   }
-  if(nrow(X.sel) == 0){
-    return(X.sel)
+  
+  # Early exit if no observations
+  if (nrow(X) == 0) return(X)
+  
+  # Terminal node
+  if (is.null(tree_top$left) && is.null(tree_top$right)) {
+    return(if (node.idx == node.count) X else NULL)
   }
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    if(node.idx == node.count){
-      return(X.sel)
-    } else {
-      return(NULL)  
-    }
-  } else{
-    if(node.idx == node.count){
-      return(X.sel)
-    } else {
-      # evaluate condition
-      cond.sel.idx <- vapply(1:nrow(X.sel), \(x) eval_cond(tree_top$cond, 
-                                                           X.sel[x,]), TRUE)
-      X.sel.left <- X.sel[cond.sel.idx,, drop = FALSE]
-      X.sel.right <- X.sel[!cond.sel.idx,, drop = FALSE]
-      
-      node.count.left = node.count + 1
-      n.term.left <- get_num_terminal_nodes(tree_top$left)
-      n.node.left <- 2*n.term.left 
-      node.count.right = node.count + n.node.left
-      
-      if(node.idx < node.count.right){
-        X.sel.left.new <- get_obs_at_node(node.idx = node.idx, 
-                                          node.count = node.count.left,
-                                          X = X.sel.left,
-                                          tree_top = tree_top$left,
-                                          X.orig = X.orig)
-        
-        return(X.sel.left.new)
-      } else {
-        X.sel.right.new <- get_obs_at_node(node.idx = node.idx,
-                                           node.count = node.count.right,
-                                           X = X.sel.right,
-                                           tree_top = tree_top$right,
-                                           X.orig = X.orig)
-        
-        return(X.sel.right.new)
-      }
-      
-    }  
+  
+  # Internal node
+  if (node.idx == node.count) return(X)
+  
+  # Evaluate condition
+  cond.sel.idx <- vapply(seq_len(nrow(X)), function(i) eval_cond(tree_top$cond, X[i, ]), logical(1))
+  
+  X.left <- X[cond.sel.idx, , drop = FALSE]
+  X.right <- X[!cond.sel.idx, , drop = FALSE]
+  
+  node.count.left <- node.count + 1
+  n.term.left <- get_num_terminal_nodes(tree_top$left)
+  node.count.right <- node.count + 2 * n.term.left
+  
+  if (node.idx < node.count.right) {
+    return(get_obs_at_node(node.idx, X.left, tree_top$left, node.count.left, X.orig))
+  } else {
+    return(get_obs_at_node(node.idx, X.right, tree_top$right, node.count.right, X.orig))
   }
 }
 
@@ -205,18 +177,19 @@ get_obs_at_node <- function(node.idx = 2, X, tree_top, node.count = 1, X.orig){
 #' tree_top <- assign_node_idx(tree_top)
 #' get_tree_plot.idx(tree_top)
 #' get_terminal_nodes_idx(tree_top)
-get_terminal_nodes_idx <- function(tree_top, counter = 1){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
+get_terminal_nodes_idx <- function(tree_top, counter = 1) {
+  if (is.null(tree_top$left) && is.null(tree_top$right)) {
     return(counter)
-  } else {
-    count.l <- counter + 1
-    n.term.left <- get_num_terminal_nodes(tree_top$left)
-    n.node.left <- 2*n.term.left 
-    count.r = counter + n.node.left
-    idx.left <- get_terminal_nodes_idx(tree_top$left, counter = count.l)
-    idx.right <- get_terminal_nodes_idx(tree_top$right, counter = count.r)
-    return(unique(c(idx.left, idx.right)))
   }
+  
+  count.left <- counter + 1
+  n.term.left <- get_num_terminal_nodes(tree_top$left)
+  count.right <- counter + 2 * n.term.left
+  
+  idx.left <- get_terminal_nodes_idx(tree_top$left, counter = count.left)
+  idx.right <- get_terminal_nodes_idx(tree_top$right, counter = count.right)
+  
+  c(idx.left, idx.right)
 }
 
 #' Internal node index values
@@ -238,12 +211,9 @@ get_terminal_nodes_idx <- function(tree_top, counter = 1){
 #' tree_top <- assign_node_idx(tree_top)
 #' get_tree_plot.idx(tree_top)
 #' get_internal_nodes_idx(tree_top)
-get_internal_nodes_idx <- function(tree_top){
-  n.term <- get_num_terminal_nodes(tree_top)
-  n.nodes <- 2*n.term - 1
-  int.idx.raw <- 1:n.nodes
-  term.idx <- get_terminal_nodes_idx(tree_top)
-  return(int.idx.raw[-term.idx])
+get_internal_nodes_idx <- function(tree_top) {
+  n.nodes <- 2 * get_num_terminal_nodes(tree_top) - 1
+  setdiff(seq_len(n.nodes), get_terminal_nodes_idx(tree_top))
 }
 
 #' Create name from splitting rule
@@ -264,11 +234,11 @@ get_internal_nodes_idx <- function(tree_top){
 #' node.name.from.cond(cond)
 #' cond <- list(x.idx = 1, x.val = c('A', 'B'))
 #' node.name.from.cond(cond)
-node.name.from.cond <- function(cond){
-  if(is.character(cond$x.val)){
-    return(paste0('X', cond$x.idx, ' in ', paste(cond$x.val, collapse = ',')))
-  } else{
-    return(paste0('X', cond$x.idx, '<=', round(cond$x.val, 3)))
+node.name.from.cond <- function(cond) {
+  if (is.character(cond$x.val)) {
+    paste0("X", cond$x.idx, " in {", paste(cond$x.val, collapse = ", "), "}")
+  } else {
+    paste0("X", cond$x.idx, " <= ", format(round(cond$x.val, 3), trim = TRUE))
   }
 }
 
@@ -292,17 +262,20 @@ node.name.from.cond <- function(cond){
 #' tree_top <- assign_split_rules(tree_top, XX)
 #' tree_top <- assign_term_node_values(tree_top, 0, 2)
 #' tree.to.plot(tree_top)
-tree.to.plot <- function(tree_top){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    return(list(left = NULL, 
-                right = NULL,
-                node.name = round(tree_top$value,3)))
-  } else {
-    return(list(children = list(left = tree.to.plot(tree_top$left),
-                                right = tree.to.plot(tree_top$right)
-    ),
-    node.name = node.name.from.cond(tree_top$cond)
+tree.to.plot <- function(tree_top) {
+  if (is.null(tree_top$left) && is.null(tree_top$right)) {
+    list(
+      left = NULL,
+      right = NULL,
+      node.name = round(tree_top$value, 3)
     )
+  } else {
+    list(
+      node.name = node.name.from.cond(tree_top$cond),
+      children = list(
+        left = tree.to.plot(tree_top$left),
+        right = tree.to.plot(tree_top$right)
+      )
     )
   }
 }
@@ -324,13 +297,16 @@ tree.to.plot <- function(tree_top){
 #' tree_top <- generate_random_binary_tree(4,5)
 #' tree_top <- assign_node_idx(tree_top)
 #' tree.to.plot.idx(tree_top)
-tree.to.plot.idx <- function(tree_top){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    return(list(node.name = tree_top$node.idx))
+tree.to.plot.idx <- function(tree_top) {
+  if (is.null(tree_top$left) && is.null(tree_top$right)) {
+    list(node.name = tree_top$node.idx)
   } else {
-    return(list(children = list(left = tree.to.plot.idx(tree_top$left),
-                                right = tree.to.plot.idx(tree_top$right)),
-                node.name = tree_top$node.idx)
+    list(
+      node.name = tree_top$node.idx,
+      children = list(
+        left = tree.to.plot.idx(tree_top$left),
+        right = tree.to.plot.idx(tree_top$right)
+      )
     )
   }
 }
@@ -391,140 +367,29 @@ get_tree_plot.idx <- function(tree_top){
 }
 
 # extract offsprings of a given node
-get_offsprings <- function(node.idx, tree_top){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    return(NULL)
-  } else {
-    if(tree_top$node.idx == node.idx){
-      return(tree_top)
-    } else {
-      tree.left <- get_offsprings(node.idx, tree_top$left)
-      tree.right <- get_offsprings(node.idx, tree_top$right)
-      if(is.null(tree.right)){
-        return(tree.left)
-      } else {
-        return(tree.right)
-      }
-    }
+get_offsprings <- function(node.idx, tree_top) {
+  if (is.null(tree_top$left) && is.null(tree_top$right)) return(NULL)
+  
+  if (tree_top$node.idx == node.idx) {
+    return(tree_top)
   }
+  
+  left_result <- get_offsprings(node.idx, tree_top$left)
+  if (!is.null(left_result)) return(left_result)
+  
+  get_offsprings(node.idx, tree_top$right)
 }
 
 # extract condition at node for switch
-get_node_condition <- function(node.idx, tree_top){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    return(NULL)
-  } else {
-    if(tree_top$node.idx == node.idx){
-      return(list(x.idx = tree_top$cond$x.idx, x.val = tree_top$cond$x.val))
-    } else {
-      cond.left <- get_node_condition(node.idx, tree_top$left)
-      cond.right <- get_node_condition(node.idx, tree_top$right)
-      if(is.null(cond.right)){
-        return(cond.left)
-      } else {
-        return(cond.right)
-      }
-    }
-  }
-}
-
-
-# apply a fun to a list of models
-apply_fun_models <- function(fun_, mcmc.list, born.out.pc = 100, n.chain = 10, sample.pc = 1000){
-  if(born.out.pc == 0){
-    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$trees, fun_, 1))
-    names(fun.list) <- names(mcmc.list)
-    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees),
-                                                              y = fun.list[[x]],
-                                                              panel.name = names(fun.list)[x]))
-    fun.df <- Reduce(rbind, fun.df.list)
-  }
-  else{
-    idx.bornout <- sort(unlist(outer(1:born.out.pc, sample.pc*(0:(n.chain - 1)), '+')))
-    ntrees.per.model <- vapply(mcmc.list, \(model.res) length(model.res$trees), 0)
-    if(sum(born.out.pc > ntrees.per.model) > 0){
-      stop('Born out greater than number of samples')
-    }
-    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$trees[-idx.bornout], fun_, 1))
-    names(fun.list) <- names(mcmc.list)
-    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees[-idx.bornout]),
-                                                              y = fun.list[[x]],
-                                                              panel.name = names(fun.list)[x]))
-    fun.df <- Reduce(rbind, fun.df.list)
+get_node_condition <- function(node.idx, tree_top) {
+  if (is.null(tree_top$left) && is.null(tree_top$right)) return(NULL)
+  
+  if (tree_top$node.idx == node.idx) {
+    return(list(x.idx = tree_top$cond$x.idx, x.val = tree_top$cond$x.val))
   }
   
-  fun.df
-}
-
-
-# apply a fun to a list of models
-apply_fun_models_res <- function(fun_, mcmc.list, born.out.pc = 100, n.chain = 10, sample.pc = 1000){
-  if(born.out.pc == 0){
-    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$df.res$acceptance, fun_, 1))
-    names(fun.list) <- names(mcmc.list)
-    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees),
-                                                              y = fun.list[[x]],
-                                                              panel.name = names(fun.list)[x]))
-    fun.df <- Reduce(rbind, fun.df.list)
-  }
-  else{
-    idx.bornout <- sort(unlist(outer(1:born.out.pc, sample.pc*(0:(n.chain - 1)), '+')))
-    ntrees.per.model <- vapply(mcmc.list, \(model.res) length(model.res$trees), 0)
-    if(sum(born.out.pc > ntrees.per.model) > 0){
-      stop('Born out greater than number of samples')
-    }
-    fun.list <- lapply(mcmc.list, \(model.res) vapply(model.res$df.res$acceptance[-idx.bornout], fun_, 1))
-    names(fun.list) <- names(mcmc.list)
-    fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees[-idx.bornout]),
-                                                              y = fun.list[[x]],
-                                                              panel.name = names(fun.list)[x]))
-    fun.df <- Reduce(rbind, fun.df.list)
-  }
+  cond.left <- get_node_condition(node.idx, tree_top$left)
+  if (!is.null(cond.left)) return(cond.left)
   
-  fun.df
+  get_node_condition(node.idx, tree_top$right)
 }
-
-
-# fun to predict
-binary.pred.tree <- function(tree_top, X){
-  get_value_tree(tree_top, X) >= 0.5
-}
-
-binary.pred.mcmc <- function(tree_list, X, born.out.pc = 100, sample.pc = 1000, n.chain = 10){
-  if(born.out.pc == 0){
-    pred.per.tree <- lapply(tree_list, \(x) binary.pred.tree(x, X))
-    pred.df <- Reduce(rbind, pred.per.tree)  
-  } else {
-    idx.bornout <- sort(unlist(outer(1:born.out.pc, sample.pc*(0:(n.chain - 1)), '+')))
-    pred.per.tree <- lapply(tree_list[-idx.bornout], \(x) binary.pred.tree(x, X))
-    pred.df <- Reduce(rbind, pred.per.tree)  
-  }
-  return(pred.df)
-}
-
-
-miss.class.rate.from.matrix <- function(pred.matrix, Y){
-  as.numeric(apply(pred.matrix, 1, \(x) sum(x != Y)))
-}
-
-miss.class.rate.mcmc <- function(tree_list, X, Y, born.out.pc = 100, sample.pc = 1000, n.chain = 10){
-  pred.matrix <- binary.pred.mcmc(tree_list = tree_list, 
-                                  X = X, 
-                                  born.out.pc = born.out.pc, 
-                                  sample.pc = sample.pc, 
-                                  n.chain = n.chain)
-  miss.class.rate.from.matrix(pred.matrix, Y)
-}
-
-
-apply_fun_models_all.tog <- function(mcmc.list, fun_){
-  fun.list <- lapply(mcmc.list, \(x) fun_(x))
-  names(fun.list) <- names(mcmc.list)
-  fun.df.list <- lapply(1:length(fun.list), \(x) data.frame(x = 1:length(mcmc.list[[x]]$trees),
-                                                            y = fun.list[[x]],
-                                                            panel.name = names(fun.list)[x]))
-  fun.df <- Reduce(rbind, fun.df.list)
-  fun.df
-}
-
-

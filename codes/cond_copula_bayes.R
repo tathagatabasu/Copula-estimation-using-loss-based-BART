@@ -21,7 +21,7 @@ set.seed(1e5)
 
 # load("analysis_sim_dat_new.RData")
 
-if(F){
+if(T){
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
@@ -78,7 +78,7 @@ if(F){
   # frank # numerical
   
   for (i in 1:4) {
-    assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = param_frank(get(paste0("tau_true_",i)))))
+    assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = BiCopTau2Par(5, get(paste0("tau_true_",i)))))
   }
   
   # dataset for prediction
@@ -133,6 +133,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 if(F){
   n.tree <- 1
+  Rprof("profile_output.out")  # Start profiling
   
   for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -147,11 +148,14 @@ if(F){
                                                                   include.split = incl.split_par,
                                                                   prop_mu = 0, prop_sigma = .2,
                                                                   theta_param_1 = 0, theta_param_2 = 1,
+                                                                  var_param_1 = 1, var_param_2 = 2,
                                                                   prior_type = "N",
                                                                   cop_type = "gauss"))
     
     cat('done case', i, '\n')
   }
+  Rprof(NULL)                  # Stop profiling
+  summaryRprof("profile_output.out")  # View results
   
 }
 
