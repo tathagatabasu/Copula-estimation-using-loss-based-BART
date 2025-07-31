@@ -17,11 +17,11 @@ library(calculus)
 ################################################################################
 # data generation
 ################################################################################
-set.seed(1e5)
+set.seed(1e3)
 
 # load("analysis_sim_dat_new.RData")
 
-if(T){
+if(F){
   n <- 500
   X_obs <- matrix(runif(n), ncol = 1)
   
@@ -136,8 +136,8 @@ if(F){
   Rprof("profile_output.out")  # Start profiling
   
   for (i in 1) {
-    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                  n.tree = n.tree,
+    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                                  n.tree = n.tree, n.chain = 2,
                                                                   X = X_obs.norm,
                                                                   U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                   U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -315,7 +315,7 @@ if(F){
 if(F){
   n.tree <- 1
   
-  for (i in 3) {
+  for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_1"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                               n.tree = n.tree,
                                                               X = X_obs.norm,
@@ -328,7 +328,8 @@ if(F){
                                                           include.split = incl.split_par,
                                                           prop_mu = 0, prop_sigma = .2,
                                                           theta_param_1 = 0, theta_param_2 = 1,
-                                                          prior_type = "N",
+                                                      var_param_1 = 1, var_param_2 = 2,
+                                                      prior_type = "N",
                                                           cop_type = "t"))
     
     cat('done case', i, '\n')
@@ -342,7 +343,7 @@ save("t_mcmc_4_tree_1", file = "t_mcmc_4_tree_1.Rdata")
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
   load(paste0("t_mcmc_",test_case,"_tree_1.Rdata"))
   
@@ -491,7 +492,7 @@ if(F){
 # Gumbel
 ################################################################################
 if(F){
-  n.tree <- 15
+  n.tree <- 5
   
   for (i in 3) {
     assign(paste0("gumbel_mcmc_",i,"_tree_5"), MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -504,7 +505,7 @@ if(F){
                                                                starting.tree = NULL,
                                                                cont.unif = cont.unif_par,
                                                                include.split = incl.split_par,
-                                                               prop_mu = 0, prop_sigma = rep(.1/n.tree,n.tree),
+                                                               prop_mu = 0, prop_sigma = .2/n.tree,
                                                                theta_param_1 = 0, theta_param_2 = 1,
                                                                var_param_1 = 1, var_param_2 = 2,
                                                                prior_type = "N",
@@ -532,8 +533,6 @@ if(F){
   pred_val = do.call(rbind,list_pred_lb)
   
   n.thin <- 1
-  
-  n.born.out.par <- 2500
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
@@ -585,7 +584,7 @@ if(F){
   
   pl_like
   
-  conv_diag(like_df,2500,50)
+  conv_diag(like_df,1000,50)
   # nterm
   
   nt_lb.df <- nterm_BART(model)
@@ -686,7 +685,7 @@ if(F){
                                                           starting.tree = NULL,
                                                           cont.unif = cont.unif_par,
                                                           include.split = incl.split_par,
-                                                          prop_mu = 0, prop_sigma = rep(.1/n.tree,n.tree),
+                                                          prop_mu = 0, prop_sigma = rep(1/n.tree,n.tree),
                                                           theta_param_1 = 0, theta_param_2 = 1,
                                                           var_param_1 = 2, var_param_2 = 2,
                                                           prior_type = "N",
@@ -714,8 +713,6 @@ if(F){
   pred_val = do.call(rbind,list_pred_lb)
   
   n.thin <- 1
-  
-  n.born.out.par <- 2500
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
@@ -868,9 +865,10 @@ if(F){
                                                                 starting.tree = NULL,
                                                                 cont.unif = cont.unif_par,
                                                                 include.split = incl.split_par,
-                                                                prop_mu = 0, prop_sigma = .2,
+                                                                prop_mu = 0, prop_sigma = .5,
                                                                 theta_param_1 = 0, theta_param_2 = 1,
-                                                                prior_type = "N",
+                                                            var_param_1 = 2, var_param_2 = 2,
+                                                            prior_type = "N",
                                                                 cop_type = "clayton"))
     
     cat('done case', i, '\n')
@@ -887,7 +885,7 @@ save("clayton_mcmc_4_tree_1", file = "clayton_mcmc_4_tree_1.Rdata")
 # results
 
 if(F){
-  test_case = 2
+  test_case = 1
   
   load(paste0("clayton_mcmc_",test_case,"_tree_1.Rdata"))
   

@@ -2,6 +2,7 @@ library(parallel)
 library(mc2d)
 library(pracma)
 library(MCMCpack)
+
 multichain_MCMC_copula <- function(n.iter = 6000, 
                                    n.burn = 1000, 
                                    n.chain = 1,
@@ -158,15 +159,11 @@ MCMC_copula <- function(n.iter,
   }
   
   assign("sample.cond.mu.copula", sample.cond.mu.copula_after_burn)
-  # cov_mat_true <- var_adapt(theta_pred_list[, , 1:n.burn]) 
-  # cov_mat <- (2.4)^2/n.tree * (cov_mat_true$cov + diag(0.005, nrow = n.tree, ncol = n.tree))
   
   for(idx.iter in (n.burn+1):n.iter){
     cat('Iteration: ', idx.iter, '\n')
     
     for(idx.tree in idx.tree.vec){
-      
-      # prop_sigma <- sqrt(cov_mat[idx.tree,idx.tree] - cov_mat[idx.tree,-idx.tree]%*%chol2inv(chol(cov_mat[-idx.tree,-idx.tree]))%*%cov_mat[-idx.tree,idx.tree])
       
       res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree])
       
@@ -204,10 +201,6 @@ MCMC_copula <- function(n.iter,
     trees.for.iter[[idx.iter]] <- last.tree.list
     df_res.for.iter[[idx.iter]] <- df_res.list
     theta_pred_list[, , idx.iter] <- res_theta_list
-    
-    # cov_mat_true <- iter_var(cov_mat_true$cov, cov_mat_true$mean, theta_pred_list[, , idx.iter],idx.iter)
-    # cov_mat <- (2.4)^2/n.tree * (cov_mat_true$cov + diag(0.005, nrow = n.tree, ncol = n.tree))
-    
   }
   
   time_diff <- Sys.time() - st_time
@@ -572,6 +565,8 @@ sample.cond.mu.copula_after_burn <- function(tree_top = NULL,
   prop_cov <- var_adapt(theta_pred_list[obs.id, ,])$cov
   
   n.tree <- ncol(prop_cov)
+  
+  prop_cov <- (2.4)^2/n.tree * (prop_cov + diag(0.005, nrow = n.tree, ncol = n.tree))
   
   prop_sigma <- ifelse(n.tree == 1, sqrt(prop_cov), sqrt(prop_cov[idx.tree, idx.tree] - 
                                                            prop_cov[idx.tree, -idx.tree] %*% 
@@ -1015,7 +1010,7 @@ link_t <- function(rho) {
 }
 
 link_clayton <- function(x) {
-  return(19*sigmoid(x)+1.001)
+  return(exp(x) + 0.0001)
 }
 
 link_gumbel <- function(x) {

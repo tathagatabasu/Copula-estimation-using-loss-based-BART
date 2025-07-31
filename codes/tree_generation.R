@@ -304,20 +304,21 @@ gen_node_condition <- function(node.idx, tree_top, X,
 #' get_tree_plot(tree_top)
 #' get_tree_plot(tree_top1)
 #' get_tree_plot(tree_top2)
-set_node_condition <- function(node.idx, tree_top, cond){
-  if(is.null(tree_top$left) & is.null(tree_top$right)){
-    return(tree_top)
-  } else {
-    if(tree_top$node.idx == node.idx){
-      tree_top$cond = cond
-      return(tree_top)
-    } else {
-      tree.left <- set_node_condition(node.idx, tree_top$left, cond)
-      tree.right <- set_node_condition(node.idx, tree_top$right, cond)
-      return(list(left = tree.left, right = tree.right, node.idx = tree_top$node.idx,
-                  cond = tree_top$cond))
-    }
+set_node_condition <- function(node.idx, tree_top, cond) {
+  if (is.null(tree_top)) {
+    return(NULL)
   }
+  
+  if (tree_top$node.idx == node.idx) {
+    tree_top$cond <- cond
+    return(tree_top)
+  }
+  
+  # Recursively update left and right subtrees
+  tree_top$left <- set_node_condition(node.idx, tree_top$left, cond)
+  tree_top$right <- set_node_condition(node.idx, tree_top$right, cond)
+  
+  return(tree_top)
 }
 
 
@@ -345,12 +346,14 @@ set_node_condition <- function(node.idx, tree_top, cond){
 #' tree_top2 <- assign_term_node_values(tree_top2, 0, 2)
 #' get_tree_plot(tree_top1)
 #' get_tree_plot(tree_top2)
-assign_split_rules <- function(tree_top, X, obs.per.term = 1, cont.unif = TRUE){
-  intern.node.idx <- get_internal_nodes_idx(tree_top)
-  for(node.idx in intern.node.idx){
-    new.cond <- gen_node_condition(node.idx, tree_top, X, obs.per.term, cont.unif = cont.unif)$cond
-    tree_top <- set_node_condition(node.idx, tree_top, new.cond)
+assign_split_rules <- function(tree_top, X, obs.per.term = 1, cont.unif = TRUE) {
+  internal_node_idxs <- get_internal_nodes_idx(tree_top)
+  
+  for (node_idx in internal_node_idxs) {
+    new_cond <- gen_node_condition(node_idx, tree_top, X, obs.per.term, cont.unif = cont.unif)$cond
+    tree_top <- set_node_condition(node_idx, tree_top, new_cond)
   }
+  
   return(tree_top)
 }
 
@@ -373,25 +376,33 @@ assign_split_rules <- function(tree_top, X, obs.per.term = 1, cont.unif = TRUE){
 #' tree_top2 <- assign_node_idx(tree_top2)
 #' get_tree_plot.idx(tree_top1)
 #' get_tree_plot.idx(tree_top2)
-generate_random_binary_tree_depth_free <- function(num_terminals){
+generate_random_binary_tree_depth_free <- function(num_terminals) {
+  
   if (num_terminals == 1) {
-    return(list(left=NULL, right=NULL))
+    return(list(left = NULL, right = NULL))
   }
-  if(num_terminals == 2) {
-    return(list(left = list(left = NULL, right = NULL),
-                right = list(left = NULL, right = NULL)))
+  
+  if (num_terminals == 2) {
+    return(list(
+      left = list(left = NULL, right = NULL),
+      right = list(left = NULL, right = NULL)
+    ))
   }
+  
   poss_left_nodes <- 1:(num_terminals - 1)
-  if(length(poss_left_nodes) == 1){
-    left_nodes = poss_left_nodes
-    right_nodes = num_terminals - left_nodes
-  } else{
-    left_nodes = sample(poss_left_nodes, 1)
-    right_nodes = num_terminals - left_nodes
+  
+  left_nodes <- if (length(poss_left_nodes) == 1) {
+    poss_left_nodes
+  } else {
+    sample(poss_left_nodes, 1)
   }
+  
+  right_nodes <- num_terminals - left_nodes
+  
   left_subtree <- generate_random_binary_tree_depth_free(left_nodes)
-  right_subtree <- generate_random_binary_tree_depth_free(right_nodes) 
-  return(list(left=left_subtree, right=right_subtree))
+  right_subtree <- generate_random_binary_tree_depth_free(right_nodes)
+  
+  return(list(left = left_subtree, right = right_subtree))
 }
 
 
@@ -417,102 +428,124 @@ generate_random_binary_tree_depth_free <- function(num_terminals){
 #' tree_top2 <- assign_node_idx(tree_top2)
 #' get_tree_plot.idx(tree_top1)
 #' get_tree_plot.idx(tree_top2)
-generate_random_binary_tree_depth_nterm <- function(depth, num_terminals,
-                                                    display.out = FALSE) {
-  # if (depth == 0) {
-  #   return(list(left=NULL, right=NULL))
-  # }
+generate_random_binary_tree_depth_nterm <- function(depth, num_terminals, display.out = FALSE) {
+  # Base case: single terminal node
   if (num_terminals == 1) {
-    return(list(left=NULL, right=NULL))
+    return(list(left = NULL, right = NULL))
   }
-  if(num_terminals == 2) {
-    return(list(left = list(left = NULL, right = NULL),
-                right = list(left = NULL, right = NULL)))
+  
+  # Base case: exactly two terminals => split into two leaves
+  if (num_terminals == 2) {
+    return(list(
+      left = list(left = NULL, right = NULL),
+      right = list(left = NULL, right = NULL)
+    ))
   }
-  min_on_side = depth
-  poss_left_nodes <- (max(1, num_terminals - 2^(depth - 1))):(min(2^(depth-1), num_terminals - 1))
-  if(depth > (num_terminals - depth)){
+  
+  min_on_side <- depth
+  
+  # Calculate possible number of left terminal nodes given depth constraints
+  poss_left_nodes <- (max(1, num_terminals - 2^(depth - 1))):(min(2^(depth - 1), num_terminals - 1))
+  
+  # Filter impossible splits based on depth and number of terminals
+  if (depth > (num_terminals - depth)) {
     idx_rm_left_nodes <- poss_left_nodes < min_on_side & poss_left_nodes > (num_terminals - min_on_side)
     poss_left_nodes <- poss_left_nodes[!idx_rm_left_nodes]
   }
-  if(display.out){
-    cat('depth: ', depth, '\n')
-    cat('num terminal:', num_terminals, '\n')
-    cat('poss: ', poss_left_nodes, '\n')  
-  }
-  if(length(poss_left_nodes) == 0){
-    return(list(left = NULL, right = NULL))
-  }
-  if(length(poss_left_nodes) == 1){
-    left_nodes = poss_left_nodes
-    right_nodes = num_terminals - left_nodes
-  } else{
-    left_nodes = sample(poss_left_nodes, 1)
-    right_nodes = num_terminals - left_nodes
-  }
-  if(display.out){
-    cat('left:', left_nodes, '\n')
-    cat('----- \n')
-  }
-  if(left_nodes >= depth & left_nodes <= (num_terminals - depth) ){
-    left_subtree <- generate_random_binary_tree_depth_nterm(depth-1, left_nodes, 
-                                                            display.out = display.out)
-    right_subtree <- generate_random_binary_tree_depth_nterm(depth-1, right_nodes,
-                                                             display.out = display.out)  
-  } else if(left_nodes > max(depth - 1, num_terminals - depth)){
-    left_subtree <- generate_random_binary_tree_depth_nterm(depth-1, left_nodes,
-                                                            display.out = display.out)
-    right_subtree <- generate_random_binary_tree_depth_free(right_nodes)  
-  } else {
-    left_subtree <- generate_random_binary_tree_depth_free(left_nodes)
-    right_subtree <- generate_random_binary_tree_depth_nterm(depth-1, right_nodes,
-                                                             display.out = display.out)  
+  
+  if (display.out) {
+    cat('depth:', depth, '\n')
+    cat('num terminals:', num_terminals, '\n')
+    cat('possible left nodes:', poss_left_nodes, '\n')
   }
   
-  return(list(left=left_subtree, right=right_subtree))
+  # No valid splits — return leaf
+  if (length(poss_left_nodes) == 0) {
+    return(list(left = NULL, right = NULL))
+  }
+  
+  # Choose number of left nodes
+  if (length(poss_left_nodes) == 1) {
+    left_nodes <- poss_left_nodes
+  } else {
+    left_nodes <- sample(poss_left_nodes, 1)
+  }
+  right_nodes <- num_terminals - left_nodes
+  
+  if (display.out) {
+    cat('chosen left nodes:', left_nodes, '\n')
+    cat('-----\n')
+  }
+  
+  # Recursively build subtrees based on depth and terminals
+  if (left_nodes >= depth && left_nodes <= (num_terminals - depth)) {
+    left_subtree <- generate_random_binary_tree_depth_nterm(depth - 1, left_nodes, display.out)
+    right_subtree <- generate_random_binary_tree_depth_nterm(depth - 1, right_nodes, display.out)
+  } else if (left_nodes > max(depth - 1, num_terminals - depth)) {
+    left_subtree <- generate_random_binary_tree_depth_nterm(depth - 1, left_nodes, display.out)
+    right_subtree <- generate_random_binary_tree_depth_free(right_nodes)
+  } else {
+    left_subtree <- generate_random_binary_tree_depth_free(left_nodes)
+    right_subtree <- generate_random_binary_tree_depth_nterm(depth - 1, right_nodes, display.out)
+  }
+  
+  return(list(left = left_subtree, right = right_subtree))
 }
 
 
 # generate random binary tree with fixed nterm and delta
-generate_random_binary_tree_n_delta <- function(n, delt){
-  if(n == 1){
+generate_random_binary_tree_n_delta <- function(n, delt) {
+  if (n == 1) {
     return(list(left = NULL, right = NULL))
   }
-  if(f.odd(n) != f.odd(delt)){
-    stop('Please provide a valid (n,delt) couple. If n is even delt should be even. If n is odd delt should be odd.')
-  } else {
-    if(f.even(n) != f.even(delt)){
-      stop('Please provide a valid (n,delt) couple. If n is even delt should be even. If n is odd delt should be odd.')
-    }
+  
+  # Check parity consistency: n and delt must be both even or both odd
+  if (f.odd(n) != f.odd(delt) || f.even(n) != f.even(delt)) {
+    stop('Please provide a valid (n, delt) couple. If n is even, delt should be even. If n is odd, delt should be odd.')
   }
-  flag = sample(c(0,1), 1)
-  if(flag){
-    nl = ( n + delt )/ 2
-    nr = (n - delt )/2
+  
+  # Randomly decide which subtree gets (n + delt)/2 terminals
+  flag <- sample(c(0, 1), 1)
+  if (flag == 1) {
+    nl <- (n + delt) / 2
+    nr <- (n - delt) / 2
   } else {
-    nl = ( n - delt )/ 2
-    nr = (n + delt )/2
+    nl <- (n - delt) / 2
+    nr <- (n + delt) / 2
   }
+  
   tree.left <- generate_random_binary_tree_depth_free(nl)
   tree.right <- generate_random_binary_tree_depth_free(nr)
-  list(left = tree.left, right = tree.right)
+  
+  return(list(left = tree.left, right = tree.right))
 }
 
-generate_random_binary_tree_from_prior <- function(omeg, gam){
+generate_random_binary_tree_from_prior <- function(omeg, gam) {
+  # Sample number of terminal nodes from prior on nterm (omeg)
   n_ <- rnterm(1, omeg)
-  if(n_ > 1){
-    if(f.odd(n_)){
-      delta.values <- seq(1,n_- 2,by = 2)  
-    } else{
-      delta.values <- seq(0,n_- 2,by = 2)
+  
+  if (n_ > 1) {
+    # Determine valid delta values based on parity of n_
+    if (f.odd(n_)) {
+      delta.values <- seq(1, n_ - 2, by = 2)
+    } else {
+      delta.values <- seq(0, n_ - 2, by = 2)
     }
-    delta_ <- sample(x = delta.values, 
-                     size = 1,
-                     prob = prior.delta(delta.values, gam, n_))
-    rt <- generate_random_binary_tree_n_delta(n_, delta_)  
+    
+    # Sample delta from prior.delta with given gamma
+    delta_ <- sample(
+      x = delta.values,
+      size = 1,
+      prob = prior.delta(delta.values, gam, n_)
+    )
+    
+    # Generate tree with given nterm and delta
+    rt <- generate_random_binary_tree_n_delta(n_, delta_)
   } else {
-    delta_ = 0
+    # For nterm = 1, delta = 0 and generate trivial tree
+    delta_ <- 0
     rt <- generate_random_binary_tree_depth_free(n_)
   }
+  
   return(list(tree = rt, n = n_, delta = delta_))
 }

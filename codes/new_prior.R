@@ -1,8 +1,9 @@
-f.odd <- function(n){
-  (1 - (-1)^n )/2
+f.odd <- function(n) {
+  as.integer(n %% 2 == 1)
 }
-f.even <- function(n){
-  1 - f.odd(n)
+
+f.even <- function(n) {
+  as.integer(n %% 2 == 0)
 }
 
 ## if the number of terminal nodes is even
@@ -22,57 +23,68 @@ prior.nterm <- function(n, omeg){
   exp(-omeg*n)*(exp(omeg) - 1)
 }
 
-count.tree <- function(n, delt){
-  nl = (n + delt)/2
-  nr = (n - delt)/2
-  c.nl = factorial(2*(nl - 1))/(factorial(nl)*factorial(nl-1))
-  c.nr = factorial(2*(nr - 1))/(factorial(nr)*factorial(nr-1))
-  if(delt == 0){
-    return(c.nl*c.nr)
+count.tree <- function(n, delt) {
+  
+  nl <- (n + delt) / 2
+  nr <- (n - delt) / 2
+  
+  # Use log-factorials to avoid overflow
+  log_cnl <- lfactorial(2 * (nl - 1)) - lfactorial(nl) - lfactorial(nl - 1)
+  log_cnr <- lfactorial(2 * (nr - 1)) - lfactorial(nr) - lfactorial(nr - 1)
+  
+  count <- exp(log_cnl + log_cnr)
+  
+  if (delt == 0) {
+    return(count)
   } else {
-    return(2*c.nl*c.nr)  
+    return(2 * count)
   }
 }
 
-prior.delta <- function(delt, gam, n){
-  if(n == 1){
-    if(delt == 1){
-      return(1)
-    } else{
-      return(0)
+prior.delta <- function(delt, gam, n) {
+  
+  if (n == 1) {
+    return(ifelse(delt == 1, 1, 0))
+  }
+  
+  if (gam > 0) {
+    n.cost <- if (f.odd(n)) {
+      n.cost.odd(gam, n)
+    } else {
+      n.cost.even(gam, n)
     }
-  }else{
-    if(gam > 0){
-      if(f.odd(n)){
-        n.cost <- n.cost.odd(gam, n)
-      } else{
-        n.cost <- n.cost.even(gam, n)
-      }
-      return(exp(-gam*delt)/n.cost)  
-    } else{
-      if(f.odd(n)){
-        poss.delt <- seq(1,n-2,by = 2)
-      } else {
-        poss.delt <- seq(0, n-2, by = 2)
-      }
-      return(rep(1/length(poss.delt), length(delt)))
+    return(exp(-gam * delt) / n.cost)
+  } else {
+    poss.delt <- if (f.odd(n)) {
+      seq(1, n - 2, by = 2)
+    } else {
+      seq(0, n - 2, by = 2)
     }
+    
+    prior_val <- numeric(length(delt))
+    is_valid <- delt %in% poss.delt
+    prior_val[is_valid] <- 1 / length(poss.delt)
+    return(prior_val)
   }
 }
 
 
-joint.prior.new <- function(n, delt, omeg, gam){
-  if(n == 1){
-    n.tree = 1
+joint.prior.new <- function(n, delt, omeg, gam) {
+  
+  if (n == 1) {
     return(prior.nterm(n, omeg))
-  } else {
-    n.tree <- count.tree(n, delt)  
-    return(prior.nterm(n, omeg)*prior.delta(delt, gam, n)/n.tree)
   }
+  
+  n.tree <- count.tree(n, delt)
+  delta.prior <- prior.delta(delt, gam, n)
+  nterm.prior <- prior.nterm(n, omeg)
+  
+  nterm.prior * delta.prior / n.tree
 }
 
 
 joint.prior.new.tree <- function(tree_top, omeg, gam){
+  
   nterm_ <- get_num_terminal_nodes(tree_top)
   delta_ <- abs(get_num_terminal_nodes(tree_top$left) - get_num_terminal_nodes(tree_top$right))
   joint.prior.new(n = nterm_, delt = delta_, omeg = omeg, gam = gam)
@@ -97,36 +109,37 @@ rnterm <- function(size, omeg){
 
 
 # sample from the conditional distribution of delta
-rdelta.cond <- function(size, gamm, nl){
-  if(nl == 1){
-    delta.v = 0
-  } else{
-    if(f.odd(nl)){
-      delta.v <- seq(1,nl-2,by=2)
-    } else{
-      delta.v <- seq(0,nl-2,by=2)
-    }  
+rdelta.cond <- function(size, gamm, nl) {
+  
+  if (nl == 1) {
+    return(rep(0, size))
   }
-  if(length(delta.v) > 1){
+  
+  delta.v <- if (f.odd(nl)) {
+    seq(1, nl - 2, by = 2)
+  } else {
+    seq(0, nl - 2, by = 2)
+  }
+  
+  if (length(delta.v) > 1) {
     prob.v <- prior.delta(delta.v, gamm, nl)
-    return(sample(delta.v, size = size, replace = TRUE, prob = prob.v))  
-  } else{
-    return(delta.v)
+    sample(delta.v, size = size, replace = TRUE, prob = prob.v)
+  } else {
+    rep(delta.v, size)
   }
 }
 
 # sample from the marginal of rdelta
-rdelta <- function(size, omeg, gamm){
-  output <- rep(NA, size)
+rdelta <- function(size, omeg, gamm) {
+  
   nl.v <- rnterm(size, omeg)
-  for(i in seq_along(output)){
-    output[i] <- rdelta.cond(1, gamm, nl.v[i])
-  }
-  return(output)
+  output <- mapply(function(nl) rdelta.cond(1, gamm, nl), nl.v)
+  return(as.integer(output))
 }
 
 
 rdepth <- function(size, omeg, gamm){
+  
   nl.v <- rnterm(size, omeg)
   delt.v <- vapply(nl.v, \(x) rdelta.cond(1, gamm, x), 0)
   depth.v <- vapply(1:size, \(x) get_depth(generate_random_binary_tree_n_delta(n = nl.v[x],

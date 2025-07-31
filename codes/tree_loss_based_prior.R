@@ -42,13 +42,19 @@ depth_loss_based <- function(d.T, omega.){
 #' pi.l = nterm_loss_based_cond(l.v, d, 1)
 #' plot(l.v, pi.l)
 #' sum(pi.l)
-nterm_loss_based_cond <- function(l.T, d.T, epsilon.){
-  out <- rep(0, length(l.T))
-  idx. <- l.T >= d.T+1 & l.T <= 2^d.T
-  if(sum(idx.) != 0){
-    out[idx.] <- 
-      exp(-epsilon.*l.T[idx.])*(exp(epsilon.) - 1)/(exp(-epsilon.*d.T) - exp(-epsilon.*(2^d.T)))  
+nterm_loss_based_cond <- function(l.T, d.T, epsilon.) {
+  # Initialize output vector with zeros
+  out <- numeric(length(l.T))
+  
+  # Logical index for l.T within valid range
+  idx <- l.T >= (d.T + 1) & l.T <= 2^d.T
+  
+  if (any(idx)) {
+    numerator <- exp(-epsilon. * l.T[idx]) * (exp(epsilon.) - 1)
+    denominator <- exp(-epsilon. * d.T) - exp(-epsilon. * (2^d.T))
+    out[idx] <- numerator / denominator
   }
+  
   return(out)
 }
 
@@ -110,8 +116,7 @@ joint_loss_based <- function(d.T, l.T, omega., epsilon.){
 joint_loss_based_tree <- function(tree_top, omega., epsilon.){
   depth_ <- get_depth(tree_top)
   n.term_ <- get_num_terminal_nodes(tree_top)
-  joint_loss_based(d.T = depth_, l.T = n.term_, 
-                   omega. = omega., epsilon. = epsilon.)
+  joint_loss_based(d.T = depth_, l.T = n.term_, omega. = omega., epsilon. = epsilon.)
 }
 
 # priors on tree
@@ -153,51 +158,59 @@ left.right.nodes <- function(tree_top, int_nodes_idx){
   cbind(node.idx = int_nodes_idx, n.left.right.df)
 }
 
-prob.split <- function(valid.split, cont.unif = TRUE){
-  if(length(valid.split) == 1){
+prob.split <- function(valid.split, cont.unif = TRUE) {
+  if (length(valid.split) == 1) {
     return(1)
   }
-  if(is.character(valid.split)){
-    1/length(valid.split)
-  } else{
-    if(cont.unif){
+  
+  if (is.character(valid.split)) {
+    return(1 / length(valid.split))
+  } else {
+    if (cont.unif) {
       valid.split.extremes <- range(valid.split)
-      1/(valid.split.extremes[2] - valid.split.extremes[1])  
-    } else{
-      1/length(valid.split)
+      return(1 / (valid.split.extremes[2] - valid.split.extremes[1]))
+    } else {
+      return(1 / length(valid.split))
     }
-    
   }
 }
 
-prior.split.rule <- function(tree_top, X, cont.unif = TRUE){
+prior.split.rule <- function(tree_top, X, cont.unif = TRUE) {
   int.nodes <- get_internal_nodes_idx(tree_top)
-  if(length(int.nodes) == 0){
+  if (length(int.nodes) == 0) {
     return(1)
-  } else{
-    obs.at.nodes <- lapply(int.nodes, \(x) get_obs_at_node(node.idx = x, 
-                                                           X = X, 
-                                                           tree_top = tree_top, 
-                                                           X.orig = X))
+  } else {
+    obs.at.nodes <- lapply(int.nodes, function(x) get_obs_at_node(
+      node.idx = x, 
+      X = X, 
+      tree_top = tree_top, 
+      X.orig = X
+    ))
+    
     lr.nodes <- left.right.nodes(tree_top, int.nodes)
-    pred.idx <- vapply(int.nodes, \(x) get_node_condition(x, tree_top)$x.idx,0)
-    prob.pred <- vapply(1:nrow(lr.nodes), \(x) 1/length(get_set_valid_predictor(X.sel = obs.at.nodes[[x]],
-                                                                                n.term.left = lr.nodes$left[x],
-                                                                                n.term.right = lr.nodes$right[x],
-                                                                                obs.per.term = 1)),0)
-    valid.split.list <- lapply(1:nrow(lr.nodes), \(x) get_set_valid_split(X.pred = obs.at.nodes[[x]][,pred.idx[x]],
-                                                                          n.term.left = lr.nodes$left[x],
-                                                                          n.term.right = lr.nodes$right[x],
-                                                                          obs.per.term = 1))
-    prob.split <- vapply(valid.split.list, \(x) prob.split(x, cont.unif = cont.unif), 0)
-    return(prod(prob.pred*prob.split))
+    
+    pred.idx <- vapply(int.nodes, function(x) get_node_condition(x, tree_top)$x.idx, 0)
+    
+    prob.pred.vec <- vapply(seq_len(nrow(lr.nodes)), function(i) {
+      1 / length(get_set_valid_predictor(
+        X.sel = obs.at.nodes[[i]],
+        n.term.left = lr.nodes$left[i],
+        n.term.right = lr.nodes$right[i],
+        obs.per.term = 1
+      ))
+    }, 0)
+    
+    valid.split.list <- lapply(seq_len(nrow(lr.nodes)), function(i) {
+      get_set_valid_split(
+        X.pred = obs.at.nodes[[i]][, pred.idx[i]],
+        n.term.left = lr.nodes$left[i],
+        n.term.right = lr.nodes$right[i],
+        obs.per.term = 1
+      )
+    })
+    
+    prob.split.vec <- vapply(valid.split.list, function(x) prob.split(x, cont.unif = cont.unif), 0)
+    
+    return(prod(prob.pred.vec * prob.split.vec))
   }
 }
-
-
-
-
-
-
-
-

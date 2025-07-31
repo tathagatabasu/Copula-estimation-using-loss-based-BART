@@ -17,31 +17,54 @@
 #' @param beta. Numeric, depth penalty (beta. >= 0).
 #' @return A list representing the tree.
 generate.tree.chip <- function(alpha., beta.) {
-  stopifnot(is.numeric(alpha.), alpha. > 0, alpha. <= 1,
-            is.numeric(beta.), beta. >= 0)
+  # Initialize tree root node
   tree <- list(node.idx = 1, depth = 0, left = NULL, right = NULL)
-  nodes <- list(tree)
-  n.split <- 1
-  max_depth <- 100
-  split_count <- 0
   
-  while (n.split > 0 && split_count < max_depth) {
+  # Maintain queue of nodes to possibly split (store references as paths)
+  nodes_to_split <- list(tree)
+  
+  split_count <- 0
+  max_depth <- 100
+  
+  while (length(nodes_to_split) > 0 && split_count < max_depth) {
+    # Pop first node to split
+    current_node <- nodes_to_split[[1]]
+    nodes_to_split <- nodes_to_split[-1]
+    
     split_count <- split_count + 1
-    to_split <- nodes[sapply(nodes, function(node) is.null(node$left) && is.null(node$right))]
-    for (node in to_split) {
-      p_split <- alpha. / (1 + node$depth)^beta.
-      if (runif(1) < p_split) {
-        # Split node
-        node$left <- list(node.idx = length(nodes) + 1, depth = node$depth + 1, left = NULL, right = NULL)
-        node$right <- list(node.idx = length(nodes) + 2, depth = node$depth + 1, left = NULL, right = NULL)
-        nodes <- c(nodes, list(node$left, node$right))
-        n.split <- n.split + 2
-      }
+    p_split <- alpha. / (1 + current_node$depth)^beta.
+    
+    if (runif(1) < p_split) {
+      # Create children
+      left_node <- list(node.idx = current_node$node.idx * 2, depth = current_node$depth + 1, left = NULL, right = NULL)
+      right_node <- list(node.idx = current_node$node.idx * 2 + 1, depth = current_node$depth + 1, left = NULL, right = NULL)
+      
+      current_node$left <- left_node
+      current_node$right <- right_node
+      
+      # Add children to queue to split later
+      nodes_to_split <- c(nodes_to_split, list(left_node, right_node))
     }
-    n.split <- length(nodes[sapply(nodes, function(node) is.null(node$left) && is.null(node$right))])
+    
+    # Rebuild tree from updated nodes: Because R uses copy-on-modify,
+    # we need a helper function to update nodes correctly
+    update_tree_node <- function(tree, node) {
+      if (tree$node.idx == node$node.idx) {
+        return(node)
+      } else if (!is.null(tree$left) && node$node.idx %in% c(tree$left$node.idx, tree$left$node.idx * 2, tree$left$node.idx * 2 + 1)) {
+        tree$left <- update_tree_node(tree$left, node)
+      } else if (!is.null(tree$right)) {
+        tree$right <- update_tree_node(tree$right, node)
+      }
+      tree
+    }
+    
+    tree <- update_tree_node(tree, current_node)
   }
+  
   if (split_count == max_depth) warning("Max tree depth reached; stopping splits.")
-  return(tree)
+  
+  tree
 }
 
 #' Calculate the depth of a node in a tree
@@ -49,16 +72,20 @@ generate.tree.chip <- function(alpha., beta.) {
 #' @param node.idx The index of the node to find.
 #' @return Integer depth or NA if not found.
 get_depth_at_node <- function(tree_top, node.idx) {
+  
   if (tree_top$node.idx == node.idx) return(tree_top$depth)
+  
   if (!is.null(tree_top$left)) {
-    result <- get_depth_at_node(tree_top$left, node.idx)
-    if (!is.na(result)) return(result)
+    depth_left <- get_depth_at_node(tree_top$left, node.idx)
+    if (!is.na(depth_left)) return(depth_left)
   }
+  
   if (!is.null(tree_top$right)) {
-    result <- get_depth_at_node(tree_top$right, node.idx)
-    if (!is.na(result)) return(result)
+    depth_right <- get_depth_at_node(tree_top$right, node.idx)
+    if (!is.na(depth_right)) return(depth_right)
   }
-  return(NA)
+  
+  NA
 }
 
 #' Calculate the prior probability of a tree under the Chipman prior
@@ -68,16 +95,20 @@ get_depth_at_node <- function(tree_top, node.idx) {
 #' @param beta. Numeric, depth penalty.
 #' @return Numeric prior probability.
 chipman_prior_tree <- function(tree, alpha., beta.) {
-  stopifnot(is.numeric(alpha.), alpha. > 0, alpha. <= 1,
-            is.numeric(beta.), beta. >= 0)
+  
   terminal_nodes <- get_terminal_nodes_idx(tree)
   internal_nodes <- get_internal_nodes_idx(tree)
   all_nodes <- c(terminal_nodes, internal_nodes)
+  
   depth.node <- vapply(all_nodes, function(idx) get_depth_at_node(tree, idx), numeric(1))
-  prior <- prod(
-    (alpha. / ((1 + depth.node[internal_nodes])^beta.)),
-    (1 - alpha. / ((1 + depth.node[terminal_nodes])^beta.))
-  )
+  names(depth.node) <- all_nodes  # Safe mapping
+  
+  # Compute prior components
+  internal_part <- alpha. / ((1 + depth.node[as.character(internal_nodes)])^beta.)
+  terminal_part <- 1 - alpha. / ((1 + depth.node[as.character(terminal_nodes)])^beta.)
+  
+  # Final prior
+  prior <- prod(c(internal_part, terminal_part))
   return(prior)
 }
 
@@ -87,12 +118,15 @@ chipman_prior_tree <- function(tree, alpha., beta.) {
 #' @param beta. Numeric, depth penalty.
 #' @return Integer vector of depths.
 rdepth.chip <- function(n, alpha., beta.) {
+  
   depths <- integer(n)
+  
   for (i in seq_len(n)) {
     tree <- generate.tree.chip(alpha., beta.)
-    depths[i] <- get_depth_at_node(tree, 1)
+    depths[i] <- get_depth_at_node(tree, 1L)
   }
-  return(depths)
+  
+  depths
 }
 
 #' Simulate number of terminal nodes under the Chipman prior
@@ -101,12 +135,15 @@ rdepth.chip <- function(n, alpha., beta.) {
 #' @param beta. Numeric, depth penalty.
 #' @return Integer vector of number of terminal nodes.
 rnterm.chip <- function(n, alpha., beta.) {
+  
   nterm <- integer(n)
+  
   for (i in seq_len(n)) {
     tree <- generate.tree.chip(alpha., beta.)
     nterm[i] <- length(get_terminal_nodes_idx(tree))
   }
-  return(nterm)
+  
+  nterm
 }
 
 #' Simulate joint (depth, nterm) under Chipman prior
@@ -115,14 +152,17 @@ rnterm.chip <- function(n, alpha., beta.) {
 #' @param beta. Numeric, depth penalty.
 #' @return Data frame with columns depth and nterm.
 rdepth.nterm.chip <- function(n, alpha., beta.) {
+  
   depths <- integer(n)
   nterms <- integer(n)
+  
   for (i in seq_len(n)) {
     tree <- generate.tree.chip(alpha., beta.)
-    depths[i] <- get_depth_at_node(tree, 1)
+    depths[i] <- get_depth_at_node(tree, 1L)
     nterms[i] <- length(get_terminal_nodes_idx(tree))
   }
-  return(data.frame(depth = depths, nterm = nterms))
+  
+  data.frame(depth = depths, nterm = nterms)
 }
 
 # Note: get_terminal_nodes_idx and get_internal_nodes_idx must be defined elsewhere for this file to work!
