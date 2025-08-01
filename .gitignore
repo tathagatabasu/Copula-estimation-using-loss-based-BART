@@ -49,3 +49,4 @@ codes/.Rhistory
 *.bbl
 *.blg
 codes/.Rhistory
+*.Rdata

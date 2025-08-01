@@ -2,6 +2,7 @@ library(parallel)
 library(mc2d)
 library(pracma)
 library(MCMCpack)
+
 multichain_MCMC_copula <- function(n.iter = 6000, 
                                    n.burn = 1000, 
                                    n.chain = 1,
