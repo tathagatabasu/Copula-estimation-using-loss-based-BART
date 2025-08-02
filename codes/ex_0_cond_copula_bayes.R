@@ -131,10 +131,10 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 # gaussian
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 5
   
-  for (i in 1:4) {
+  for (i in 2:3) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                   n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                   X = X_obs.norm,
@@ -162,9 +162,9 @@ if(F){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 4
   
-  # load(paste0("gauss_mcmc_",test_case,"_tree_5.Rdata"))
+  load(paste0("gauss_mcmc_",test_case,"_tree_1.Rdata"))
   
   model <- get(paste0("gauss_mcmc_",test_case,"_tree_1"))
   
@@ -218,6 +218,7 @@ if(F){
   
   pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('log-likelihood') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -230,6 +231,7 @@ if(F){
   
   pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -242,6 +244,7 @@ if(F){
   
   pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('depth') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -258,18 +261,19 @@ if(F){
   
   xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
-  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   xtable(conv_diag_sum)
   
+  rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
 }
 
 ################################################################################
 # t
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 5
   
-  for (i in 1:4) {
+  for (i in 3) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                  n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                  X = X_obs.norm,
@@ -297,7 +301,7 @@ if(F){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 4
   
   load(paste0("t_mcmc_",test_case,"_tree_1.Rdata"))
   
@@ -353,6 +357,7 @@ if(F){
   
   pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('log-likelihood') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -365,6 +370,7 @@ if(F){
   
   pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -377,6 +383,7 @@ if(F){
   
   pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('depth') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -393,18 +400,19 @@ if(F){
   
   xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
-  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   xtable(conv_diag_sum)
   
+  rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree))
 }
 
 ################################################################################
 # Gumbel
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 5
   
-  for (i in 1:4) {
+  for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                       X = X_obs.norm,
@@ -432,11 +440,11 @@ if(F){
 # results
 
 if(F){
-  test_case = 3
+  test_case = 4
   
-  load(paste0("gumbel_mcmc_",test_case,"_tree_5.Rdata"))
+  load(paste0("gumbel_mcmc_",test_case,"_tree_1.Rdata"))
   
-  model <- get(paste0("gumbel_mcmc_",test_case,"_tree_5"))
+  model <- get(paste0("gumbel_mcmc_",test_case,"_tree_1"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -468,7 +476,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated rho') +
+    ylab('estimated theta') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -488,19 +496,20 @@ if(F){
   
   pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('log-likelihood') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
   
   pl_like
   
-  conv_diag(like_df,1000,50)
   # nterm
   
   nt_lb.df <- nterm_BART(model)
   
   pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -513,6 +522,7 @@ if(F){
   
   pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('depth') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -529,18 +539,19 @@ if(F){
   
   xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
-  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   xtable(conv_diag_sum)
   
+  rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree))
 }
 
 ################################################################################
 # frank
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 5
   
-  for (i in 1:4) {
+  for (i in 3:4) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                      X = X_obs.norm,
@@ -568,11 +579,11 @@ if(F){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 4
   
-  load(paste0("frank_mcmc_",test_case,"_tree_5.Rdata"))
+  load(paste0("frank_mcmc_",test_case,"_tree_1.Rdata"))
   
-  model <- get(paste0("frank_mcmc_",test_case,"_tree_5"))
+  model <- get(paste0("frank_mcmc_",test_case,"_tree_1"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -604,7 +615,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated rho') +
+    ylab('estimated theta') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -624,19 +635,20 @@ if(F){
   
   pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('log-likelihood') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
   
   pl_like
   
-  conv_diag(like_df,2500,50)
   # nterm
   
   nt_lb.df <- nterm_BART(model)
   
   pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -649,6 +661,7 @@ if(F){
   
   pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('depth') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -665,18 +678,19 @@ if(F){
   
   xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
-  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   xtable(conv_diag_sum)
   
+  rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree))
 }
 
 ################################################################################
 # clayton
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 5
   
-  for (i in 1:4) {
+  for (i in 2:3) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                        X = X_obs.norm,
@@ -699,15 +713,13 @@ if(F){
     rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree))
   }
   
-  # all prop_mu = 0, prop_sigma = .2,
-  # 3 prop_mu = 0, prop_sigma = 3,
+  rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree))
   
 }
-
 # results
 
 if(F){
-  test_case = 1
+  test_case = 4
   
   load(paste0("clayton_mcmc_",test_case,"_tree_1.Rdata"))
   
@@ -743,7 +755,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated rho') +
+    ylab('estimated theta') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -767,6 +779,7 @@ if(F){
   
   pl_like <- ggplot(like_df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('log-likelihood') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -779,6 +792,7 @@ if(F){
   
   pl_nl <- ggplot(nt_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('nterm') + 
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -791,6 +805,7 @@ if(F){
   
   pl_dp <- ggplot(depth_lb.df, aes(idx, nn)) + 
     geom_line() + 
+    geom_vline(xintercept=(1:n.chain_par)*n.iter_par, linetype="dotted") + 
     ylab('depth') +
     theme_classic() + 
     theme(panel.grid.major = element_line())
@@ -807,7 +822,11 @@ if(F){
   
   xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
-  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,n.thin), conv_diag(nt_lb.df, n.born.out.par,n.thin), conv_diag(like_df,n.born.out.par,n.thin))
+  conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   xtable(conv_diag_sum)
   
+  rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree))
 }
+
+rm(acc_lb.df, depth_lb.df, like_df, like_df_thin, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, pred_cond_thin,
+   pred_obs, pred_val, pred_val_vec, theta_true, pred_cond_summary, tree_stat_summary, conv_diag_sum)
