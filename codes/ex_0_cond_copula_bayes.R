@@ -133,25 +133,25 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 # gaussian
 ################################################################################
-if(T){
+if(F){
   n.tree <- 5
   
   for (i in 2:3) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                  n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
-                                                                  X = X_obs.norm,
-                                                                  U1 = get(paste0("copula_uu_gauss_",i))[,1],
-                                                                  U2 = get(paste0("copula_uu_gauss_",i))[,2],
-                                                                  prior_list = lb.prior.def, 
-                                                                  moves.prob = moves.prob_par, 
-                                                                  starting.tree = NULL,
-                                                                  cont.unif = cont.unif_par,
-                                                                  include.split = incl.split_par,
-                                                                  prop_mu = 0, prop_sigma = .2,
-                                                                  theta_param_1 = 0, theta_param_2 = 1,
-                                                                  var_param_1 = 1, var_param_2 = 2,
-                                                                  prior_type = "N",
-                                                                  cop_type = "gauss"))
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                           X = X_obs.norm,
+                                                                           U1 = get(paste0("copula_uu_gauss_",i))[,1],
+                                                                           U2 = get(paste0("copula_uu_gauss_",i))[,2],
+                                                                           prior_list = lb.prior.def, 
+                                                                           moves.prob = moves.prob_par, 
+                                                                           starting.tree = NULL,
+                                                                           cont.unif = cont.unif_par,
+                                                                           include.split = incl.split_par,
+                                                                           prop_mu = 0, prop_sigma = .2,
+                                                                           theta_param_1 = 0, theta_param_2 = 1,
+                                                                           var_param_1 = 1, var_param_2 = 2,
+                                                                           prior_type = "N",
+                                                                           cop_type = "gauss"))
     
     cat('done case', i, '\n')
     
@@ -164,11 +164,11 @@ if(T){
 # results
 
 if(F){
-  test_case = 4
+  test_case = 3
   
-  load(paste0("gauss_mcmc_",test_case,"_tree_1.Rdata"))
+  load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
-  model <- get(paste0("gauss_mcmc_",test_case,"_tree_1"))
+  model <- get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -272,25 +272,25 @@ if(F){
 ################################################################################
 # t
 ################################################################################
-if(T){
+if(F){
   n.tree <- 5
   
   for (i in 3) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                 n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
-                                                                 X = X_obs.norm,
-                                                                 U1 = get(paste0("copula_uu_t_",i))[,1],
-                                                                 U2 = get(paste0("copula_uu_t_",i))[,2],
-                                                                 prior_list = lb.prior.def, 
-                                                                 moves.prob = moves.prob_par, 
-                                                                 starting.tree = NULL,
-                                                                 cont.unif = cont.unif_par,
-                                                                 include.split = incl.split_par,
-                                                                 prop_mu = 0, prop_sigma = .2,
-                                                                 theta_param_1 = 0, theta_param_2 = 1,
-                                                                 var_param_1 = 1, var_param_2 = 2,
-                                                                 prior_type = "N",
-                                                                 cop_type = "t"))
+                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                       X = X_obs.norm,
+                                                                       U1 = get(paste0("copula_uu_t_",i))[,1],
+                                                                       U2 = get(paste0("copula_uu_t_",i))[,2],
+                                                                       prior_list = lb.prior.def, 
+                                                                       moves.prob = moves.prob_par, 
+                                                                       starting.tree = NULL,
+                                                                       cont.unif = cont.unif_par,
+                                                                       include.split = incl.split_par,
+                                                                       prop_mu = 0, prop_sigma = .2,
+                                                                       theta_param_1 = 0, theta_param_2 = 1,
+                                                                       var_param_1 = 1, var_param_2 = 2,
+                                                                       prior_type = "N",
+                                                                       cop_type = "t"))
     
     cat('done case', i, '\n')
     
@@ -303,11 +303,11 @@ if(T){
 # results
 
 if(F){
-  test_case = 4
+  test_case = 3
   
-  load(paste0("t_mcmc_",test_case,"_tree_1.Rdata"))
+  load(paste0("t_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
-  model <- get(paste0("t_mcmc_",test_case,"_tree_1"))
+  model <- get(paste0("t_mcmc_",test_case,"_tree_",n.tree))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -411,25 +411,25 @@ if(F){
 ################################################################################
 # Gumbel
 ################################################################################
-if(T){
+if(F){
   n.tree <- 5
   
   for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
-                                                                      X = X_obs.norm,
-                                                                      U1 = get(paste0("copula_uu_gumbel_",i))[,1],
-                                                                      U2 = get(paste0("copula_uu_gumbel_",i))[,2],
-                                                                      prior_list = lb.prior.def, 
-                                                                      moves.prob = moves.prob_par, 
-                                                                      starting.tree = NULL,
-                                                                      cont.unif = cont.unif_par,
-                                                                      include.split = incl.split_par,
-                                                                      prop_mu = 0, prop_sigma = .2/n.tree,
-                                                                      theta_param_1 = 0, theta_param_2 = 1,
-                                                                      var_param_1 = 1, var_param_2 = 2,
-                                                                      prior_type = "N",
-                                                                      cop_type = "gumbel"))
+                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                            X = X_obs.norm,
+                                                                            U1 = get(paste0("copula_uu_gumbel_",i))[,1],
+                                                                            U2 = get(paste0("copula_uu_gumbel_",i))[,2],
+                                                                            prior_list = lb.prior.def, 
+                                                                            moves.prob = moves.prob_par, 
+                                                                            starting.tree = NULL,
+                                                                            cont.unif = cont.unif_par,
+                                                                            include.split = incl.split_par,
+                                                                            prop_mu = 0, prop_sigma = .2/n.tree,
+                                                                            theta_param_1 = 0, theta_param_2 = 1,
+                                                                            var_param_1 = 1, var_param_2 = 2,
+                                                                            prior_type = "N",
+                                                                            cop_type = "gumbel"))
     
     cat('done case', i, '\n')
     
@@ -442,11 +442,11 @@ if(T){
 # results
 
 if(F){
-  test_case = 4
+  test_case = 2
   
-  load(paste0("gumbel_mcmc_",test_case,"_tree_1.Rdata"))
+  load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
-  model <- get(paste0("gumbel_mcmc_",test_case,"_tree_1"))
+  model <- get(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -551,24 +551,24 @@ if(F){
 # frank
 ################################################################################
 if(T){
-  n.tree <- 5
+  n.tree <- 15
   
-  for (i in 3:4) {
+  for (i in 3) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
-                                                                     X = X_obs.norm,
-                                                                     U1 = get(paste0("copula_uu_frank_",i))[,1],
-                                                                     U2 = get(paste0("copula_uu_frank_",i))[,2],
-                                                                     prior_list = lb.prior.def, 
-                                                                     moves.prob = moves.prob_par, 
-                                                                     starting.tree = NULL,
-                                                                     cont.unif = cont.unif_par,
-                                                                     include.split = incl.split_par,
-                                                                     prop_mu = 0, prop_sigma = rep(1/n.tree,n.tree),
-                                                                     theta_param_1 = 0, theta_param_2 = 1,
-                                                                     var_param_1 = 2, var_param_2 = 2,
-                                                                     prior_type = "N",
-                                                                     cop_type = "frank"))
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                           X = X_obs.norm,
+                                                                           U1 = get(paste0("copula_uu_frank_",i))[,1],
+                                                                           U2 = get(paste0("copula_uu_frank_",i))[,2],
+                                                                           prior_list = lb.prior.def, 
+                                                                           moves.prob = moves.prob_par, 
+                                                                           starting.tree = NULL,
+                                                                           cont.unif = cont.unif_par,
+                                                                           include.split = incl.split_par,
+                                                                           prop_mu = 0, prop_sigma = rep(1/n.tree,n.tree),
+                                                                           theta_param_1 = 0, theta_param_2 = 1,
+                                                                           var_param_1 = 2, var_param_2 = 2,
+                                                                           prior_type = "N",
+                                                                           cop_type = "frank"))
     
     cat('done case', i, '\n')
     
@@ -581,11 +581,11 @@ if(T){
 # results
 
 if(F){
-  test_case = 4
+  test_case = 3
   
-  load(paste0("frank_mcmc_",test_case,"_tree_1.Rdata"))
+  load(paste0("frank_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
-  model <- get(paste0("frank_mcmc_",test_case,"_tree_1"))
+  model <- get(paste0("frank_mcmc_",test_case,"_tree_",n.tree))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -689,25 +689,25 @@ if(F){
 ################################################################################
 # clayton
 ################################################################################
-if(T){
-  n.tree <- 5
+if(F){
+  n.tree <- 10
   
-  for (i in 2:3) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
-                                                                       X = X_obs.norm,
-                                                                       U1 = get(paste0("copula_uu_clayton_",i))[,1],
-                                                                       U2 = get(paste0("copula_uu_clayton_",i))[,2],
-                                                                       prior_list = lb.prior.def, 
-                                                                       moves.prob = moves.prob_par, 
-                                                                       starting.tree = NULL,
-                                                                       cont.unif = cont.unif_par,
-                                                                       include.split = incl.split_par,
-                                                                       prop_mu = 0, prop_sigma = .5,
-                                                                       theta_param_1 = 0, theta_param_2 = 1,
-                                                                       var_param_1 = 2, var_param_2 = 2,
-                                                                       prior_type = "N",
-                                                                       cop_type = "clayton"))
+                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                             X = X_obs.norm,
+                                                                             U1 = get(paste0("copula_uu_clayton_",i))[,1],
+                                                                             U2 = get(paste0("copula_uu_clayton_",i))[,2],
+                                                                             prior_list = lb.prior.def, 
+                                                                             moves.prob = moves.prob_par, 
+                                                                             starting.tree = NULL,
+                                                                             cont.unif = cont.unif_par,
+                                                                             include.split = incl.split_par,
+                                                                             prop_mu = 0, prop_sigma = .5,
+                                                                             theta_param_1 = 0, theta_param_2 = 1,
+                                                                             var_param_1 = 2, var_param_2 = 2,
+                                                                             prior_type = "N",
+                                                                             cop_type = "clayton"))
     
     cat('done case', i, '\n')
     
@@ -721,11 +721,11 @@ if(T){
 # results
 
 if(F){
-  test_case = 4
+  test_case = 2
   
-  load(paste0("clayton_mcmc_",test_case,"_tree_1.Rdata"))
+  load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
-  model <- get(paste0("clayton_mcmc_",test_case,"_tree_1"))
+  model <- get(paste0("clayton_mcmc_",test_case,"_tree_",n.tree))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
   
@@ -830,5 +830,5 @@ if(F){
   rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree))
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, like_df_thin, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, pred_cond_thin,
-   pred_obs, pred_val, pred_val_vec, theta_true, pred_cond_summary, tree_stat_summary, conv_diag_sum)
+# rm(acc_lb.df, depth_lb.df, like_df, like_df_thin, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, pred_cond_thin,
+#    pred_obs, pred_val, pred_val_vec, theta_true, pred_cond_summary, tree_stat_summary, conv_diag_sum)
