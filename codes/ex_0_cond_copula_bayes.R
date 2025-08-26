@@ -120,7 +120,9 @@ if(F){
 # source files
 ################################################################################
 
-# source('mclapply.R') # if run on windows uncomment it
+if(.Platform$OS.type == "windows"){
+  source('mclapply.R')
+}
 
 # source('MCMC_BART_copula.R')
 source('import_functions.R')
