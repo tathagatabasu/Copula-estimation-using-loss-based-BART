@@ -119,7 +119,7 @@ MCMC_copula <- function(n.iter,
     
     for(idx.tree in idx.tree.vec){
       
-      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree])
+      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree, drop = FALSE])
       
       # cat('Tree: ', idx.tree, '\n')
       old_tree <- last.tree.list[[idx.tree]]
@@ -165,7 +165,7 @@ MCMC_copula <- function(n.iter,
     
     for(idx.tree in idx.tree.vec){
       
-      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree])
+      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree, drop = FALSE])
       
       # cat('Tree: ', idx.tree, '\n')
       old_tree <- last.tree.list[[idx.tree]]

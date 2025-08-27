@@ -690,10 +690,10 @@ if(F){
 # clayton
 ################################################################################
 if(F){
-  n.tree <- 10
+  n.tree <- 2
   
   for (i in 2) {
-    assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = 2000, n.burn = 500,
+    assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = 6000, n.burn = 1000,
                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                              X = X_obs.norm,
                                                                              U1 = get(paste0("copula_uu_clayton_",i))[,1],
@@ -703,7 +703,7 @@ if(F){
                                                                              starting.tree = NULL,
                                                                              cont.unif = cont.unif_par,
                                                                              include.split = incl.split_par,
-                                                                             prop_mu = 0, prop_sigma = .5,
+                                                                             prop_mu = 0, prop_sigma = rep(1/n.tree,n.tree),
                                                                              theta_param_1 = 0, theta_param_2 = 1,
                                                                              var_param_1 = 2, var_param_2 = 2,
                                                                              prior_type = "N",
