@@ -550,7 +550,7 @@ if(F){
 ################################################################################
 # frank
 ################################################################################
-if(T){
+if(F){
   n.tree <- 15
   
   for (i in 3) {
@@ -693,7 +693,7 @@ if(F){
   n.tree <- 10
   
   for (i in 2) {
-    assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+    assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = 2000, n.burn = 500,
                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
                                                                              X = X_obs.norm,
                                                                              U1 = get(paste0("copula_uu_clayton_",i))[,1],

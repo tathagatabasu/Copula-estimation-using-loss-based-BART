@@ -312,9 +312,16 @@ BART_single_step <- function(X,
   term_val_prior_old <- (sum(sapply(term_val_old, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
   term_val_prior_new <- (sum(sapply(term_val_new, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
   
-  HR <- exp(cart_log_lik_copula(new.tree_mu.new, U1, U2, res_theta, X, log_like_fun = log_like_fun) - cart_log_lik_copula(new.tree_mu.old, U1, U2, res_theta, X, log_like_fun = log_like_fun) + term_val_prior_new - term_val_prior_old)
+  ll_new <- cart_log_lik_copula(new.tree_mu.new, U1, U2, res_theta, X, log_like_fun = log_like_fun)
+  ll_old <- cart_log_lik_copula(new.tree_mu.old, U1, U2, res_theta, X, log_like_fun = log_like_fun)
   
-  if(runif(1)<HR){
+  logHR <- (ll_new - ll_old) + (term_val_prior_new - term_val_prior_old)
+  
+  if (!is.finite(logHR)) {
+    logHR <- -Inf
+  }
+  
+  if(runif(1) < exp(logHR)){
     new.tree <- new.tree_mu.new
   }else{
     new.tree <- new.tree_mu.old
