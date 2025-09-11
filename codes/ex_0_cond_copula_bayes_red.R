@@ -12,14 +12,13 @@ library(xtable)
 require(foreach)
 require(parallel)
 require(doParallel)
-library(calculus)
 
 ################################################################################
 # data generation
 ################################################################################
 set.seed(1e3)
 
-# load("analysis_sim_dat_new.RData")
+# load("analysis_sim_dat_red.RData")
 
 if(F){
   n <- 500
@@ -36,48 +35,42 @@ if(F){
   tau_true_tree[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
   tau_true_tree[(X_obs>=0.66)] <- 0.3
   
-  tau_true_1 <- tau_true_tree #+ rnorm(length(tau_true_tree), sd = 0.01)
+  tau_true_1 <- tau_true_tree + rnorm(length(tau_true_tree), sd = 0.01)
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
   
-  # monotone
-  tau_true_2 <- 0.3 + 0.2 * sin(3*X_obs) + 0.3*X_obs^2 #+ rnorm(length(tau_true_1), sd = 0.01)
-  # convex
-  tau_true_3 <- 0.5 + 0.3 * sin(3*X_obs) #+ rnorm(length(tau_true_1), sd = 0.01)
-  # non-convex
-  tau_true_4 <- 0.6 - 0.3 * sin(2*X_obs) + 0.2 * sin(4*X_obs) + 0.3 * X_obs^2 #+ rnorm(length(tau_true_1), sd = 0.01)
+  # periodoic
+  tau_true_2 <- 0.4*sin(2*pi*X_obs) + 0.5 + rnorm(length(tau_true_1), sd = 0.01)
   
   plot(X_obs, tau_true_1, xlab = "Observations", ylab = "tau")
   plot(X_obs, tau_true_2, xlab = "Observations", ylab = "tau")
-  plot(X_obs, tau_true_3, xlab = "Observations", ylab = "tau")
-  plot(X_obs, tau_true_4, xlab = "Observations", ylab = "tau")
   
   # gauss # sin(tau*pi/2)
   
-  for (i in 1:4) {
+  for (i in 1:2) {
     assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = sin(get(paste0("tau_true_",i)) * pi/2)))
   }
   
   # t # sin(tau*pi/2)
   
-  for (i in 1:4) {
+  for (i in 1:2) {
     assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = sin(get(paste0("tau_true_",i)) * pi/2), par2 = 3))
   }
   
   # gumbel # 1/(1-tau)
   
-  for (i in 1:4) {
+  for (i in 1:2) {
     assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = 1/(1-get(paste0("tau_true_",i)))))
   }
   
   # clayton # (2*tau)/(1-tau)
   
-  for (i in 1:4) {
+  for (i in 1:2) {
     assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = (2*get(paste0("tau_true_",i)))/(1-get(paste0("tau_true_",i)))))
   }
   
   # frank # numerical
   
-  for (i in 1:4) {
+  for (i in 1:2) {
     assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = BiCopTau2Par(5, get(paste0("tau_true_",i)))))
   }
   
@@ -96,20 +89,16 @@ if(F){
   tau_true_tree_pred[(X_obs_pred>=0.33)&(X_obs_pred<0.66)] <- 0.7
   tau_true_tree_pred[(X_obs_pred>=0.66)] <- 0.3
   
-  tau_true_pred_1 <- tau_true_tree_pred #+ rnorm(length(tau_true_tree_pred), sd = 0.01)
+  tau_true_pred_1 <- tau_true_tree_pred + rnorm(length(tau_true_tree_pred), sd = 0.01)
   tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
   
-  # monotone
-  tau_true_pred_2 <- 0.3 + 0.2 * sin(3*X_obs_pred) + 0.3*X_obs_pred^2 #+ rnorm(length(tau_true_1), sd = 0.01)
-  # convex
-  tau_true_pred_3 <- 0.5 + 0.3 * sin(3*X_obs_pred) #+ rnorm(length(tau_true_1), sd = 0.01)
-  # non-convex
-  tau_true_pred_4 <- 0.6 - 0.3 * sin(2*X_obs_pred) + 0.2 * sin(4*X_obs_pred) + 0.3 * X_obs_pred^2 #+ rnorm(length(tau_true_1), sd = 0.01)
+  # periodic
+  tau_true_pred_2 <- 0.4*sin(2*pi*X_obs_pred) + 0.5 + rnorm(length(tau_true_1), sd = 0.01)
   
   # mcmc params
   n.chain_par <- 10
-  n.iter_par <- 6000
-  n.born.out.par <- 1000
+  n.iter_par <- 10000
+  n.born.out.par <- 5000
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
@@ -133,12 +122,12 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 # gaussian
 ################################################################################
-if(F){
-  n.tree <- 5
+if(T){
+  n.tree <- 30
   
-  for (i in 2:3) {
+  for (i in 2) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                                                            X = X_obs.norm,
                                                                            U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                            U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -164,13 +153,13 @@ if(F){
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
   load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
   model <- get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
@@ -178,14 +167,14 @@ if(F){
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  pred_obs = rep(X_obs.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_gauss(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_gauss(pred_val_vec)
+  pred_cond$y = BiCopPar2Tau(1,link_gauss(pred_val_vec))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -200,7 +189,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated rho') +
+    ylab('estimated tau') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -272,12 +261,12 @@ if(F){
 ################################################################################
 # t
 ################################################################################
-if(F){
-  n.tree <- 5
+if(T){
+  n.tree <- 30
   
-  for (i in 3) {
+  for (i in 2) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                                                        X = X_obs.norm,
                                                                        U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                        U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -303,13 +292,13 @@ if(F){
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
   load(paste0("t_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
   model <- get(paste0("t_mcmc_",test_case,"_tree_",n.tree))
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
@@ -317,14 +306,14 @@ if(F){
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  pred_obs = rep(X_obs.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_t(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_t(pred_val_vec)
+  pred_cond$y = BiCopPar2Tau(2, link_t(pred_val_vec), par2 = 3)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -339,7 +328,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated rho') +
+    ylab('estimated tau') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -411,12 +400,12 @@ if(F){
 ################################################################################
 # Gumbel
 ################################################################################
-if(F){
-  n.tree <- 5
+if(T){
+  n.tree <- 30
   
   for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                                                             X = X_obs.norm,
                                                                             U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                             U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -448,7 +437,7 @@ if(F){
   
   model <- get(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree))
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
@@ -456,14 +445,14 @@ if(F){
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  pred_obs = rep(X_obs.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_gumbel(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_gumbel(pred_val_vec)
+  pred_cond$y = BiCopPar2Tau(4,link_gumbel(pred_val_vec))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -478,7 +467,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated theta') +
+    ylab('estimated tau') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -550,10 +539,10 @@ if(F){
 ################################################################################
 # frank
 ################################################################################
-if(F){
-  n.tree <- 15
+if(T){
+  n.tree <- 30
   
-  for (i in 3) {
+  for (i in 2) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                                                            X = X_obs.norm,
@@ -581,13 +570,13 @@ if(F){
 # results
 
 if(F){
-  test_case = 3
+  test_case = 1
   
   load(paste0("frank_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
   model <- get(paste0("frank_mcmc_",test_case,"_tree_",n.tree))
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs_pred.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
   
   pred_val = do.call(rbind,list_pred_lb)
   
@@ -595,14 +584,14 @@ if(F){
   
   pred_val_vec = as.vector(pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  pred_obs = rep(X_obs_pred.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  pred_obs = rep(X_obs.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_frank(get(paste0("tau_true_pred_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_frank(pred_val_vec)
+  pred_cond$y = BiCopPar2Tau(5, link_frank(pred_val_vec))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -617,7 +606,7 @@ if(F){
     geom_line(aes(obs, theta_q025), col = 3) +
     # facet_wrap(facets = ~panel.name, ncol = 2) +
     xlab('X') +
-    ylab('estimated theta') +
+    ylab('estimated tau') +
     theme_classic()
   
   pred_cond_stat = pred_cond_mod %>%
@@ -689,12 +678,12 @@ if(F){
 ################################################################################
 # clayton
 ################################################################################
-if(F){
-  n.tree <- 1
+if(T){
+  n.tree <- 30
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = n.chain_par,
+                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                                                              X = X_obs.norm,
                                                                              U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                              U2 = get(paste0("copula_uu_clayton_",i))[,2],
@@ -735,12 +724,12 @@ if(F){
   
   pred_obs = rep(X_obs.norm, each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
-  theta_true = rep(param_clayton(get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
+  theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond <- data.frame("obs" = pred_obs)
   pred_cond$obs = pred_obs
   pred_cond$theta_true = theta_true
-  pred_cond$y = link_clayton(pred_val_vec)
+  pred_cond$y = BiCopPar2Tau(3, link_clayton(pred_val_vec))
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   

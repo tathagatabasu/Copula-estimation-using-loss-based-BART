@@ -294,6 +294,7 @@ BART_single_step <- function(X,
       }
   }
   
+  # new.tree <- new.tree.list$tree
   new.tree_mu.old <- new.tree.list$tree
   term_node_old <- get_terminal_nodes_idx(new.tree_mu.old)
   term_val_old <- sapply(term_node_old, function(i)unique(get_value_tree(new.tree_mu.old, get_obs_at_node(i, X, new.tree_mu.old,1,X))))
@@ -569,16 +570,13 @@ sample.cond.mu.copula_after_burn <- function(tree_top = NULL,
   
   ##############################################################################
   
-  prop_cov <- var_adapt(theta_pred_list[obs.id, ,])$cov
+  prop_cov <- var_adapt(theta_pred_list[obs.id, idx.tree,])$cov
   
   n.tree <- ncol(prop_cov)
   
-  prop_cov <- (2.4)^2/n.tree * (prop_cov + diag(0.005, nrow = n.tree, ncol = n.tree))
+  prop_cov <- (2.4)^2 * prop_cov
   
-  prop_sigma <- ifelse(n.tree == 1, sqrt(prop_cov), sqrt(prop_cov[idx.tree, idx.tree] - 
-                                                           prop_cov[idx.tree, -idx.tree] %*% 
-                                                           chol2inv(chol(prop_cov[-idx.tree, -idx.tree])) %*% 
-                                                           prop_cov[-idx.tree, idx.tree]))
+  prop_sigma <- sqrt(prop_cov)
   
   proposal = rnorm(1, prop_mu, prop_sigma)
   
@@ -867,7 +865,9 @@ cart_log_lik_copula <- function(tree_top, U1, U2, res_theta, X, log_like_fun = l
   
   tree.at.obs <- get_value_tree(tree_top, X)
   
-  log.prob.obs <- log_like_fun(tree.at.obs + res_theta, U1, U2)
+  rho <- tree.at.obs + res_theta
+  
+  log.prob.obs <- log_like_fun(rho, U1, U2)
   
   return(log.prob.obs)
 }
@@ -1032,7 +1032,7 @@ var_adapt <- function(theta_pred_list) {
   
   pred_mat <- apply(theta_pred_list, c(3, 2), mean)
   
-  return(list("cov" = cov(pred_mat), "mean" = colMeans(pred_mat)))
+  return(list("cov" = var(pred_mat), "mean" = colMeans(pred_mat)))
 }
 
 iter_var <- function(cov_mat, mean_vec_prev, theta_pred_iter, idx.iter) {
