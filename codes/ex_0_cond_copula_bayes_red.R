@@ -97,8 +97,8 @@ if(F){
   
   # mcmc params
   n.chain_par <- 10
-  n.iter_par <- 10000
-  n.born.out.par <- 5000
+  n.iter_par <- 3000
+  n.born.out.par <- 1000
   n.thin <- 1
   incl.split_par <- TRUE
   cont.unif_par <- TRUE
@@ -123,11 +123,11 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 # gaussian
 ################################################################################
 if(T){
-  n.tree <- 30
+  n.tree <- 1
   
-  for (i in 2) {
+  for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
                                                                            U1 = get(paste0("copula_uu_gauss_",i))[,1],
                                                                            U2 = get(paste0("copula_uu_gauss_",i))[,2],
@@ -153,7 +153,7 @@ if(T){
 # results
 
 if(F){
-  test_case = 1
+  test_case = 2
   
   load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
@@ -262,11 +262,11 @@ if(F){
 # t
 ################################################################################
 if(T){
-  n.tree <- 30
+  n.tree <- 1
   
-  for (i in 2) {
+  for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                        X = X_obs.norm,
                                                                        U1 = get(paste0("copula_uu_t_",i))[,1],
                                                                        U2 = get(paste0("copula_uu_t_",i))[,2],
@@ -401,11 +401,11 @@ if(F){
 # Gumbel
 ################################################################################
 if(T){
-  n.tree <- 30
+  n.tree <- 1
   
-  for (i in 2) {
+  for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                             X = X_obs.norm,
                                                                             U1 = get(paste0("copula_uu_gumbel_",i))[,1],
                                                                             U2 = get(paste0("copula_uu_gumbel_",i))[,2],
@@ -540,11 +540,11 @@ if(F){
 # frank
 ################################################################################
 if(T){
-  n.tree <- 30
+  n.tree <- 1
   
-  for (i in 2) {
+  for (i in 1) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
                                                                            U1 = get(paste0("copula_uu_frank_",i))[,1],
                                                                            U2 = get(paste0("copula_uu_frank_",i))[,2],
@@ -679,11 +679,11 @@ if(F){
 # clayton
 ################################################################################
 if(T){
-  n.tree <- 30
+  n.tree <- 1
   
-  for (i in 2) {
+  for (i in 1) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
+                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                              X = X_obs.norm,
                                                                              U1 = get(paste0("copula_uu_clayton_",i))[,1],
                                                                              U2 = get(paste0("copula_uu_clayton_",i))[,2],
