@@ -96,8 +96,8 @@ if(F){
   tau_true_pred_2 <- 0.4*sin(2*pi*X_obs_pred) + 0.5 + rnorm(length(tau_true_1), sd = 0.01)
   
   # mcmc params
-  n.chain_par <- 10
-  n.iter_par <- 3000
+  n.chain_par <- 1
+  n.iter_par <- 6000
   n.born.out.par <- 1000
   n.thin <- 1
   incl.split_par <- TRUE
@@ -136,11 +136,12 @@ if(T){
                                                                            starting.tree = NULL,
                                                                            cont.unif = cont.unif_par,
                                                                            include.split = incl.split_par,
-                                                                           prop_mu = 0, prop_sigma = .2,
+                                                                           prop_mu = 0, prop_sigma = .4,
                                                                            theta_param_1 = 0, theta_param_2 = 1,
                                                                            var_param_1 = 1, var_param_2 = 2,
                                                                            prior_type = "N",
-                                                                           cop_type = "gauss"))
+                                                                           cop_type = "gauss",
+                                                                           adapt = T))
     
     cat('done case', i, '\n')
     
@@ -153,7 +154,7 @@ if(T){
 # results
 
 if(F){
-  test_case = 2
+  test_case = 1
   
   load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
   
@@ -279,7 +280,8 @@ if(T){
                                                                        theta_param_1 = 0, theta_param_2 = 1,
                                                                        var_param_1 = 1, var_param_2 = 2,
                                                                        prior_type = "N",
-                                                                       cop_type = "t"))
+                                                                       cop_type = "t",
+                                                                       adapt = T))
     
     cat('done case', i, '\n')
     
@@ -418,7 +420,8 @@ if(T){
                                                                             theta_param_1 = 0, theta_param_2 = 1,
                                                                             var_param_1 = 1, var_param_2 = 2,
                                                                             prior_type = "N",
-                                                                            cop_type = "gumbel"))
+                                                                            cop_type = "gumbel",
+                                                                            adapt = T))
     
     cat('done case', i, '\n')
     
@@ -557,7 +560,8 @@ if(T){
                                                                            theta_param_1 = 0, theta_param_2 = 1,
                                                                            var_param_1 = 2, var_param_2 = 2,
                                                                            prior_type = "N",
-                                                                           cop_type = "frank"))
+                                                                           cop_type = "frank",
+                                                                           adapt = T))
     
     cat('done case', i, '\n')
     
@@ -696,7 +700,8 @@ if(T){
                                                                              theta_param_1 = 0, theta_param_2 = 1,
                                                                              var_param_1 = 2, var_param_2 = 2,
                                                                              prior_type = "N",
-                                                                             cop_type = "clayton"))
+                                                                             cop_type = "clayton",
+                                                                             adapt = T))
     
     cat('done case', i, '\n')
     
