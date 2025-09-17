@@ -96,7 +96,7 @@ if(F){
   tau_true_pred_2 <- 0.4*sin(2*pi*X_obs_pred) + 0.5 + rnorm(length(tau_true_1), sd = 0.01)
   
   # mcmc params
-  n.chain_par <- 1
+  n.chain_par <- 20
   n.iter_par <- 6000
   n.born.out.par <- 1000
   n.thin <- 1
@@ -126,7 +126,7 @@ if(T){
   n.tree <- 1
   
   for (i in 1) {
-    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
                                                                            U1 = get(paste0("copula_uu_gauss_",i))[,1],
@@ -145,6 +145,30 @@ if(T){
     
     cat('done case', i, '\n')
     
+    save(list = paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    rm(list = paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"))
+  }
+  
+  for (i in 1) {
+    assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                                                           X = X_obs.norm,
+                                                                           U1 = get(paste0("copula_uu_gauss_",i))[,1],
+                                                                           U2 = get(paste0("copula_uu_gauss_",i))[,2],
+                                                                           prior_list = lb.prior.def, 
+                                                                           moves.prob = moves.prob_par, 
+                                                                           starting.tree = NULL,
+                                                                           cont.unif = cont.unif_par,
+                                                                           include.split = incl.split_par,
+                                                                           prop_mu = 0, prop_sigma = .4,
+                                                                           theta_param_1 = 0, theta_param_2 = 1,
+                                                                           var_param_1 = 1, var_param_2 = 2,
+                                                                           prior_type = "N",
+                                                                           cop_type = "gauss",
+                                                                           adapt = F))
+    
+    cat('done case', i, '\n')
+    
     save(list = paste0("gauss_mcmc_",i,"_tree_",n.tree), file = paste0("gauss_mcmc_",i,"_tree_",n.tree, ".Rdata"))
     rm(list = paste0("gauss_mcmc_",i,"_tree_",n.tree))
   }
@@ -156,9 +180,9 @@ if(T){
 if(F){
   test_case = 1
   
-  load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
   
-  model <- get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
+  model <- get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
   
   list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
   
@@ -285,8 +309,8 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("t_mcmc_",i,"_tree_",n.tree), file = paste0("t_mcmc_",i,"_tree_",n.tree, ".Rdata"))
-    rm(list = paste0("t_mcmc_",i,"_tree_",n.tree))
+    save(list = paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    rm(list = paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
   for (i in 1) {
@@ -449,8 +473,8 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree), file = paste0("gumbel_mcmc_",i,"_tree_",n.tree, ".Rdata"))
-    rm(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree))
+    save(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    rm(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
   for (i in 1) {
@@ -613,8 +637,8 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree), file = paste0("frank_mcmc_",i,"_tree_",n.tree, ".Rdata"))
-    rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree))
+    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
   for (i in 1) {
@@ -776,8 +800,8 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("clayton_mcmc_",i,"_tree_",n.tree), file = paste0("clayton_mcmc_",i,"_tree_",n.tree, ".Rdata"))
-    rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree))
+    save(list = paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
   for (i in 1) {
