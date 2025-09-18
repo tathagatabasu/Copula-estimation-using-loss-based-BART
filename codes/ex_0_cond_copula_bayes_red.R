@@ -123,7 +123,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 # gaussian
 ################################################################################
 if(F){
-  n.tree <- 1
+  n.tree <- 10
   
   for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -178,7 +178,7 @@ if(F){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   # model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   # rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -248,56 +248,56 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
@@ -308,15 +308,15 @@ if(T){
   # save(plot_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
   
-  stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
   save(plot_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -386,62 +386,62 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
   
-  stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list_adapt <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
   save(plot_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
@@ -457,7 +457,7 @@ if(T){
 # t
 ################################################################################
 if(F){
-  n.tree <- 1
+  n.tree <- 10
   
   for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -512,7 +512,7 @@ if(F){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   # model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   # rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -582,56 +582,56 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
@@ -642,15 +642,15 @@ if(T){
   # save(plot_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
   
-  stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
   save(plot_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -720,62 +720,62 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
   
-  stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list_adapt <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
   save(plot_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
@@ -791,7 +791,7 @@ if(T){
 # Gumbel
 ################################################################################
 if(F){
-  n.tree <- 1
+  n.tree <- 10
   
   for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -846,7 +846,7 @@ if(F){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   # model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   # rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -916,56 +916,56 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
@@ -976,15 +976,15 @@ if(T){
   # save(plot_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
   
-  stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
   save(plot_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1054,62 +1054,62 @@ if(T){
   
   # nterm
   
-  nt_lb.df <- nterm_BART(model)
-  nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  
-  pl_nl <- nt_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "nterm"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_nl
-  
-  # depth
-  
-  depth_lb.df <- depth_BART(model)
-  depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  pl_dp <- depth_lb.df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "depth"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  pl_dp
-  
-  pl_nl + pl_dp
-  
-  # acceptance
-  
-  acc_lb.df <- acc_BART(model)
-  acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-  acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
-  
-  names(tree_stat_summary) <- c("nterm", "depth", "acc")
-  
-  xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
+  # nt_lb.df <- nterm_BART(model)
+  # nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # 
+  # pl_nl <- nt_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "nterm"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_nl
+  # 
+  # # depth
+  # 
+  # depth_lb.df <- depth_BART(model)
+  # depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # pl_dp <- depth_lb.df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "depth"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # pl_dp
+  # 
+  # pl_nl + pl_dp
+  # 
+  # # acceptance
+  # 
+  # acc_lb.df <- acc_BART(model)
+  # acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
+  # acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+  # 
+  # names(tree_stat_summary) <- c("nterm", "depth", "acc")
+  # 
+  # xtable(t(as.matrix(c(tree_stat_summary, pred_cond_summary))), digits = 4)
   
   # conv_diag_sum <- cbind(conv_diag(depth_lb.df,n.born.out.par,10), conv_diag(nt_lb.df, n.born.out.par,10), conv_diag(like_df,n.born.out.par,10))
   # xtable(conv_diag_sum)
   
-  stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+  stat_list_adapt <- list("pred" = pred_cond_summary)#, "tree" = tree_stat_summary)
+  plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)#, "depth" = pl_dp, "nterm" = pl_nl)
   save(stat_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
   save(plot_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
@@ -1125,7 +1125,7 @@ if(T){
 # frank
 ################################################################################
 if(F){
-  n.tree <- 1
+  n.tree <- 10
   
   for (i in 1) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -1179,7 +1179,7 @@ if(F){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   # model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   # rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1317,7 +1317,7 @@ if(T){
 }
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1458,7 +1458,7 @@ if(T){
 # clayton
 ################################################################################
 if(F){
-  n.tree <- 1
+  n.tree <- 10
   
   for (i in 1) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -1512,7 +1512,7 @@ if(F){
 # results
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   # model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   # rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1650,7 +1650,7 @@ if(T){
 }
 
 if(T){
-  test_case = 1
+  test_case = 2
   
   model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt"))

@@ -84,17 +84,32 @@ for $i=1,2$. For a more detailed introduction to the concept, we recommend the w
 
 \subsection{Loss-based BART}
 
-Let, $Z$ be an outcome data such that 
-\begin{equation*}
-	Z_i \sim \mathcal{N}\left(r(x_i),\sigma^2\right);\qquad 1\le i\le n.
-\end{equation*}
-Then we can approximate this function $r(x)$ with sum of regression trees such such that,
-\begin{equation*}
-	r(x_i) = \sum_{t=1}^m g(x_i, T_t, M_t).
-\end{equation*}
-where $T_t$ denotes the $t$-th tree, $M_t$ denotes the vector of terminal node values $M_t = \{\mu_1,\mu_2, \cdots, \mu_{n_L(T_t)}\}$ of the $t$-th tree and $n_L(T_t)$ denotes the number of terminal nodes of the $t$-th tree. 
+Let, $Z\coloneqq(Z_1,\cdots,Z_n)$ denote $n$ outputs and $x\coloneqq(x_1,\cdots,x_n)$ denote corresponding $p$-dimensional inputs. \citet{chipman2010BART} showed that we can approximate the functional relationship between $Z$ and $x$ using sum of regression trees given by:
 
-Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed a loss-based prior for BART in the following way:
+\begin{equation}\label{eq:BART}
+	Z_i \sim \mathcal{N}\left(\sum_{t=1}^m g(x_i, T_t, M_t),\sigma^2\right);\qquad 1\le i\le n.
+\end{equation}
+where $T_t$ denotes the $t$-th tree; $M_t$ denotes the vector of terminal node values $M_t =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T_t)}\}$ of the $t$-th tree; $n_L(T_t)$ denotes the number of terminal nodes of the $t$-th tree; and $g(x_i, T_t, M_t)$ denotes the $t$-th regression tree.
+
+Such representation allows us to approximate a function with piecewise constant values on a partitioned domain. The internal nodes of the tree create these partitions by assigning a splitting rule $x_{\cdot j}\le \tau$ for $1\le j \le p$ on each internal node where the value $\tau$ is either chosen from one of the observed values $x_{ij}$ or chosen uniformly in a range of values $(\underline{x}_{\cdot j},\overline{x}_{\cdot j})$. In order to be able to estimate the value at the terminal nodes, we want to ensure that at least one observation is associated with each terminal node. Such partitions are called \textit{valid}.  \citet{serafini2024lossbasedpriortreetopologies} introduce the following to formal definition in this regard.
+
+\begin{definition}[Cell size] Given a $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]^p$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the sell size $S(\Omega_k)$ of $\Omega_k$
+	is the fraction of observations contained in $\Omega_k$.
+	\begin{equation*}
+		S(\Omega_k) = \frac{1}{n}\sum_{j=1}^n \mathbb{I}(x_j\in \Omega_k).
+	\end{equation*}
+\end{definition}
+
+\begin{definition}[Valid partition]
+	A partition is said to be valid if
+	\begin{equation*}
+		S(\Omega_k) \ge \frac{C^2}{n}, \quad\text{for any } k=1,2,\cdots, N
+	\end{equation*}
+	for a constant $C^2\ge 1$.
+\end{definition}
+
+The most used prior for tree topology was introduced by \citet{chipman98BCART} for a single tree. Afterwards \citet{chipman2010BART} extended the framework for sum of regression trees. Recently, \citet{serafini2024lossbasedpriortreetopologies} an alternate prior for the tree topology. They consider a loss-based approach \cite{villa_loss-prior} where the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. In doing so, they define the following hierarchical prior
+
 \begin{align}
 	\begin{split}
 		T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
@@ -104,13 +119,13 @@ Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed a loss-based
 \end{align}
 where $\Delta(T_t)$ is the difference between right terminal nodes and left terminal nodes of $t$-th given tree.
 
-For the choice of prior on $\mu_j\mid T_t$ \citet{chipman_BART,serafini2024lossbasedpriortreetopologies} suggested a conjugate prior with respect to the likelihood function. 
 
 \section{Conditional Copula Modelling}\label{sec:cond:cop}
 
-We wish to employ this loss-based prior for BART for the estimation of $\theta(x)$. Such that 
+As hinted earlier, our main objective is to model the dependence structure of a conditional copula. While some works are done based on estimating the margins of the copula, our approach is focused on estimating the conditional copula parameter. To do so, we use a suitable link function $h$, to model the conditional copula parameter such that 
+
 \begin{equation*}
-	\theta(x) \coloneqq h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right).
+	\theta(x_i) \coloneqq h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right);\qquad 1\le i\le n.
 \end{equation*}
 Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula density function. Then we can define the following hierarchical model
 \begin{align}
@@ -165,21 +180,6 @@ For $q\left(T_t^k;T_t^\ast\right)$ we follow the steps given by \citet{serafini2
 \end{itemize}
 
 The moves are performed to ensure that $T_t^\ast$ yields a valid partition defined as followed.
-
-\begin{definition}[Cell size] Given a $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the sell size $S(\Omega_k)$ of $\Omega_k$
-	is the fraction of observations contained in $\Omega_k$.
-	\begin{equation*}
-		S(\Omega_k) = \frac{1}{n}\sum_{j=1}^n \mathbb{I}(x_j\in \Omega_k).
-	\end{equation*}
-\end{definition}
-
-\begin{definition}[Valid partition]
-	A partition is said to be valid if
-	\begin{equation*}
-		S(\Omega_k) \ge \frac{C^2}{n}, \quad\text{for any } k=1,2,\cdots, N
-	\end{equation*}
-	for a constant $C^2\ge 1$.
-\end{definition}
 
 \subsection{proposal for terminal node values}
 For $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ we generate new terminal node values based on the terminal node values of the previous tree. For instance;
