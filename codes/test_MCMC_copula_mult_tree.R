@@ -968,8 +968,7 @@ conv_diag <- function(post_data, n.burn, n.thin){
 }
 
 nterm_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(idx = idx,
-                                                                 nn = vapply(bart_tree_list$trees[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(nn = vapply(bart_tree_list$trees[[idx]], 
                                                                              \(x) get_num_terminal_nodes(x),
                                                                              0),
                                                                  trees = factor( 1:length(bart_tree_list$trees[[idx]]))))
@@ -977,8 +976,7 @@ nterm_BART <- function(bart_tree_list){
 }
 
 depth_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(idx = idx,
-                                                                 nn = vapply(bart_tree_list$trees[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(nn = vapply(bart_tree_list$trees[[idx]], 
                                                                              \(x) get_depth(x),
                                                                              0),
                                                                  trees = factor( 1:length(bart_tree_list$trees[[idx]]))))
@@ -986,8 +984,7 @@ depth_BART <- function(bart_tree_list){
 }
 
 acc_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$df_res), \(idx) data.frame(idx = idx,
-                                                                  nn = unlist(lapply(bart_tree_list$df_res[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$df_res), \(idx) data.frame(nn = unlist(lapply(bart_tree_list$df_res[[idx]], 
                                                                                      \(x)as.factor(x$acceptance))),
                                                                   trees = factor( 1:length(bart_tree_list$df_res[[idx]]))))
   Reduce(rbind, ll)

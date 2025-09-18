@@ -59,31 +59,28 @@ Modelling the dependence structure is an important problem in multivariate analy
 
 Despite the use of copulas in applied statistics, adjustment for confounding in copulas is a relatively new concept. \citet{patton2006} formalised the conditional version of Sklar's theorem for its applicability in financial time series modelling. Initial works on conditional copulas were mostly for estimating time varying dependence structures using likelihood based approaches for autoregressive models (\citet{patton2006,JONDEAU2006827,BARTRAM20071461}). Later \citet{acar2010} proposed a non-parametric approach for estimating conditional copula for general problems. Several other likelihood-based non-parametric (\citet{GIJBELS20111919,Gijbels2012mult_cop}) and semi-parametric (\citet{ABEGAZ201243}) approaches were proposed in this regard. Whereas \citet{valle_cond_cop} proposed a Dirichlet mixture models for estimating conditional copula and \citet{GRAZIAN2022107417} proposed an approximate Bayesian approach for the same. While the previously mentioned likelihood-based approaches rely on kernel estimators, \citet{BonacinaLopezThomas+2025} proposed a ``Classification and Regression Tree'' (CART) \cite{brei_CART} algorithm for modelling conditional copula and investigated consistency of the CART algorithm in conditional copula estimation.
 
-The introduction of CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative of CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier known Bayesian CART models (\citet{chipman98BCART,denison98BCART}) where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression (\citet{Murray03042021}); survival analysis (\citet{Sparapani_BART}); gamma regression (\citet{Linero_BART_gamma}) etc. While the original tree prior proposed by \citet{chipman98BCART} is most commonly used in BART literatures, it is not very straightforward to incorporate prior information on the number of terminal nodes. Whereas, the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives were proposed (\citet{Wu_CART,rockova_BART,Linero_BART_VS}) to tackle this issue but choice of hyperparameters remains subjective. In order to reduce such subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression tree using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree which considers both the loss in information and complexity of the tree, making it appealing for BART models.
+The introduction of CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative of CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier known Bayesian CART models (\citet{chipman98BCART,denison98BCART}) where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression (\citet{Murray03042021}); survival analysis (\citet{Sparapani_BART}); gamma regression (\citet{Linero_BART_gamma}); generalised BART (\citet{Linero02012025}) etc. While the original tree prior proposed by \citet{chipman98BCART} is most commonly used in BART literatures, it is not very straightforward to incorporate prior information on the number of terminal nodes. Whereas, the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives were proposed (\citet{Wu_CART,rockova_BART,Linero_BART_VS}) to tackle this issue but choice of hyperparameters remains subjective. In order to reduce such subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression tree using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree which considers both the loss in information and complexity of the tree, making it appealing for BART models.
 
+In this article, we exploit the loss-based BART prior proposed \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straight forward likelihood function to chose a conjugate prior. While, the method proposed by \citet{Linero02012025} is appealing for most problems, we noticed that a Laplace approximation based approach is not
+viable for conditional copula modelling as the first and second order derivatives may not be numerically stable. So we propose a reversible jump MCMC algorithm to sample from the posterior. We also propose an adaptive routine for the proposal distribution that is designed to get a better posterior estimates of the terminal node values. Moreover, we notice from initial analyses, such adaptive approach also performs better in capturing the true parsimonious tree structure. We illustrate our method using different copula models to show the efficiency of our approach in identifying the true tree structure as well as estimating the true conditional dependence. However, we would like to note that due to its simple and fast implementation, it can easily be adapted for other modelling problems. 
 
+The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees followed by our semi-parametric estimation approach for conditional copulas. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior along with its adaptive variant. After that, we illustrate our method using synthetic dataset in \cref{sec:sim} to monitor it's efficiency and accuracy; followed by case studies involving real life dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and conclude it in \cref{sec:conc}.
 
-\section{Model}
+\section{Preliminaries}\label{sec:prelim}
+
+In this section, we present a formal description of conditional copulas followed by the BART models and the loss-based prior for BART proposed by \citet{serafini2024lossbasedpriortreetopologies}, which we will incorporate for modelling.
 
 \subsection{Conditional copula}
-
-Copulas are extremely useful  for modelling the dependence structure between random variables when we wish to separate the marginals from their joint distribution. \citet{sklar:1959} showed the existence of such unique copulas $C:[0,1]^p\to [0,1]$ such that
+Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable that might affect the relationship between $Y_1$ and $Y_2$. Let $H_x(y_1,y_2)$ denotes the joint distribution of $(Y_1,Y_2)$ conditional on $X$. Then, according to Patton's\cite{patton2006} interpretation of Sklar's\cite{sklar:1959} theorem, there exists a unique copula $C_x$ such that
 \begin{equation*}
-	H(Y_1,Y_2,\cdots, Y_p) = C(F_1(Y_1),F_2(Y_2),\cdots,F_p(Y_p)).
+	H_x(y_1,y_2) = C_x(F_{1x}(y_1),F_{2x}(y_2))
 \end{equation*}
-In some cases, there might be additional confounding random variable $X$ that influences the dependence between $Y_1,Y_2,\cdots, Y_p$. 
-
-In such cases, a conditional copula is used to understand the dependence structure. A conditional copula was first formalised by \citet{patton2006}. For simplicity we present the formulation for two variables. Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable that might affect the relationship between $Y_1$ and $Y_2$. Then according to Sklar’s theorem there exists a unique copula such that:
+where $F_{ix}(y_i)$ is the cdf of $Y_i$ conditional on $X$ for $i=1,2$. Alternatively, we can write the following form of copula distribution function given by:
 \begin{equation*}
-	H(Y_1,Y_2\mid X) = C_X(F_{1X}(Y_1\mid X),F_{1X}(Y_2\mid X)); \quad \forall (y_1,y_2) \in \mathbb{R}^2
+	C_x(u_1,u_2) = H_x\left(F_{1x}^{-1}(u_1),F_{2x}^{-1}(u_2)\right)
 \end{equation*}
-where $C_X \coloneqq C(\cdot\mid \theta(X))$ is the copula function that varies with respect to $X$ through the copula parameter $\theta$ and $F_{iX}(Y_i\mid X)$ is the cdf of $Y_i$ conditional on $X$ for $i=1,2$.
-
-This gives us the following copula distribution function
-\begin{equation*}
-	C_X(u_1,u_2) = H\left(F_{1X}^{-1}(Y_1\mid X),F_{2X}^{-1}(Y_2\mid X)\mid X\right)
-\end{equation*}
-where $u_k = F_{1X}(Y_k\mid X)$ for $i=1,2$.
+where $u_i = F_{ix}(y_i)$ are pseudo observations and $F_{ix}^{-1}(u_i)$s are conditional quantile functions
+for $i=1,2$. For a more detailed introduction to the concept, we recommend the works of \citet{patton2006,acar2010,GIJBELS20111919} etc.
 
 \subsection{Loss-based BART}
 
@@ -109,7 +106,7 @@ where $\Delta(T_t)$ is the difference between right terminal nodes and left term
 
 For the choice of prior on $\mu_j\mid T_t$ \citet{chipman_BART,serafini2024lossbasedpriortreetopologies} suggested a conjugate prior with respect to the likelihood function. 
 
-\subsection{Copula Parameter Estimation}
+\section{Conditional Copula Modelling}\label{sec:cond:cop}
 
 We wish to employ this loss-based prior for BART for the estimation of $\theta(x)$. Such that 
 \begin{equation*}
@@ -145,7 +142,7 @@ Then the posterior of $j$-th pair conditional on $R_j$ is given by:
 	\end{split}
 \end{align}
 
-\section{MCMC for Parameter Estimation}
+\section{RJMCMC for Parameter Estimation}\label{sec:rjmcmc}
 For standard BART model, the use of conjugate prior allows us to marginalise the likelihood with respect to $\mu_j$ such that:
 \begin{equation}
 	\mathcal{L}(U_1,U_2\mid X, T)\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1},u_{2}\mid h\left(R_j+g(x, T_j, M_j)\right)\right)\prod_{k=1}^{n_L(T_j)}\pi(\mu_k\mid T_j)\right)d\mu.
@@ -244,7 +241,7 @@ Finally, we can employ a Metropolis within Gibbs to update $T,M$ and $\sigma_{t}
 	\end{algorithmic}
 \end{algorithm}
 
-\section{Simulation Studies}
+\section{Simulation Studies}\label{sec:sim}
 
 In this section, we consider two settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. 
 
@@ -440,6 +437,10 @@ We present the summary of our analyses with different copulas in \cref{tab:gauss
 	\end{tabular}
 \caption{Posterior convergence diagnostic for Different copulas. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood.}\label{tab:gauss:convergence}}
 \end{table}
+
+\section{CIA world fact data}\label{sec:cia}
+
+\section{Conclusion}\label{sec:conc}
 
 \appendix
 
