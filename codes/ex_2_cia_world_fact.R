@@ -64,12 +64,12 @@ GDP <- as.matrix(GDP)
 rownames(GDP) <- 1:nrow(GDP)
 
 n.chain_par <- 1
-n.iter_par <- 6000
+n.iter_par <- 15000
 n.born.out.par <- 1000
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
-moves.prob_par <- c(0.4, 0.4, 0.1, 0.1)
+moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
 n.tree <- 10
 
@@ -100,7 +100,8 @@ gauss_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = 10,#n.born.out.par
                                  theta_param_1 = 0, theta_param_2 = .3,
                                  var_param_1 = 1, var_param_2 = 2,
                                  prior_type = "N",
-                                 cop_type = "gauss")
+                                 cop_type = "gauss",
+                                adapt = T)
 
 frank_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             n.tree = n.tree,
@@ -116,9 +117,8 @@ frank_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             theta_param_1 = 0, theta_param_2 = .3,
                             var_param_1 = 1, var_param_2 = 2,
                             prior_type = "N",
-                            cop_type = "frank")
-
-Rprof("profile_output.out")  # Start profiling
+                            cop_type = "frank",
+                            adapt = T)
 
 t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             n.tree = n.tree,
@@ -134,9 +134,8 @@ t_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                             theta_param_1 = 0, theta_param_2 = .3,
                             var_param_1 = 1, var_param_2 = 2,
                             prior_type = "N",
-                            cop_type = "t")
-Rprof(NULL)                  # Stop profiling
-summaryRprof("profile_output.out")  # View results
+                            cop_type = "t",
+                            adapt = T)
 
 clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   n.tree = n.tree,
@@ -152,7 +151,8 @@ clayton_GDP_tree_1 <- MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                   theta_param_1 = 0, theta_param_2 = .5,
                                   var_param_1 = 1, var_param_2 = 2,
                                   prior_type = "N",
-                                  cop_type = "clayton")
+                                  cop_type = "clayton",
+                                  adapt = T)
 
 ################################################################################
 
