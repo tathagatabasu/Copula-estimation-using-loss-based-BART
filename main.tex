@@ -93,7 +93,7 @@ where $T_t$ denotes the $t$-th tree; $M_t$ denotes the vector of terminal node v
 
 Such representation allows us to approximate a function with piecewise constant values on a partitioned domain. The internal nodes of the tree create these partitions by assigning a splitting rule $x_{\cdot j}\le \tau$ for $1\le j \le p$ on each internal node where the value $\tau$ is either chosen from one of the observed values $x_{ij}$ or chosen uniformly in a range of values $(\underline{x}_{\cdot j},\overline{x}_{\cdot j})$. In order to be able to estimate the value at the terminal nodes, we want to ensure that at least one observation is associated with each terminal node. Such partitions are called \textit{valid}.  \citet{serafini2024lossbasedpriortreetopologies} introduce the following to formal definition in this regard.
 
-\begin{definition}[Cell size] Given a $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]^p$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the sell size $S(\Omega_k)$ of $\Omega_k$
+\begin{definition}[Cell size] Given a partition $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]^p$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the cell size $S(\Omega_k)$ of $\Omega_k$
 	is the fraction of observations contained in $\Omega_k$.
 	\begin{equation*}
 		S(\Omega_k) = \frac{1}{n}\sum_{i=1}^n \mathbb{I}(x_i\in \Omega_k).
@@ -162,11 +162,11 @@ In this section we provide the MCMC algorithm for sampling from the posterior. F
 \end{align}
 So, to sample from the posterior we use a backfitting algorithm proposed by \citet{chipman2010BART} where we sample $(T_k, M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
 \begin{equation*}
-	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma_{k}, U_1, U_2, X
+	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma^2_{k}, U_1, U_2, X
 \end{equation*}
 followed by a sample of the variance term $\sigma_{k}$ from the following conditional distribution
 \begin{equation*}
-	\sigma_{k} \mid (T_k,M_k),U_1,U_2,X.
+	\sigma^2_{k} \mid (T_k,M_k),U_1,U_2,X.
 \end{equation*}
 So in order to implement the backfitting algorithm, we define 
 \begin{equation*}
@@ -175,86 +175,103 @@ So in order to implement the backfitting algorithm, we define
 Here $R_{ik}$ is similar to the notion of residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead we will add this residual term with terminal node values of the $k$-th regression tree which give us the following posterior of $(T_k,M_k)$ conditional on $R_{\cdot k}$ and $\sigma_{k}$
 \begin{align}\label{eq:post:res}
 	\begin{split}
-		\pi(T_k,M_k \mid R_{\cdot k}, \sigma_{k}, U_1,U_2, X) &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
+		\pi(T_k,M_k \mid R_{\cdot k}, \sigma^2_{k}, U_1,U_2, X) &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
 	\end{split}
 \end{align}
 For standard BART model, the use of conjugate prior allows us to marginalise the likelihood with respect to $\mu\coloneqq\left(\mu_1,\mu_2,\cdots,\mu_{n_L(T_k)}\right)$ such that:
 \begin{equation*}
-	\mathcal{L}(U_1,U_2\mid X, T_k, \sigma_{k})\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)\right)d\mu.
+	\mathcal{L}(U_1,U_2\mid X, T_k, \sigma^2_{k})\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)\right)d\mu.
 \end{equation*}
-Unfortunately, we do not have the conjugacy property in our case. So we use a Metropolis Hastings algorithm to compute from the posterior given by \cref{eq:post:res}.First, we choose a proposal distribution, $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ to generate a proposal at the $k$-th step.
+Unfortunately, we do not have the conjugacy property in our case. So we use a reversible jump MCMC algorithm \cite{green_RJMCMC} to compute from the posterior given by \cref{eq:post:res}. We follow, a similar setup to that of \citet{Linero02012025} to build our algorithm. However, for tree space exploration, we consider the original tree steps suggested by \cite{chipman98BCART}.
 
+\subsection{Proposal for RJ-MCMC}
+
+Reversible jump MCMC algorithms is a common strategy for trans-dimensional cases. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. For that, we consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at $\gamma+1$ iteration given by:
 \begin{align}\label{eq:prop}
-	q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right) = q\left(T_t^k;T_t^\ast\right) q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right).
+	q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right) = q\left( T_k^\ast\mid T_k^{\gamma}\right) q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right).
 \end{align}
-
-\subsection{proposal for tree}
-For $q\left(T_t^k;T_t^\ast\right)$ we follow the steps given by \citet{serafini2024lossbasedpriortreetopologies}. 
-
+Here, $q\left( T_k^\ast\mid T_k^{\gamma}\right)$ denote the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps.
 \begin{itemize}
 	\item \textsc{grow}: Randomly choose a terminal node and split it into two terminal nodes
 	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn into a terminal node
 	\item \textsc{change}: Randomly choose an internal node and assign a new splitting rule
 	\item \textsc{swap}: Randomly choose a parent-child pair of internal node and swap their splitting rules
 \end{itemize}
+For a detailed discussion on the splitting rule, we suggest the readers to look into \citet{chipman98BCART}. 
 
-The moves are performed to ensure that $T_t^\ast$ yields a valid partition defined as followed.
-
-\subsection{proposal for terminal node values}
-For $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ we generate new terminal node values based on the terminal node values of the previous tree. For instance;
-
+The generation of new terminal node values rely on the proposed tree structure that we represent with $q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$. For obvious reasons, we only need to consider \textsc{grow} and \textsc{prune} for new terminal node values as we can update all the terminal node values of $T_k$ from the full conditional using a Metropolis Hastings step. Therefore, the proposal for terminal node values is given by:
 \begin{itemize}
 	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_l$ and$j_r$ so,
-	$q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi_{prop}(\mu_{j_l})*\pi_{prop}(\mu_{j_r})$
-	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned then $q\left(M_t^k;T_t^k, T_t^\ast, M_t^\ast\right)$ = $\pi_{prop}(\mu_j)$
+	$q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$ = $\pi_{prop}(\mu_{j_l})*\pi_{prop}(\mu_{j_r})$
+	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned then $q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$ = $\pi_{prop}(\mu_j)$
 \end{itemize}
-To ensure that the proposal is accurate and can explore the parameter space efficiently, we follow the suggestion of \citet{Linero02012025} and use a Laplace approximation given by \cref{alg:laplace:appx}.
+For the choice of proposal we consider a normal distribution with mean 0 and variance $\sigma_{\text{prop}}$. We notice that fixing $\sigma_{\text{prop}}$ is rather difficult. While eye-balling the likelihood give us some idea but due to slow mixing nature of RJ-MCMC it still exhibits high autocorrelation. So, we suggest an adaptive variance for the proposal. Our approach is motivated from the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the co-variance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on the partition of the predictor space in \cref{alg:ada:prop}.
 
 \begin{algorithm}[H]
-	\caption{Laplace Approximation}\label{alg:laplace:appx}
+	\caption{Adaptive Proposal}\label{alg:ada:prop}
 	\begin{algorithmic}[1]
-		\State Calculate log-likelihood given by: $\ell(\mu_k)\coloneqq\sum_{i\in \Omega_k}\log\left(c\left(u_{1i},u_{2i}\mid h\left(R_{ij}+\mu_k\right)\right)\right)$
+		\State Perform $t_0$ iterations with a fixed variance.
 		
-		\State Calculate log-posterior given by: $\log p(\mu_k\mid U_1,U_2, X) = \ell(\mu_k) - \frac{\mu_k^2}{2\sigma_{t}^2}$
+		\For{$k =1, \cdots, m$}
+		\State Collect MCMC samples for initial $t_0$ iterations such that for the $k$-th tree so that:
+		\begin{equation*}
+			V_{ik}^{t} = g(x_i,T_k^{t},M_k^{t})\quad 1\le i \le n; 1\le t \le t_0
+		\end{equation*}
 		
-		\State Find the maximum aposteriori estimate : $\hat{\mu}_k = \arg\max_{\mu_k}\log p(\mu_k\mid U_1,U_2, X)$
+		\State Calculate sample covariance matrix :
+		\begin{equation*}
+			C_k^{t} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{t-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } t>t_0
+		\end{equation*}
 		
-		\State Compute the observed information matrix at the MAP:
-		$J(\hat{\mu}_k) = -\nabla^2\ell(\mu_k)\mid_{\mu_k = \hat{\mu}_k}+\frac{1}{\sigma_t^2}$
+		\State Identify the indices of the observations that is contained in the partition $\Omega_\ast$ corresponding to the new terminal node such that $\mathcal{I}\coloneqq\left\{i:x_i \in \Omega_\ast\right\}$
 		
-		\State Compute variance of the approximate posterior distribution: $\hat{\sigma}^2 = -(J(\hat{\mu}_k))^{-1}$
+		\State Calculate the new variance corresponding to the new terminal node value such that
 		
+		\begin{equation}\label{eq:var:adapt}
+			\sigma_{\text{prop}}^2 \coloneqq \frac{2.4^2}{(\#\{\mathcal{I}\})^3}\sum_{i\in\mathcal{I}}\sum_{j\in\mathcal{I}}\left[C_k^{t}\right]_{ij}
+		\end{equation}
+		
+		\EndFor
+		
+		\State Update sample covariance using iterative formula such that
+		\begin{equation*}
+			C_k^{t+1} \coloneqq \frac{t-1}{t} C_k^{t+1} + \frac{1}{t}\left(t \left(\overline{V}_{\cdot k}^{t-1}\right)\left(\overline{V}_{\cdot k}^{t-1}\right)^T - (t+1)\left(\overline{V}_{\cdot k}^{t}\right)\left(\overline{V}_{\cdot k}^{t}\right)^T + \left({V}_{\cdot k}^{t}\right)\left({V}_{\cdot k}^{t}\right)^T + \epsilon\mathbf{I}_n\right)
+		\end{equation*}
 	\end{algorithmic}
 \end{algorithm}
-We use this approximate proposal distribution for \textsc{grow} and \textsc{prune} steps. Then we define the acceptance probability such that
-\begin{equation}\label{eq:acc:prob}
-	\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)
-	= \frac{\pi(T_t^\ast,M_t^\ast \mid R_t, U_1, U_2, X)q\left(T_t^\ast, M_t^\ast;T_t^k,M_t^k\right)}
-	{\pi(T_t^k,M_t^k \mid R_t, U_1, U_2, X)q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)}.
-\end{equation}
+The formulation in \cref{eq:var:adapt} ensures that the proposal variance is represents the variance of the mean of the observed values at each terminal nodes, which is how the traditional BART model updates the prior mean.
 
-Finally, we can employ a Metropolis within Gibbs to update $T,M$ and $\sigma_{t}^2$. We provide the algorithm in \cref{alg:MCMC}.
+
+Once we have a proposal for both the trees and terminal node values, we can define the acceptance probability in the following way:
+\begin{equation}\label{eq:acc:prob}
+	\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)
+	= \frac{\mathcal{L}(T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^{\gamma},M_k^{\gamma}\mid T_k^\ast, M_k^\ast\right)}
+	{\mathcal{L}(T_k^{\gamma},M_k^{\gamma})\pi(T_k^{\gamma},M_k^{\gamma}) q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)}.
+\end{equation}
+where $\mathcal{L}(T_k,M_k)$ denotes the likelihood for a given pair of $(T_k,M_k)$.
+
+Finally, once we have sampled a new $(T_k,M_k)$ we can employ a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We provide one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
  
 \begin{algorithm}
 	\caption{One iteration of MCMC for copula BART}\label{alg:MCMC}
 	\begin{algorithmic}[1]
-		\State The previous steps gives us $(T^k,M^k)$
-		\State Set $\theta(x_i) \leftarrow \sum_{t=1}^{m} g(x_i, T^k_t, M^k_t)$ for $i = 1, \ldots, n$
-		\For{$t = 1, \ldots, m$}
-		\State Set $R_{it} \leftarrow \sum_{j\not=t}g(x_i, T_j^k, M_j^k)$ for $i = 1, \ldots, n$
+		\State The previous steps gives us $(T_k^{\gamma},M_k^{\gamma})$
+		\State Set $\theta(x_i) \leftarrow h\left(\sum_{t=1}^{m} g(x_i, T_t^{\gamma},M_t^{\gamma})\right)$ for $i = 1, \ldots, n$
+		\For{$k = 1, \ldots, m$}
+		\State Set $R_{ik} \leftarrow \sum_{t\not=k}g(x_i, T_t^{\gamma},M_t^{\gamma})$ for $i = 1, \ldots, n$
 		
-		\State Sample $(T_t^\ast, M_t^\ast)$ using $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{swap}, and \textsc{change} 
+		\State Sample $(T_k^\ast, M_k^\ast)$ using $q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{swap}, and \textsc{change} 
 		
-		\State Compute acceptance probability using $\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ in \cref{eq:acc:prob}.
+		\State Compute acceptance probability using $\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)$ in \cref{eq:acc:prob}.
 		
-		\State Set $(T_t^{k+1}, M_t^{k+1})=(T_t^\ast, M_t^\ast)$ with probability $\alpha\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ or $(T_t^{k+1}, M_t^{k+1})=(T_t^k,M_t^k)$.
-		\State Set $\theta_i \leftarrow R_{it} + g(x_i T_t^{k+1}, M_t^{k+1})$ for $i = 1, \ldots, N$
+		\State Set $(T_k^{\gamma+1}, M_k^{\gamma+1})=(T_k^\ast, M_k^\ast)$ with probability $\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)$ or $(T_t^{k+1}, M_t^{k+1})=(T_t^k,M_t^k)$.
+		\State Set $\theta(x_i) \leftarrow h(R_{ik} + g(x_i, T_k^{\gamma+1}, M_k^{\gamma+1}))$ for $i = 1, \ldots, n$
 		
 		\State Sample $M_t$ from the full conditional using MH step once all the new trees are formed.
 		
-		\State Sample $\sigma_{t}^2$ from 
+		\State Sample $\sigma_{k}^2$ from 
 		\begin{equation*}
-			\text{InvGamma}\left(a+\frac{n_L(T_t)}{2} , b + \frac{\sum_{k=1}^{n_L(T_t)}\mu_k^2}{2}\right)
+			\text{InvGamma}\left(a+\frac{n_L(T_k)}{2} , b + \frac{\sum_{j=1}^{n_L(T_k)}\mu_j^2}{2}\right)
 		\end{equation*}
 		\EndFor
 	\end{algorithmic}
@@ -262,229 +279,13 @@ Finally, we can employ a Metropolis within Gibbs to update $T,M$ and $\sigma_{t}
 
 \section{Simulation Studies}\label{sec:sim}
 
-In this section, we consider two settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. 
+In this section, we consider two synthetic settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. 
 
-To generate the true copula parameter, we first consider 4 different test cases to simulate Kendall's tau conditional on $x$. Such that
-
-\begin{itemize}
-	\item Case 1: True $\tau_x$ has a tree structure with respect to $x$. To obtain the tree structure we first generate a random binary tree such that number of terminal nodes is 8 and and difference between left and right terminal node is 4. Then we generate $\tau_x$ such that
-	\begin{equation}
-		\tau_x = \begin{cases}
-			0.5 + \mathcal{N}(0,0.01) & x \le 0.25\\
-			0.7 + \mathcal{N}(0,0.01) & 0.25 < x \le 0.6\\
-			0.3 + \mathcal{N}(0,0.01) & 0.6 < x
-		\end{cases}
-	\end{equation}
-	\item Case 2: True $\tau_x$ is monotone with respect to $x$ such that 
-	\begin{equation}\label{eq:synth:tau_x:case2}
-		\tau_x = 0.3 + 0.2 \sin(3x) + 0.3x^2.
-	\end{equation}
-	\item Case 3: True $\tau_x$ is convex with respect to $x$ such that 
-	\begin{equation}\label{eq:synth:tau_x:case3}
-		\tau_x = 0.5 + 0.3 \sin(3x).
-	\end{equation}
-	\item Case 4: True $\tau_x$ non-convex and non-monotone with respect to $x$ such that 
-	\begin{equation}\label{eq:synth:tau_x:case4}
-		\tau_x = 0.6 - 0.3 \sin(2x) + 0.2 \sin(4x) + 0.3 x^2.
-	\end{equation}
-\end{itemize}
-
-We present the plot of true values of Kendall's $\tau$ with respect to $x$ in \cref{fig:true:tau}. Additionally, we provide the tree structure based $\tau_x$ in for clearer interpretation of the splitting rule.
-
-\begin{figure}
-	\centering
-	\caption{Splitting rule for the tree based $\tau_x$}
-	\label{fig:tau_tree_split}
-	\includegraphics[width=0.5\linewidth]{tree_cond_tau_x.png}
-\end{figure}
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.95\linewidth]{true_tau.pdf}
-	\caption{True values of Kendall's $\tau$ with respect to $x$. The top left plot shows case with tree structure; top right plot shows case defined by \cref{eq:synth:tau_x:case2}; bottom left shows case defined by \cref{eq:synth:tau_x:case3}; and bottom right shows case defined by \cref{eq:synth:tau_x:case4}.}
-	\label{fig:true:tau}
-\end{figure}
-
-Then using these values of conditional Kendall's $\tau$, we generate the copula parameters using the link functions summarised in \cref{tab:cop:link}. Afterwards, we simulate from the copula density functions to obtain our synthetic dataset.
-
-\begin{table}
-	\centering
-	\begin{tabular}{l|c|c|c}
-		\toprule
-		Family & Support & Relation with $\tau$ & Range of $\tau$ \\
-		\midrule
-		Gaussian & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ & (-1,1)\\
-		Student-t & $\rho \in (-1,1)$ & $\sin(\tau\pi/2)$ & (-1,1) \\
-		Clayton & $\theta \in (0,\infty)$ & $2\tau/(1-\tau)$ & $(0,1)$ \\
-		Gumbel & $\theta\in [1,\infty)$ & $1/(1-\tau)$  & $[0,1)$ \\
-		\bottomrule
-	\end{tabular}
-	\caption{Copula families used for analyses, along with parameter support and relation with Kendall's $\tau$.}
-	\label{tab:cop:link}
-\end{table}
-
-\paragraph{Prediction accuracy} For the sake of evaluating the efficiency of copula parameter estimation we check in sample prediction of the copula parameter ($\rho$ for Gaussian and student-t; $\theta$ for Clayton and Gumbel) using the posterior samples of the regression trees . 
-
-There after we check the root mean squared error with respect to the true copula parameter used in the data generation phase. Given by:
-
-\begin{equation}
-	\text{RMSE} = \sqrt{\frac{1}{nC}\sum_{j=1}^C \sum_{i=1}^n (\theta_{ij} - \overline{\theta}^*_{ij})^2}
-\end{equation}
-where $\overline{\theta}^*_i$ is posterior sample mean of copula parameter conditional on $x_i$ and $C$ is the total number of parallel chains.
-
-For accuracy, we check whether the true copula parameter is contained within the 95\% credible interval of the predictive samples of the copula parameter
-
-\begin{equation}
-	\text{Accuracy} = \frac{\sum_{j=1}^C\sum_{i=1}^n\mathbb{I}\left(Q_{2.5}(\theta^*_{ij}) \le \theta_i \le Q_{97.5}(\theta^*_{ij})\right)}{nC}.
-\end{equation}
-
-Additionally, we check for credible interval length using $\left(Q_{97.5}(\theta^*_i) - Q_{2.5}(\theta^*_i)\right)$.
-
-\paragraph{Results}
-
-We present the summary of our analyses with different copulas in \cref{tab:gauss:summary} and convergence diagnostics in \cref{tab:gauss:convergence}.
-
-\begin{table}[ht]
-	\centering
-	\scriptsize{
-	\begin{tabular}{lc|cccccc}
-		\toprule
-		Case & Trees & $\mathbb{E}(n_L\mid U,X)$ & $\mathbb{E}(D\mid U,X)$ & Acc. Rate & RMSE & CI length & Accuracy \\ 
-		\midrule
-		\multicolumn{8}{c}{Gaussian} \\
-		\midrule
-		Case 1 & 1 & 3.0844 & 2.0061 & 0.4289 & 0.0058 & 0.2468 & 0.9980 \\ 
-		Case 2 & 1 & 2.1379 & 1.1329 & 0.1435 & 0.0043 & 0.1462 & 0.9320 \\ 
-		Case 2 & 5 & -- & -- & -- & 0.0013 & 0.2264 & 1.0000  \\ 
-		Case 3 & 1 & 3.1031 & 2.0207 & 0.4323 & 0.0009 & 0.1037 & 0.6240 \\
-		Case 3 & 5 & -- & -- & -- & 0.0026 & 0.1252 & 1.0000 \\ 
-		Case 4 & 1 & 2.1290 & 1.1249 & 0.1435 & 0.0003 & 0.1286 & 1.0000 \\ 
-		\midrule
-		\multicolumn{8}{c}{Student t} \\
-		\midrule
-		Case 1 & 1 & 3.2026 & 2.1036 & 0.4342 & 0.0094 & 0.2545 & 0.9980 \\ 
-		Case 2 & 1 & 2.0814 & 1.0785 & 0.1592 & 0.0019 & 0.1707 & 0.9680 \\ 
-		Case 3 & 1 & 3.1368 & 2.0575 & 0.4347 & 0.0037 & 0.1379 & 0.8720 \\ 
-		Case 3 & 5 & -- & -- & -- & 0.0027 & 0.1857 & 0.9600 \\
-		Case 4 & 1 & 2.0713 & 1.0694 & 0.1530 & 0.0013 & 0.1294 & 1.0000 \\ 
-		\midrule
-		\multicolumn{8}{c}{Clayton} \\
-		\midrule
-		Case 1 & 1 & 3.3062 & 2.0459 & 0.4415 & 0.3589 & 1.2332 & 0.9980 \\ 
-		Case 2 & 1 & 3.1549 & 2.0090 & 0.4558 & 0.1468 & 1.2279 & 0.6700 \\ 
-		Case 2 & 5 & -- & -- & -- & 0.1312 & 1.5219 & 0.9340 \\ 
-		Case 2 & 10 & -- & -- & -- & 0.1891 & 2.2298 & 0.9520 \\ 
-		Case 3 & 1 & 3.3085 & 2.1343 & 0.4451 & 0.6157 & 2.9311 & 0.8760 \\ 
-		Case 3 & 5 & -- & -- & -- & 0.6960 & 3.6403 & 0.9720 \\ 
-		Case 4 & 1 & 2.2104 & 1.1961 & 0.1514 & 0.0480 & 1.1370 & 1.0000 \\
-		\midrule
-		\multicolumn{8}{c}{Gumbel} \\
-		\midrule
-		Case 1 & 1 & 3.0883 & 2.0196 & 0.4269 & 0.0667 & 0.5716 & 1.0000 \\ 
-		Case 2 & 1 & 2.2013 & 1.1848 & 0.1561 & 0.0447 & 0.5939 & 0.9800 \\ 
-		Case 2 & 5 & -- & -- & -- & 0.0192 & 1.0615 & 1.0000 \\ 
-		Case 3 & 1 & 3.3469 & 2.1489 & 0.4587 & 0.1806 & 1.5804 & 0.9560 \\ 
-		Case 4 & 1 & 2.2269 & 1.2096 & 0.2418 & 0.0152 & 0.7405 & 1.0000 \\ 
-		\midrule
-		\multicolumn{8}{c}{Frank} \\
-		\midrule
-		Case 1 & 1 & 3.2734 & 2.0605 & 0.4350 & 3.7027 & 3.6551 & 0.9900 \\ 
-		Case 2 & 1 & 2.1114 & 1.1057 & 0.1404 & 0.9429 & 2.9564 & 1.0000 \\ 
-		Case 3 & 1 & 3.1517 & 2.0479 & 0.4506 & 3.4662 & 6.0499 & 0.7760 \\ 
-		Case 3 & 5 & -- & -- & -- & 2.5106 & 6.1438 & 0.8300 \\ 
-		Case 3 & 10 & -- & -- & -- & 1.7759 & 6.0762 & 0.9120 \\ 
-		Case 3 & 15 & -- & -- & -- & 1.1745 & 6.2690 & 1.0000 \\ 
-		Case 4 & 1 & 2.0948 & 1.0912 & 0.1218 & 0.6979 & 2.9941 & 0.9200 \\ 
-		Case 4 & 5 & -- & -- & -- & 0.5758 & 3.9529 & 1.0000 \\ 
-		\bottomrule
-		\end{tabular}}
-	\caption{Summary of analyses with Gaussian copula. The columns represents the specific case, the type of prior on $\mu_j\mid T$, the posterior expected number of terminal nodes, the posterior expected depth, the acceptance rate of MH algorithm, RMSE of estimated $\rho$ against true $\rho$, length of credible interval and coverage frequency within the credible interval. The posterior quantities are obtained by running 10 different chains with 6000 samples in a single chain and we discard 1000 samples as burn-in iteration.}
-	\label{tab:gauss:summary}
-\end{table}
-
-
-\begin{table}[ht]
-	\centering
-	\scriptsize{
-		\begin{tabular}{lc|crr|crr|crr}
-			\toprule
-			\multicolumn{2}{c|}{} &
-			\multicolumn{3}{c|}{Depth} &
-			\multicolumn{3}{c|}{$n_L$} &
-			\multicolumn{3}{c}{likelihood} \\
-			\midrule
-			Case & Trees & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke & AC & ESS (\%) & Geweke \\ 
-			\midrule
-			\multicolumn{11}{c}{Gaussian} \\
-			\midrule
-			Case 1 & 1 & 0.57 & 22.71 & 0.03 & 0.60 & 23.69 & -0.49 & 0.30 & 19.65 & -0.53 \\ 
-			Case 2 & 1 & 0.54 & 17.69 & -1.59 & 0.56 & 16.90 & -1.59 & 0.21 & 46.68 & 0.14 \\ 
-			Case 3 & 1 & 0.68 & 8.62 & -1.76 & 0.67 & 13.16 & -1.69 & 0.34 & 4.62 & -2.69 \\ 
-			Case 4 & 1 & 0.58 & 10.67 & -2.18 & 0.61 & 9.85 & -2.10 & 0.20 & 62.39 & 1.71 \\ 
-			\midrule
-			\multicolumn{11}{c}{Student t} \\
-			\midrule
-			Case 1 & 1 & 0.89 & 0.36 & 5.62 & 0.79 & 0.81 & 6.13 & 0.35 & 17.16 & -0.17 \\ 
-			Case 2 & 1 & 0.43 & 31.96 & 1.33 & 0.46 & 30.43 & 1.42 & 0.19 & 73.22 & -0.02 \\ 
-			Case 3 & 1 & 0.89 & 1.08 & -0.33 & 0.79 & 2.00 & 0.39 & 0.30 & 12.53 & -0.87 \\ 
-			Case 4 & 1 & 0.46 & 32.76 & -0.42 & 0.48 & 30.75 & -0.48 & 0.32 & 45.74 & 1.02 \\ 
-			\midrule
-			\multicolumn{11}{c}{Clayton} \\
-			\midrule
-			Case 1 & 1 & 0.73 & 8.07 & 1.03 & 0.77 & 9.92 & 0.75 & 0.63 & 8.06 & -0.83 \\ 
-			Case 2 & 1 & 0.84 & 2.82 & -0.97 & 0.82 & 4.10 & -1.31 & 0.66 & 10.66 & -1.84  \\ 
-			Case 2 & 5 & 0.34 & 56.56 & -2.35 & 0.34 & 56.56 & -2.35 & 0.28 & 36.34 & -1.58 \\ 
-			Case 3 & 1 & 0.53 & 5.79 & -0.78 & 0.57 & 18.35 & -0.85 & 0.28 & 39.57 & -0.85 \\ 
-			Case 3 & 5 & 0.53 & 5.79 & -0.78 & 0.57 & 18.35 & -0.85 & 0.28 & 39.57 & -0.85 \\ 
-			Case 4 & 1 & 0.26 & 71.26 & -2.28 & 0.26 & 71.26 & -2.28 & 0.09 & 82.51 & -0.91 \\ 
-			Case 4 & 5 & 0.26 & 71.26 & -2.28 & 0.26 & 71.26 & -2.28 & 0.09 & 82.51 & -0.91 \\ 
-			\midrule
-			\multicolumn{11}{c}{Gumbel} \\
-			\midrule
-			Case 1 & 1 & 0.60 & 12.03 & -1.58 & 0.61 & 16.86 & 1.10 & 0.51 & 14.45 & -0.94 \\ 
-			Case 2 & 1 & 0.54 & 18.64 & 0.86 & 0.59 & 17.02 & 0.83 & 0.26 & 52.21 & -0.64 \\ 
-			Case 3 & 1 & 0.86 & 0.66 & -0.48 & 0.83 & 1.96 & 0.88 & 0.30 & 17.71 & -1.41 \\ 
-			Case 4 & 1 & 0.52 & 22.53 & 0.39 & 0.58 & 19.99 & 0.55 & 0.20 & 55.58 & -0.49 \\ 
-			\midrule
-			\multicolumn{11}{c}{Frank} \\
-			\midrule
-			Case 1 & 1 & 0.81 & 2.81 & -1.08 & 0.81 & 5.35 & 1.50 & 0.32 & 18.73 & -0.21 \\ 
-			Case 2 & 1 & 0.42 & 22.29 & -0.62 & 0.47 & 19.70 & -0.62 & 0.18 & 55.51 & -0.57 \\ 
-			Case 3 & 1 & 0.93 & 0.50 & -1.49 & 0.90 & 1.96 & -1.56 & 0.82 & 5.77 & -1.19 \\ 
-			Case 4 & 1 & 0.77 & 8.59 & 0.12 & 0.80 & 7.69 & 0.37 & 0.49 & 32.59 & -0.75 \\ 
-			\bottomrule
-	\end{tabular}
-\caption{Posterior convergence diagnostic for Different copulas. The first two columns represent the specific case, type of prior on $\mu_j\mid T$. Followed by auto-correlation (lag-1) denoted by `AC', effective sample size percentage denoted by `ESS (\%)' and Geweke score of posterior samples of depth, posterior samples of the number of terminal nodes and likelihood.}\label{tab:gauss:convergence}}
-\end{table}
 
 \section{CIA world fact data}\label{sec:cia}
 
 \section{Conclusion}\label{sec:conc}
 
-\appendix
-
-\section{Derivatives}
-Let $\log(f(h(\mu)))\coloneqq \log(f(h(\mu)\mid U_1,U_2,X)) = \sum\log\left(c(u_1,u_2\mid h(R_j+\mu))\right)$ denote the copula likelihood at a terminal node. Then the first derivative is given by:
-\begin{align}
-	\begin{split}
-		\frac{\partial \log(f(h(\mu)))}{\partial \mu} 
-		& = \frac{\partial f(h(\mu))}{\partial \mu}\frac{\partial \log(f(h(\mu)))}{\partial f(h(\mu))}\\
-		& = \frac{\partial h(\mu)}{\partial \mu}\frac{\partial f(h(\mu))}{\partial h(\mu)}\frac{1}{f(h(\mu))} \\
-		& = h'(\mu)\frac{f'(h(\mu))}{f(h(\mu))}.
-	\end{split}
-\end{align}
-
-Similarly, the second derivative is given by:
-\begin{align}
-	\begin{split}
-		\frac{\partial^2 \log(f(h(\mu)))}{\partial \mu^2}
-		& = \frac{\partial}{\partial \mu}\left[h'(\mu)\frac{f'(h(\mu))}{f(h(\mu))}\right]\\
-		& = h''(\mu)\frac{f'(h(\mu))}{f(h(\mu))} 
-			+ h'(\mu)\frac{\partial}{\partial \mu}\left[\frac{f'(h(\mu))}{f(h(\mu))}\right]\\
-		& = h''(\mu)\frac{f'(h(\mu))}{f(h(\mu))} 
-		+ \left(h'(\mu)\right)^2\left[\frac{f''(h(\mu))}{f(h(\mu))} - \left(\frac{f'(h(\mu))}{f(h(\mu))}\right)^2\right]
-	\end{split}
-\end{align}
 
 \bibliographystyle{plainnat}
 \bibliography{example}
