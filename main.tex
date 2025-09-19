@@ -96,7 +96,7 @@ Such representation allows us to approximate a function with piecewise constant 
 \begin{definition}[Cell size] Given a $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]^p$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the sell size $S(\Omega_k)$ of $\Omega_k$
 	is the fraction of observations contained in $\Omega_k$.
 	\begin{equation*}
-		S(\Omega_k) = \frac{1}{n}\sum_{j=1}^n \mathbb{I}(x_j\in \Omega_k).
+		S(\Omega_k) = \frac{1}{n}\sum_{i=1}^n \mathbb{I}(x_i\in \Omega_k).
 	\end{equation*}
 \end{definition}
 
@@ -110,7 +110,7 @@ Such representation allows us to approximate a function with piecewise constant 
 
 The most used prior for tree topology was introduced by \citet{chipman98BCART} for a single tree. Afterwards \citet{chipman2010BART} extended the framework for sum of regression trees. Recently, \citet{serafini2024lossbasedpriortreetopologies} an alternate prior for the tree topology. They consider a loss-based approach \cite{villa_loss-prior} where the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. In doing so, they define the following hierarchical prior
 
-\begin{align}
+\begin{align}\label{eq:L-BART}
 	\begin{split}
 		T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
 		T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
@@ -127,42 +127,61 @@ As hinted earlier, our main objective is to model the dependence structure of a 
 \begin{equation*}
 	\theta(x_i) \coloneqq h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right);\qquad 1\le i\le n.
 \end{equation*}
-Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula density function. Then we can define the following hierarchical model
-\begin{align}
+Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula density function. Then employing the loss-based prior for tree introduced in \cref{eq:L-BART}, we can define the following hierarchical model 
+\begin{align}\label{eq:bayes:hier}
 	\begin{split}
 		u_{1i},u_{2i} \mid \theta(x_i) & \sim c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\\
 		T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
 		\pi(M_t\mid T_t) &\propto \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\\
-		\mu_j\mid T_t &\sim \mathcal{N}(0,\sigma_{t}^2)\\
-		\sigma_{t}^2&\sim \text{InvGamma}(a,b)\\
-		t & = 1,2,\cdots m\\
-		a,b&>0.
+		t & = 1,2,\cdots m.
 	\end{split}
 \end{align}
 
-This gives us the following posterior:
-\begin{equation}
-	\pi(T,M \mid U_1, U_2, X) \propto \prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\prod_{t=1}^{m}\pi(T_t)\prod_{t=1}^{m}\pi(M_t\mid T_t).
-\end{equation}
+\subsection{Choice of link functions} The choice of link function to relate the tree structure with the conditional copula parameter is dependent on the family of copula. Use of such link function is not completely unusual in the context of conditional copula modelling. \citet{ABEGAZ201243,valle_cond_cop} used such functions for calibrating the parameter. In our case, we wish to keep the sum of trees flexible and it can take any value in $\mathbb{R}$. So we consider functions that can map from $\mathbb{R}$ to the domain of $\theta$. A relevant table provided in \cref{sec:sim} where we evaluate the performance of our approach for different copula families. 
 
-To sample from the posterior we use backfitting algorithm where we sample $(T_j, M_j)$ conditional on the other $m-1$ pairs of $(T_k,M_k)$. Therefore, we define $R_{ij}$ such that
+Note that, one may also want to use link function on the conditional Kendall's $\tau$ such that
 \begin{equation*}
-	R_{ij} = \sum_{t\not=j}g(x_i, T_t, M_t)
+	\theta(x_i) \coloneqq h'(\tau(x_i))\quad\text{and}\quad \tau(x_i) = \sum_{t=1}^m g'(x_i, T_t, M_t).
 \end{equation*}
-Then the posterior of $j$-th pair conditional on $R_j$ is given by:
+This will allow one to estimate the conditional Kendall's $\tau$ directly whilst modelling the copula parameter. However, we refrain from doing so as the domain of $h'$ may vary based on the family of copula. For instance, Gaussian copula can take any value of $\tau$ in $(-1,1)$ where as for Gumbel family we $tau$ can only have non-negative values.
+
+\subsection{Choice of priors on $\mu_j$}
+Earlier adaptions of BART models (\citet{chipman2010BART,Sparapani_BART,Murray03042021}) suggested a conjugate prior for the terminal node values $\mu_j$ for integrating it out. In our case, we lack that benefit so we consider default $\mathcal{N}(0,\sigma_{t}^2)$ on $\mu_j$ as suggested by \citet{chipman2010BART,Linero02012025} where $\sigma_{t}^2$ is variance specific to the $t$-th tree. For $\sigma_{t}^2$ we use a flat inverse-gamma prior.
+
+Note that, similar to our arguments around the link function, we can also consider a transformed beta prior \cite{gokhale_prior_cor} for $\mu_j$ if we wish to model the copula parameter with a link function on Kendall's $\tau$.
+
+\subsection{Choice of $m$} The choice of the total number of trees still remains an open problem. \citet{chipman2010BART} considered a default of 500 trees whereas \citet{Linero02012025} suggested to 200 trees for analysis. In our case, we follow the approach of \citet{serafini2024lossbasedpriortreetopologies}, we start with 10 trees and increase it by 10 to monitor the change in performance.
+
+\section{RJ-MCMC for Parameter Estimation}\label{sec:rjmcmc}
+
+In this section we provide the MCMC algorithm for sampling from the posterior. First, let $(U_1,U_2)$ denote the pseudo observations $\{(u_{1i},u_{2i}):1\le i \le n\}$ and $X$ denote the covariates. The hierarchical model described in \cref{eq:bayes:hier} gives us a posterior proportional to the following form:
+\begin{align}
+	\begin{split}
+		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\prod_{t=1}^{m}\pi(T_t)\prod_{t=1}^{m}\left(\prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\right)\prod_{t=1}^{m}\pi(\sigma_{t}).
+	\end{split}
+\end{align}
+So, to sample from the posterior we use a backfitting algorithm proposed by \citet{chipman2010BART} where we sample $(T_k, M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
+\begin{equation*}
+	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma_{k}, U_1, U_2, X
+\end{equation*}
+followed by a sample of the variance term $\sigma_{k}$ from the following conditional distribution
+\begin{equation*}
+	\sigma_{k} \mid (T_k,M_k),U_1,U_2,X.
+\end{equation*}
+So in order to implement the backfitting algorithm, we define 
+\begin{equation*}
+	R_{ik} = \sum_{t\not=k}g(x_i, T_t, M_t)\quad\text{and}\quad R_{\cdot k}\coloneqq(R_{1k},R_{2k},\cdots,R_{nk}).
+\end{equation*}
+Here $R_{ik}$ is similar to the notion of residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead we will add this residual term with terminal node values of the $k$-th regression tree which give us the following posterior of $(T_k,M_k)$ conditional on $R_{\cdot k}$ and $\sigma_{k}$
 \begin{align}\label{eq:post:res}
 	\begin{split}
-		\pi(T_j,M_j \mid R_j, U_1,U_2, X) &\propto \prod_{i=1}^{n}c\left(u_{1},u_{2}\mid h\left(R_j+g(x, T_j, M_j)\right)\right)\pi(T_j)\pi(M_j\mid T_j)\\
-		&\propto \pi(T_j)\prod_{i=1}^{n}c\left(u_{1},u_{2}\mid h\left(R_j+g(x, T_j, M_j)\right)\right)\prod_{k=1}^{n_L(T_j)}\pi(\mu_k\mid T_j)
+		\pi(T_k,M_k \mid R_{\cdot k}, \sigma_{k}, U_1,U_2, X) &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
 	\end{split}
 \end{align}
-
-\section{RJMCMC for Parameter Estimation}\label{sec:rjmcmc}
-For standard BART model, the use of conjugate prior allows us to marginalise the likelihood with respect to $\mu_j$ such that:
-\begin{equation}
-	\mathcal{L}(U_1,U_2\mid X, T)\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1},u_{2}\mid h\left(R_j+g(x, T_j, M_j)\right)\right)\prod_{k=1}^{n_L(T_j)}\pi(\mu_k\mid T_j)\right)d\mu.
-\end{equation}
-
+For standard BART model, the use of conjugate prior allows us to marginalise the likelihood with respect to $\mu\coloneqq\left(\mu_1,\mu_2,\cdots,\mu_{n_L(T_k)}\right)$ such that:
+\begin{equation*}
+	\mathcal{L}(U_1,U_2\mid X, T_k, \sigma_{k})\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)\right)d\mu.
+\end{equation*}
 Unfortunately, we do not have the conjugacy property in our case. So we use a Metropolis Hastings algorithm to compute from the posterior given by \cref{eq:post:res}.First, we choose a proposal distribution, $q\left(T_t^k,M_t^k;T_t^\ast, M_t^\ast\right)$ to generate a proposal at the $k$-th step.
 
 \begin{align}\label{eq:prop}
