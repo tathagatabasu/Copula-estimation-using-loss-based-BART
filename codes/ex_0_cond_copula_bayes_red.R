@@ -12,6 +12,7 @@ library(xtable)
 require(foreach)
 require(parallel)
 require(doParallel)
+library(patchwork)
 
 ################################################################################
 # data generation

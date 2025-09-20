@@ -208,7 +208,7 @@ The generation of new terminal node values rely on the proposed tree structure t
 For the choice of proposal we consider a normal distribution with mean 0 and variance $\sigma_{\text{prop}}$. We notice that fixing $\sigma_{\text{prop}}$ is rather difficult. While eye-balling the likelihood give us some idea but due to slow mixing nature of RJ-MCMC it still exhibits high autocorrelation. So, we suggest an adaptive variance for the proposal. Our approach is motivated from the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the co-variance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on the partition of the predictor space in \cref{alg:ada:prop}.
 
 \begin{algorithm}[H]
-	\caption{Adaptive Proposal}\label{alg:ada:prop}
+	\caption{Computation of adaptive proposal}\label{alg:ada:prop}
 	\begin{algorithmic}[1]
 		\State Perform $t_0$ iterations with a fixed variance.
 		
@@ -239,21 +239,9 @@ For the choice of proposal we consider a normal distribution with mean 0 and var
 		\end{equation*}
 	\end{algorithmic}
 \end{algorithm}
-The formulation in \cref{eq:var:adapt} ensures that the proposal variance is represents the variance of the mean of the observed values at each terminal nodes, which is how the traditional BART model updates the prior mean.
 
-
-Once we have a proposal for both the trees and terminal node values, we can define the acceptance probability in the following way:
-\begin{equation}\label{eq:acc:prob}
-	\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)
-	= \frac{\mathcal{L}(T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^{\gamma},M_k^{\gamma}\mid T_k^\ast, M_k^\ast\right)}
-	{\mathcal{L}(T_k^{\gamma},M_k^{\gamma})\pi(T_k^{\gamma},M_k^{\gamma}) q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)}.
-\end{equation}
-where $\mathcal{L}(T_k,M_k)$ denotes the likelihood for a given pair of $(T_k,M_k)$.
-
-Finally, once we have sampled a new $(T_k,M_k)$ we can employ a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We provide one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
- 
-\begin{algorithm}
-	\caption{One iteration of MCMC for copula BART}\label{alg:MCMC}
+\begin{algorithm}[H]
+	\caption{One iteration of RJ-MCMC for copula BART}\label{alg:MCMC}
 	\begin{algorithmic}[1]
 		\State The previous steps gives us $(T_k^{\gamma},M_k^{\gamma})$
 		\State Set $\theta(x_i) \leftarrow h\left(\sum_{t=1}^{m} g(x_i, T_t^{\gamma},M_t^{\gamma})\right)$ for $i = 1, \ldots, n$
@@ -277,9 +265,148 @@ Finally, once we have sampled a new $(T_k,M_k)$ we can employ a Metropolis withi
 	\end{algorithmic}
 \end{algorithm}
 
+The formulation in \cref{eq:var:adapt} ensures that the proposal variance is represents the variance of the mean of the observed values at each terminal nodes, which is how the traditional BART model updates the prior on the terminal node values.
+
+
+Once we have a proposal for both the trees and terminal node values, we can define the acceptance probability in the following way:
+\begin{equation}\label{eq:acc:prob}
+	\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)
+	= \frac{\mathcal{L}(T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^{\gamma},M_k^{\gamma}\mid T_k^\ast, M_k^\ast\right)}
+	{\mathcal{L}(T_k^{\gamma},M_k^{\gamma})\pi(T_k^{\gamma},M_k^{\gamma}) q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)}.
+\end{equation}
+where $\mathcal{L}(T_k,M_k)$ denotes the likelihood for a given pair of $(T_k,M_k)$.
+
+Finally, once we have sampled a new $(T_k,M_k)$ we can employ a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We provide one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
+
+
 \section{Simulation Studies}\label{sec:sim}
 
-In this section, we consider two synthetic settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. 
+In this section, we consider two synthetic settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. For both the setting, we investigate the performance of our method for five different copula families: Gaussian, Students t, Clayton, Gumbel and Frank. As hinted earlier, to model the conditional copula parameter, we consider different link functions which we present in \cref{tab:cop:link} below.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{l|c|c}
+		Family & Support & Link function\\
+		\midrule
+		Gaussian & $\rho \in (-1,1)$ & $h(x)=2\text{sigmoid}(x) -1$\\
+		Student-t & $\rho \in (-1,1)$ & $h(x)=2\text{sigmoid}(x) -1$\\
+		Clayton & $\theta \in (0,\infty)$ & $h(x)=\exp(x)$\\
+		Gumbel & $\theta\in [1,\infty)$ & $h(x)=\exp(x)+1$\\
+		Frank & $\theta\in \mathbb{R}\neg \{0\}$ & $h(x)=x$\\
+		\end{tabular}
+	\caption{Copula families used for analyses, along with parameter support and corresponding link function.}
+	\label{tab:cop:link}
+\end{table}
+
+For data generation process, we sample $x_i$'s from a uniform distribution $U(0,1)$ for $1\le i\le n$. Afterwards we get our conditional Kendall's tau $(\tau(x_i))$ using following two equations.
+\begin{equation}\label{eq:tree:tau}
+	\tau_1(x_i) = \begin{cases}
+		0.1 & x_i \le 0.33\\
+		0.7 & 0.33 < x_i \le 0.66\\
+		0.3 & 0.66 < x_i
+	\end{cases}
+\end{equation}
+and
+\begin{equation}
+	\tau_2(x_i) = 0.4\sin(2\pi x_i) + 0.5.
+\end{equation}
+We use these $\tau(x_i)$'s to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Then we use these copula datasets to perform our posterior inference. For each dataset, we run 20 parallel chains comprising of 6000 MCMC iterations. We also check the performance of our RJ-MCMC algorithm with and without adaption. For adaptive version of our algorithm we use first 1000 iterations for adaption. 
+
+One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure for that we take consider the average posterior samples. Besides that. we are also interested in the predictive performance of our approach for that we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
+
+\subsection{Example with true tree structure} 
+
+We present the summary of our analysis in 
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{l|ccc|ccc}
+		\toprule
+		\multicolumn{1}{c|}{} &
+		\multicolumn{3}{c|}{without adaption} &
+		\multicolumn{3}{c}{with adaption} \\
+		\midrule
+		& $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. & $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. \\ 
+		\midrule
+		Gaussian & 3.33 & 2.17 & 0.15 & 3.20 & 2.08 & 0.14 \\ 
+		Student t & 3.16 & 2.07 & 0.15 & 3.11 & 2.03 & 0.14 \\ 
+		Clayton & 3.28 & 2.14 & 0.15 & 3.25 & 2.09 & 0.15 \\ 
+		Gumbel & 3.14 & 2.07 & 0.14 & 3.10 & 2.02 & 0.14 \\ 
+		Frank & 3.14 & 2.04 & 0.14 & 3.12 & 2.02 & 0.14 \\ 
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{l|ccc|ccc}
+		\toprule
+		\multicolumn{1}{c|}{} &
+		\multicolumn{3}{c|}{without adaption} &
+		\multicolumn{3}{c}{with adaption} \\
+		\midrule
+		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
+		\midrule
+		Gaussian & 0.0436 & 0.1630 & 0.994 & \textbf{0.0412} & 0.1565 & 0.994 \\ 
+		Student-t & 0.0640 & 0.1909 & \textbf{0.982} & \textbf{0.0632} & 0.1897 & 0.980 \\ 
+		Clayton & \textbf{0.0490} & 0.1442 & 0.986 & 0.0500 & 0.1466 & \textbf{0.988} \\ 
+		Gumbel & 0.0436 & 0.1529 & 0.998 & \textbf{0.0424} & 0.1529 & \textbf{1.000} \\ 
+		Frank & \textbf{0.0480} & 0.1754 & 0.998 & 0.0490 & 0.1796 & 0.998 \\ 
+		\hline
+	\end{tabular}
+\end{table}
+
+% 141.5362 190.4971 193.4512 147.1030 134.3136
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
+\end{figure}
+
+\subsection{Example with a general function}
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{l|ccc|ccc}
+		\toprule
+		\multicolumn{1}{c|}{} &
+		\multicolumn{3}{c|}{without adaption} &
+		\multicolumn{3}{c}{with adaption} \\
+		\midrule
+		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
+		\midrule
+		Gaussian & 0.0648 & 0.2823 & \textbf{0.982} & \textbf{0.0616} & 0.2941 & 0.972 \\ 
+		Student-t & 0.0624 & 0.3367 & \textbf{1.000} & \textbf{0.0583} & 0.3286 & 0.996 \\ 
+		Clayton & 0.0671 & 0.2524 & 0.986 & \textbf{0.0616} & 0.2565 & \textbf{0.992} \\ 
+		Gumbel & 0.0574 & 0.2449 & 0.910 & \textbf{0.0548} & 0.2571 & \textbf{0.936} \\ 
+		Frank & 0.0600 & 0.2522 & 0.886 & \textbf{0.0592} & 0.2600 & \textbf{0.914} \\ 
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
+\end{figure}
+
+% 293.6331 299.5395 335.3049 291.9339 241.1606
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
+\end{figure}
+
 
 
 \section{CIA world fact data}\label{sec:cia}
