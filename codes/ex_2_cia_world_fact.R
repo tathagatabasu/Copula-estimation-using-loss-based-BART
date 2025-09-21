@@ -78,7 +78,7 @@ GDP <- as.matrix(GDP)
 rownames(GDP) <- 1:nrow(GDP)
 
 n.chain_par <- 10
-n.iter_par <- 6000
+n.iter_par <- 15000
 n.born.out.par <- 1000
 n.thin <- 1
 incl.split_par <- TRUE
@@ -91,7 +91,9 @@ n.tree <- 10
 # source files
 ################################################################################
 
-# source('mclapply.R') # if run on windows uncomment it
+if(.Platform$OS.type == "windows"){
+  source('mclapply.R')
+}
 
 # source('MCMC_BART_copula.R')
 source('import_functions.R')
@@ -118,7 +120,7 @@ if(F){
                                          cop_type = "gauss",
                                          adapt = T)
   
-  save(gauss_GDP_LE, file = "gaussgdp_LE.Rdata")
+  save(gauss_GDP_LE, file = "gauss_gdp_LE.Rdata")
   rm(gauss_GDP_LE)
   
   frank_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -138,7 +140,7 @@ if(F){
                                          cop_type = "frank",
                                          adapt = T)
   
-  save(frank_GDP_LE, file = "frankgdp_LE.Rdata")
+  save(frank_GDP_LE, file = "frank_gdp_LE.Rdata")
   rm(frank_GDP_LE)
   
   t_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -158,7 +160,7 @@ if(F){
                                      cop_type = "t",
                                      adapt = T)
   
-  save(t_GDP_LE, file = "tgdp_LE.Rdata")
+  save(t_GDP_LE, file = "t_gdp_LE.Rdata")
   rm(t_GDP_LE)
   
   clayton_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -178,7 +180,7 @@ if(F){
                                            cop_type = "clayton",
                                            adapt = T)
   
-  save(clayton_GDP_LE, file = "claytongdp_LE.Rdata")
+  save(clayton_GDP_LE, file = "clayton_gdp_LE.Rdata")
   rm(clayton_GDP_LE)
   
   gumbel_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -198,7 +200,7 @@ if(F){
                                           cop_type = "gumbel",
                                           adapt = T)
   
-  save(gumbel_GDP_LE, file = "gumbelgdp_LE.Rdata")
+  save(gumbel_GDP_LE, file = "gumbel_gdp_LE.Rdata")
   rm(gumbel_GDP_LE)
   
   gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -218,7 +220,7 @@ if(F){
                                          cop_type = "gauss",
                                          adapt = T)
   
-  save(gauss_GDP_LT, file = "gaussgdp_LT.Rdata")
+  save(gauss_GDP_LT, file = "gauss_gdp_LT.Rdata")
   rm(gauss_GDP_LT)
   
   frank_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -238,7 +240,7 @@ if(F){
                                          cop_type = "frank",
                                          adapt = T)
   
-  save(frank_GDP_LT, file = "frankgdp_LT.Rdata")
+  save(frank_GDP_LT, file = "frank_gdp_LT.Rdata")
   rm(frank_GDP_LT)
   
   t_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -258,7 +260,7 @@ if(F){
                                      cop_type = "t",
                                      adapt = T)
   
-  save(t_GDP_LT, file = "tgdp_LT.Rdata")
+  save(t_GDP_LT, file = "t_gdp_LT.Rdata")
   rm(t_GDP_LT)
   
   clayton_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -278,7 +280,7 @@ if(F){
                                            cop_type = "clayton",
                                            adapt = T)
   
-  save(clayton_GDP_LT, file = "claytongdp_LT.Rdata")
+  save(clayton_GDP_LT, file = "clayton_gdp_LT.Rdata")
   rm(clayton_GDP_LT)
   
   gumbel_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
@@ -298,19 +300,19 @@ if(F){
                                           cop_type = "gumbel",
                                           adapt = T)
   
-  save(gumbel_GDP_LT, file = "gumbelgdp_LT.Rdata")
+  save(gumbel_GDP_LT, file = "gumbel_gdp_LT.Rdata")
   rm(gumbel_GDP_LT)
   
 }
 ################################################################################
 
-if(T){
+if(F){
   
-  load("gaussgdp_LT.Rdata")
-  load("frankgdp_LT.Rdata")
-  load("claytongdp_LT.Rdata")
-  load("tgdp_LT.Rdata")
-  load("gumbelgdp_LT.Rdata")
+  load("gauss_gdp_LT.Rdata")
+  load("frank_gdp_LT.Rdata")
+  load("clayton_gdp_LT.Rdata")
+  load("t_gdp_LT.Rdata")
+  load("gumbel_gdp_LT.Rdata")
   
   gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LT$trees), \(idx) BART_calculate_pred(gauss_GDP_LT$trees[[idx]], GDP))
   
