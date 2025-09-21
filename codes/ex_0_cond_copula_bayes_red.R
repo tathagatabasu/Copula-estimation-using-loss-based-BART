@@ -123,10 +123,10 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 # gaussian
 ################################################################################
-if(F){
+if(T){
   n.tree <- 10
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -150,7 +150,7 @@ if(F){
     rm(list = paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -178,7 +178,7 @@ if(F){
 
 # results
 
-if(T){
+if(F){
   test_case = 2
   
   # model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -316,7 +316,7 @@ if(T){
   
 }
 
-if(T){
+if(F){
   test_case = 2
   
   model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -457,10 +457,10 @@ if(T){
 ################################################################################
 # t
 ################################################################################
-if(F){
+if(T){
   n.tree <- 10
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                        X = X_obs.norm,
@@ -484,7 +484,7 @@ if(F){
     rm(list = paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                        X = X_obs.norm,
@@ -512,7 +512,7 @@ if(F){
 
 # results
 
-if(T){
+if(F){
   test_case = 2
   
   # model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -650,7 +650,7 @@ if(T){
   
 }
 
-if(T){
+if(F){
   test_case = 2
   
   model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -791,10 +791,10 @@ if(T){
 ################################################################################
 # Gumbel
 ################################################################################
-if(F){
+if(T){
   n.tree <- 10
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                             X = X_obs.norm,
@@ -818,7 +818,7 @@ if(F){
     rm(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                             X = X_obs.norm,
@@ -846,7 +846,7 @@ if(F){
 
 # results
 
-if(T){
+if(F){
   test_case = 2
   
   # model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -984,7 +984,7 @@ if(T){
   
 }
 
-if(T){
+if(F){
   test_case = 2
   
   model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -1125,10 +1125,10 @@ if(T){
 ################################################################################
 # frank
 ################################################################################
-if(F){
+if(T){
   n.tree <- 10
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -1152,7 +1152,7 @@ if(F){
     rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -1179,7 +1179,7 @@ if(F){
 
 # results
 
-if(T){
+if(F){
   test_case = 2
   
   # model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -1317,7 +1317,7 @@ if(T){
   
 }
 
-if(T){
+if(F){
   test_case = 2
   
   model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -1458,10 +1458,10 @@ if(T){
 ################################################################################
 # clayton
 ################################################################################
-if(F){
+if(T){
   n.tree <- 10
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                              X = X_obs.norm,
@@ -1485,7 +1485,7 @@ if(F){
     rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"))
   }
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                              X = X_obs.norm,
@@ -1512,7 +1512,7 @@ if(F){
 }
 # results
 
-if(T){
+if(F){
   test_case = 2
   
   # model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
@@ -1650,7 +1650,7 @@ if(T){
   
 }
 
-if(T){
+if(F){
   test_case = 2
   
   model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))

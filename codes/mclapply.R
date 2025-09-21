@@ -23,6 +23,7 @@
 #' 
 mclapply <- function(..., verbose=FALSE, mc.cores=NULL) {
   require(parallel)
+  require(doParallel)
   
   ## Create a cluster
   if( is.null(mc.cores) ) {
@@ -33,7 +34,8 @@ mclapply <- function(..., verbose=FALSE, mc.cores=NULL) {
   ##      the master console, as is the default with
   ##      mclapply() on Linux / Mac
   cl <- makeCluster( mc.cores, outfile="" )
-  
+  registerDoParallel(cl)
+  clusterSetRNGStream(cl, 123)
   ## Find out the names of the loaded packages
   loaded.package.names <- c(
     ## Base packages

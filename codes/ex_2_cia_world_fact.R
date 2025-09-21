@@ -23,18 +23,18 @@ colnames_for_anlysis <- c("Country","People.and.Society..Life.expectancy.at.birt
                           "People.and.Society..Literacy...female", 
                           "Economy..Real.GDP.per.capita")
 
-cia_wf_data_le_vs_gdp <- cia_wf_data %>% dplyr::select(all_of(colnames_for_anlysis))
+cia_wf_data_2023 <- cia_wf_data %>% dplyr::select(all_of(colnames_for_anlysis))
 
-index_2023 <- (grepl("(2023 est.)", cia_wf_data_le_vs_gdp$Economy..Real.GDP.per.capita, fixed = TRUE))
+# index_2023 <- (grepl("(2023 est.)", cia_wf_data_le_vs_gdp$Economy..Real.GDP.per.capita, fixed = TRUE))
 
 
-cia_wf_data_2023 <- cia_wf_data_le_vs_gdp[index_2023,]
+# cia_wf_data_2023 <- cia_wf_data_le_vs_gdp[index_2023,]
 
 # index_bil <- (grepl("billion (2023 est.)", cia_wf_data_2023$Economy..Real.GDP..purchasing.power.parity., fixed = TRUE))
 # index_tril <- (grepl("trillion (2023 est.)", cia_wf_data_2023$Economy..Real.GDP..purchasing.power.parity., fixed = TRUE))
 # index_mil <- (grepl("million (2023 est.)", cia_wf_data_2023$Economy..Real.GDP..purchasing.power.parity., fixed = TRUE))
 
-index <- (grepl(" (2023 est.)", cia_wf_data_2023$Economy..Real.GDP..purchasing.power.parity., fixed = TRUE))
+# index <- (grepl(" (2023 est.)", cia_wf_data_2023$Economy..Real.GDP..purchasing.power.parity., fixed = TRUE))
 
 colnames(cia_wf_data_2023) <- c("Country",
                               "Life_expectancy_M",
@@ -354,7 +354,6 @@ if(T){
   gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   gauss_pl_like <- gauss_like_df %>%
-    filter(idx > 2000) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -432,11 +431,11 @@ if(T){
   gumbel_like_df$idx <- 1:(n.chain_par*n.iter_par)
   
   gumbel_like_df <-data.frame("nn" = gumbel_like_val)
-  gumbel_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+  gumbel_like_df$idx <- rep(1:n.iter_par*n.chain_par)
   gumbel_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   gumbel_pl_like <- gumbel_like_df %>%
-    # filter(idx > n.born.out.par) %>%
+    filter(idx > n.born.out.par) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -480,7 +479,7 @@ if(T){
               clayton_tau_mean = mean(clayton_tau), clayton_tau_q975 = quantile(clayton_tau, .975), clayton_tau_q025 = quantile(clayton_tau, .025),
               gumbel_tau_mean = mean(gumbel_tau), gumbel_tau_q975 = quantile(gumbel_tau, .975), gumbel_tau_q025 = quantile(gumbel_tau, .025)) 
   
-  ggplot(pred_cond_mod_tau) +
+  pl_tau_est <- ggplot(pred_cond_mod_tau) +
     geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
     geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
     geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
@@ -658,11 +657,11 @@ if(T){
   fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(clayton_pred_U1_LT, clayton_pred_U2_LT))
   fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gumbel_pred_U1_LT, gumbel_pred_U2_LT))
   
-  save(gauss_pred_U1_LT, gauss_pred_U2_LT, hist_gauss, gauss_like_val, gauss_pl_like, file = "gauss_gdp_LT_post.Rdata")
-  save(frank_pred_U1_LT, frank_pred_U2_LT, hist_frank, frank_like_val, frank_pl_like, file = "frank_gdp_LT_post.Rdata")
-  save(clayton_pred_U1_LT, clayton_pred_U2_LT, hist_clayton, clayton_like_val, clayton_pl_like, file = "clayton_gdp_LT_post.Rdata")
-  save(gumbel_pred_U1_LT, gumbel_pred_U2_LT, hist_gumbel, gumbel_like_val, gumbel_pl_like, file = "gumbel_gdp_LT_post.Rdata")
-  save(t_pred_U1_LT, t_pred_U2_LT, hist_t, t_like_val, t_pl_like, file = "t_gdp_LT_post.Rdata")
-  
+  save(gauss_pred_U1_LT, gauss_pred_U2_LT, hist_gauss, gauss_like_val, gauss_pl_like, gauss_like_df, file = "gauss_gdp_LT_post.Rdata")
+  save(frank_pred_U1_LT, frank_pred_U2_LT, hist_frank, frank_like_val, frank_pl_like, frank_like_df, file = "frank_gdp_LT_post.Rdata")
+  save(clayton_pred_U1_LT, clayton_pred_U2_LT, hist_clayton, clayton_like_val, clayton_pl_like, clayton_like_df, file = "clayton_gdp_LT_post.Rdata")
+  save(gumbel_pred_U1_LT, gumbel_pred_U2_LT, hist_gumbel, gumbel_like_val, gumbel_pl_like, gumbel_like_df, file = "gumbel_gdp_LT_post.Rdata")
+  save(t_pred_U1_LT, t_pred_U2_LT, hist_t, t_like_val, t_pl_like, t_like_df, file = "t_gdp_LT_post.Rdata")
+  save(pred_cond, pred_cond_mod_tau, pl_tau_est, file = "pred_tau_LT.Rdata")
 }
 
