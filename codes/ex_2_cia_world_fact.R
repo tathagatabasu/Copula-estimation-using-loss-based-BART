@@ -100,167 +100,128 @@ source('test_MCMC_copula_mult_tree.R')
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ##########################################################
 
-gauss_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+if(F){
+  gauss_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                         X = GDP,
+                                         U1 = U1_LE,
+                                         U2 = U2_LE,
+                                         prior_list = lb.prior.def, 
+                                         moves.prob = moves.prob_par, 
+                                         starting.tree = NULL,
+                                         cont.unif = cont.unif_par,
+                                         include.split = incl.split_par,
+                                         prop_mu = 0, prop_sigma = .2/n.tree,
+                                         theta_param_1 = 0, theta_param_2 = .3,
+                                         var_param_1 = 1, var_param_2 = 2,
+                                         prior_type = "N",
+                                         cop_type = "gauss",
+                                         adapt = T)
+  
+  save(gauss_GDP_LE, file = "gaussgdp_LE.Rdata")
+  rm(gauss_GDP_LE)
+  
+  frank_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                         X = GDP,
+                                         U1 = U1_LE,
+                                         U2 = U2_LE,
+                                         prior_list = lb.prior.def, 
+                                         moves.prob = moves.prob_par, 
+                                         starting.tree = NULL,
+                                         cont.unif = cont.unif_par,
+                                         include.split = incl.split_par,
+                                         prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                         theta_param_1 = 0, theta_param_2 = .3,
+                                         var_param_1 = 1, var_param_2 = 2,
+                                         prior_type = "N",
+                                         cop_type = "frank",
+                                         adapt = T)
+  
+  save(frank_GDP_LE, file = "frankgdp_LE.Rdata")
+  rm(frank_GDP_LE)
+  
+  t_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                     X = GDP,
+                                     U1 = U1_LE,
+                                     U2 = U2_LE,
+                                     prior_list = lb.prior.def, 
+                                     moves.prob = moves.prob_par, 
+                                     starting.tree = NULL,
+                                     cont.unif = cont.unif_par,
+                                     include.split = incl.split_par,
+                                     prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                     theta_param_1 = 0, theta_param_2 = .3,
+                                     var_param_1 = 1, var_param_2 = 2,
+                                     prior_type = "N",
+                                     cop_type = "t",
+                                     adapt = T)
+  
+  save(t_GDP_LE, file = "tgdp_LE.Rdata")
+  rm(t_GDP_LE)
+  
+  clayton_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                            X = GDP,
-                                 U1 = U1_LE,
-                                 U2 = U2_LE,
-                                 prior_list = lb.prior.def, 
-                                 moves.prob = moves.prob_par, 
-                                 starting.tree = NULL,
-                                 cont.unif = cont.unif_par,
-                                 include.split = incl.split_par,
-                                 prop_mu = 0, prop_sigma = .2/n.tree,
-                                 theta_param_1 = 0, theta_param_2 = .3,
-                                 var_param_1 = 1, var_param_2 = 2,
-                                 prior_type = "N",
-                                 cop_type = "gauss",
-                                adapt = T)
-
-save(gauss_GDP_LE, file = "gaussgdp_LE.Rdata")
-rm(gauss_GDP_LE)
-
-frank_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                           X = GDP,
-                            U1 = U1_LE,
-                            U2 = U2_LE,
-                            prior_list = lb.prior.def, 
-                            moves.prob = moves.prob_par, 
-                            starting.tree = NULL,
-                            cont.unif = cont.unif_par,
-                            include.split = incl.split_par,
-                            prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                            theta_param_1 = 0, theta_param_2 = .3,
-                            var_param_1 = 1, var_param_2 = 2,
-                            prior_type = "N",
-                            cop_type = "frank",
-                            adapt = T)
-
-save(frank_GDP_LE, file = "frankgdp_LE.Rdata")
-rm(frank_GDP_LE)
-
-t_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                       X = GDP,
-                            U1 = U1_LE,
-                            U2 = U2_LE,
-                            prior_list = lb.prior.def, 
-                            moves.prob = moves.prob_par, 
-                            starting.tree = NULL,
-                            cont.unif = cont.unif_par,
-                            include.split = incl.split_par,
-                            prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                            theta_param_1 = 0, theta_param_2 = .3,
-                            var_param_1 = 1, var_param_2 = 2,
-                            prior_type = "N",
-                            cop_type = "t",
-                            adapt = T)
-
-save(t_GDP_LE, file = "tgdp_LE.Rdata")
-rm(t_GDP_LE)
-
-clayton_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                             X = GDP,
-                                  U1 = U1_LE,
-                                  U2 = U2_LE,
-                                  prior_list = lb.prior.def, 
-                                  moves.prob = moves.prob_par, 
-                                  starting.tree = NULL,
-                                  cont.unif = cont.unif_par,
-                                  include.split = incl.split_par,
-                                  prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                  theta_param_1 = 0, theta_param_2 = .3,
-                                  var_param_1 = 1, var_param_2 = 2,
-                                  prior_type = "N",
-                                  cop_type = "clayton",
-                                  adapt = T)
-
-save(clayton_GDP_LE, file = "claytongdp_LE.Rdata")
-rm(clayton_GDP_LE)
-
-gumbel_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                             X = GDP,
-                                             U1 = U1_LE,
-                                             U2 = U2_LE,
-                                             prior_list = lb.prior.def, 
-                                             moves.prob = moves.prob_par, 
-                                             starting.tree = NULL,
-                                             cont.unif = cont.unif_par,
-                                             include.split = incl.split_par,
-                                             prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                             theta_param_1 = 0, theta_param_2 = .3,
-                                             var_param_1 = 1, var_param_2 = 2,
-                                             prior_type = "N",
-                                             cop_type = "gumbel",
-                                             adapt = T)
-
-save(gumbel_GDP_LE, file = "gumbelgdp_LE.Rdata")
-rm(gumbel_GDP_LE)
-
-gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                       X = GDP,
-                                       U1 = U1_LT,
-                                       U2 = U2_LT,
-                                       prior_list = lb.prior.def, 
-                                       moves.prob = moves.prob_par, 
-                                       starting.tree = NULL,
-                                       cont.unif = cont.unif_par,
-                                       include.split = incl.split_par,
-                                       prop_mu = 0, prop_sigma = .2/n.tree,
-                                       theta_param_1 = 0, theta_param_2 = .3,
-                                       var_param_1 = 1, var_param_2 = 2,
-                                       prior_type = "N",
-                                       cop_type = "gauss",
-                                       adapt = T)
-
-save(gauss_GDP_LT, file = "gaussgdp_LT.Rdata")
-rm(gauss_GDP_LT)
-
-frank_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                       X = GDP,
-                                       U1 = U1_LT,
-                                       U2 = U2_LT,
-                                       prior_list = lb.prior.def, 
-                                       moves.prob = moves.prob_par, 
-                                       starting.tree = NULL,
-                                       cont.unif = cont.unif_par,
-                                       include.split = incl.split_par,
-                                       prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                       theta_param_1 = 0, theta_param_2 = .3,
-                                       var_param_1 = 1, var_param_2 = 2,
-                                       prior_type = "N",
-                                       cop_type = "frank",
-                                       adapt = T)
-
-save(frank_GDP_LT, file = "frankgdp_LT.Rdata")
-rm(frank_GDP_LT)
-
-t_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                   n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                   X = GDP,
-                                   U1 = U1_LT,
-                                   U2 = U2_LT,
-                                   prior_list = lb.prior.def, 
-                                   moves.prob = moves.prob_par, 
-                                   starting.tree = NULL,
-                                   cont.unif = cont.unif_par,
-                                   include.split = incl.split_par,
-                                   prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                   theta_param_1 = 0, theta_param_2 = .3,
-                                   var_param_1 = 1, var_param_2 = 2,
-                                   prior_type = "N",
-                                   cop_type = "t",
-                                   adapt = T)
-
-save(t_GDP_LT, file = "tgdp_LT.Rdata")
-rm(t_GDP_LT)
-
-clayton_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                           U1 = U1_LE,
+                                           U2 = U2_LE,
+                                           prior_list = lb.prior.def, 
+                                           moves.prob = moves.prob_par, 
+                                           starting.tree = NULL,
+                                           cont.unif = cont.unif_par,
+                                           include.split = incl.split_par,
+                                           prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                           theta_param_1 = 0, theta_param_2 = .3,
+                                           var_param_1 = 1, var_param_2 = 2,
+                                           prior_type = "N",
+                                           cop_type = "clayton",
+                                           adapt = T)
+  
+  save(clayton_GDP_LE, file = "claytongdp_LE.Rdata")
+  rm(clayton_GDP_LE)
+  
+  gumbel_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                          X = GDP,
+                                          U1 = U1_LE,
+                                          U2 = U2_LE,
+                                          prior_list = lb.prior.def, 
+                                          moves.prob = moves.prob_par, 
+                                          starting.tree = NULL,
+                                          cont.unif = cont.unif_par,
+                                          include.split = incl.split_par,
+                                          prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                          theta_param_1 = 0, theta_param_2 = .3,
+                                          var_param_1 = 1, var_param_2 = 2,
+                                          prior_type = "N",
+                                          cop_type = "gumbel",
+                                          adapt = T)
+  
+  save(gumbel_GDP_LE, file = "gumbelgdp_LE.Rdata")
+  rm(gumbel_GDP_LE)
+  
+  gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                         X = GDP,
+                                         U1 = U1_LT,
+                                         U2 = U2_LT,
+                                         prior_list = lb.prior.def, 
+                                         moves.prob = moves.prob_par, 
+                                         starting.tree = NULL,
+                                         cont.unif = cont.unif_par,
+                                         include.split = incl.split_par,
+                                         prop_mu = 0, prop_sigma = .2/n.tree,
+                                         theta_param_1 = 0, theta_param_2 = .3,
+                                         var_param_1 = 1, var_param_2 = 2,
+                                         prior_type = "N",
+                                         cop_type = "gauss",
+                                         adapt = T)
+  
+  save(gauss_GDP_LT, file = "gaussgdp_LT.Rdata")
+  rm(gauss_GDP_LT)
+  
+  frank_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                          X = GDP,
                                          U1 = U1_LT,
@@ -274,60 +235,108 @@ clayton_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.ou
                                          theta_param_1 = 0, theta_param_2 = .3,
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
-                                         cop_type = "clayton",
+                                         cop_type = "frank",
                                          adapt = T)
-
-save(clayton_GDP_LT, file = "claytongdp_LT.Rdata")
-rm(clayton_GDP_LT)
-
-gumbel_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
-                                        X = GDP,
-                                        U1 = U1_LT,
-                                        U2 = U2_LT,
-                                        prior_list = lb.prior.def, 
-                                        moves.prob = moves.prob_par, 
-                                        starting.tree = NULL,
-                                        cont.unif = cont.unif_par,
-                                        include.split = incl.split_par,
-                                        prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
-                                        theta_param_1 = 0, theta_param_2 = .3,
-                                        var_param_1 = 1, var_param_2 = 2,
-                                        prior_type = "N",
-                                        cop_type = "gumbel",
-                                        adapt = T)
-
-save(gumbel_GDP_LT, file = "gumbelgdp_LT.Rdata")
-rm(gumbel_GDP_LT)
-
+  
+  save(frank_GDP_LT, file = "frankgdp_LT.Rdata")
+  rm(frank_GDP_LT)
+  
+  t_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                     X = GDP,
+                                     U1 = U1_LT,
+                                     U2 = U2_LT,
+                                     prior_list = lb.prior.def, 
+                                     moves.prob = moves.prob_par, 
+                                     starting.tree = NULL,
+                                     cont.unif = cont.unif_par,
+                                     include.split = incl.split_par,
+                                     prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                     theta_param_1 = 0, theta_param_2 = .3,
+                                     var_param_1 = 1, var_param_2 = 2,
+                                     prior_type = "N",
+                                     cop_type = "t",
+                                     adapt = T)
+  
+  save(t_GDP_LT, file = "tgdp_LT.Rdata")
+  rm(t_GDP_LT)
+  
+  clayton_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                           X = GDP,
+                                           U1 = U1_LT,
+                                           U2 = U2_LT,
+                                           prior_list = lb.prior.def, 
+                                           moves.prob = moves.prob_par, 
+                                           starting.tree = NULL,
+                                           cont.unif = cont.unif_par,
+                                           include.split = incl.split_par,
+                                           prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                           theta_param_1 = 0, theta_param_2 = .3,
+                                           var_param_1 = 1, var_param_2 = 2,
+                                           prior_type = "N",
+                                           cop_type = "clayton",
+                                           adapt = T)
+  
+  save(clayton_GDP_LT, file = "claytongdp_LT.Rdata")
+  rm(clayton_GDP_LT)
+  
+  gumbel_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                          X = GDP,
+                                          U1 = U1_LT,
+                                          U2 = U2_LT,
+                                          prior_list = lb.prior.def, 
+                                          moves.prob = moves.prob_par, 
+                                          starting.tree = NULL,
+                                          cont.unif = cont.unif_par,
+                                          include.split = incl.split_par,
+                                          prop_mu = 0, prop_sigma = rep(.2/n.tree,n.tree),
+                                          theta_param_1 = 0, theta_param_2 = .3,
+                                          var_param_1 = 1, var_param_2 = 2,
+                                          prior_type = "N",
+                                          cop_type = "gumbel",
+                                          adapt = T)
+  
+  save(gumbel_GDP_LT, file = "gumbelgdp_LT.Rdata")
+  rm(gumbel_GDP_LT)
+  
+}
 ################################################################################
 
-if(F){
-  gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP))
+if(T){
+  
+  load("gaussgdp_LT.Rdata")
+  load("frankgdp_LT.Rdata")
+  load("claytongdp_LT.Rdata")
+  load("tgdp_LT.Rdata")
+  load("gumbelgdp_LT.Rdata")
+  
+  gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LT$trees), \(idx) BART_calculate_pred(gauss_GDP_LT$trees[[idx]], GDP))
   
   gauss_pred_val = do.call(rbind,gauss_list_pred_lb)
   
   gauss_pred_val_vec = as.vector(gauss_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  frank_list_pred_lb <- lapply(1:length(frank_GDP_LE$trees), \(idx) BART_calculate_pred(frank_GDP_LE$trees[[idx]], GDP))
+  frank_list_pred_lb <- lapply(1:length(frank_GDP_LT$trees), \(idx) BART_calculate_pred(frank_GDP_LT$trees[[idx]], GDP))
   
   frank_pred_val = do.call(rbind,frank_list_pred_lb)
   
   frank_pred_val_vec = as.vector(frank_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  t_list_pred_lb <- lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP))
+  t_list_pred_lb <- lapply(1:length(t_GDP_LT$trees), \(idx) BART_calculate_pred(t_GDP_LT$trees[[idx]], GDP))
   
   t_pred_val = do.call(rbind,t_list_pred_lb)
   
   t_pred_val_vec = as.vector(t_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LE$trees), \(idx) BART_calculate_pred(clayton_GDP_LE$trees[[idx]], GDP))
+  clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LT$trees), \(idx) BART_calculate_pred(clayton_GDP_LT$trees[[idx]], GDP))
   
   clayton_pred_val = do.call(rbind,clayton_list_pred_lb)
   
   clayton_pred_val_vec = as.vector(clayton_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LE$trees), \(idx) BART_calculate_pred(gumbel_GDP_LE$trees[[idx]], GDP))
+  gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LT$trees), \(idx) BART_calculate_pred(gumbel_GDP_LT$trees[[idx]], GDP))
   
   gumbel_pred_val = do.call(rbind,gumbel_list_pred_lb)
   
@@ -338,7 +347,7 @@ if(F){
   
   # like
   
-  gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LE, U2_LE))
+  gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LT, U2_LT))
   
   gauss_like_df <-data.frame("nn" = gauss_like_val)
   gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -357,7 +366,7 @@ if(F){
   
   gauss_pl_like
   
-  frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1_LE, U2_LE))
+  frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1_LT, U2_LT))
   
   frank_like_df <-data.frame("nn" = frank_like_val)
   frank_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -376,7 +385,7 @@ if(F){
   
   frank_pl_like
   
-  t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LE, U2_LE))
+  t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LT, U2_LT))
   
   t_like_df <-data.frame("nn" = t_like_val)
   t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -395,7 +404,7 @@ if(F){
   
   t_pl_like
   
-  clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1_LE, U2_LE))
+  clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1_LT, U2_LT))
   
   clayton_like_df <-data.frame("nn" = clayton_like_val)
   clayton_like_df$idx <- 1:(n.chain_par*n.iter_par)
@@ -417,7 +426,7 @@ if(F){
   
   clayton_pl_like
   
-  gumbel_like_val <- apply(gumbel_pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), U1_LE, U2_LE))
+  gumbel_like_val <- apply(gumbel_pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), U1_LT, U2_LT))
   
   gumbel_like_df <-data.frame("nn" = gumbel_like_val)
   gumbel_like_df$idx <- 1:(n.chain_par*n.iter_par)
@@ -491,56 +500,56 @@ if(F){
     ylab('estimated tau') +
     theme_classic()
   
-  cor(U1_LE,U2_LE, method = "kendall")
+  cor(U1_LT,U2_LT, method = "kendall")
   cor(U1_LT,U2_LT, method = "kendall")
   
   GDP_gauss_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gauss(colMeans(gauss_pred_val)))
   
-  gauss_pred_U1_LE = GDP_gauss_pred[,1]
-  gauss_pred_U2_LE = GDP_gauss_pred[,2]
+  gauss_pred_U1_LT = GDP_gauss_pred[,1]
+  gauss_pred_U2_LT = GDP_gauss_pred[,2]
   
-  plot(U1_LE,U2_LE)
-  plot(gauss_pred_U1_LE,gauss_pred_U2_LE)
+  plot(U1_LT,U2_LT)
+  plot(gauss_pred_U1_LT,gauss_pred_U2_LT)
   
   GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 5, par = link_frank(colMeans(frank_pred_val)))
   
-  frank_pred_U1_LE = GDP_frank_pred[,1]
-  frank_pred_U2_LE = GDP_frank_pred[,2]
+  frank_pred_U1_LT = GDP_frank_pred[,1]
+  frank_pred_U2_LT = GDP_frank_pred[,2]
   
-  plot(U1_LE,U2_LE)
-  plot(frank_pred_U1_LE,frank_pred_U2_LE)
+  plot(U1_LT,U2_LT)
+  plot(frank_pred_U1_LT,frank_pred_U2_LT)
   
   GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 2, par = link_t(colMeans(t_pred_val)),par2 = 3)
   
-  t_pred_U1_LE = GDP_t_pred[,1]
-  t_pred_U2_LE = GDP_t_pred[,2]
+  t_pred_U1_LT = GDP_t_pred[,1]
+  t_pred_U2_LT = GDP_t_pred[,2]
   
-  plot(U1_LE,U2_LE)
-  plot(t_pred_U1_LE,t_pred_U2_LE)
+  plot(U1_LT,U2_LT)
+  plot(t_pred_U1_LT,t_pred_U2_LT)
   
   GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 3, par = link_clayton(colMeans(clayton_pred_val)))
   
-  clayton_pred_U1_LE = GDP_clayton_pred[,1]
-  clayton_pred_U2_LE = GDP_clayton_pred[,2]
+  clayton_pred_U1_LT = GDP_clayton_pred[,1]
+  clayton_pred_U2_LT = GDP_clayton_pred[,2]
   
-  plot(U1_LE,U2_LE)
-  plot(clayton_pred_U1_LE,clayton_pred_U2_LE)
+  plot(U1_LT,U2_LT)
+  plot(clayton_pred_U1_LT,clayton_pred_U2_LT)
   
   GDP_gumbel_pred <- BiCopSim(N = nrow(GDP), family = 4, par = link_gumbel(colMeans(gumbel_pred_val)))
   
-  gumbel_pred_U1_LE = GDP_gumbel_pred[,1]
-  gumbel_pred_U2_LE = GDP_gumbel_pred[,2]
+  gumbel_pred_U1_LT = GDP_gumbel_pred[,1]
+  gumbel_pred_U2_LT = GDP_gumbel_pred[,2]
   
-  plot(U1_LE,U2_LE)
-  plot(gumbel_pred_U1_LE,gumbel_pred_U2_LE)
+  plot(U1_LT,U2_LT)
+  plot(gumbel_pred_U1_LT,gumbel_pred_U2_LT)
   
-  hist_true <- hist2d(U1_LE, U2_LE, nbins = c(10,10), show = FALSE)
+  hist_true <- hist2d(U1_LT, U2_LT, nbins = c(10,10), show = FALSE)
   
-  hist_gauss <- hist2d(gauss_pred_U1_LE, gauss_pred_U2_LE, nbins = c(10,10), show = FALSE)
-  hist_t <- hist2d(t_pred_U1_LE, t_pred_U2_LE, nbins = c(10,10), show = FALSE)
-  hist_clayton <- hist2d(clayton_pred_U1_LE, clayton_pred_U2_LE, nbins = c(10,10), show = FALSE)
-  hist_gumbel <- hist2d(gumbel_pred_U1_LE, gumbel_pred_U2_LE, nbins = c(10,10), show = FALSE)
-  hist_frank <- hist2d(frank_pred_U1_LE, frank_pred_U2_LE, nbins = c(10,10), show = FALSE)
+  hist_gauss <- hist2d(gauss_pred_U1_LT, gauss_pred_U2_LT, nbins = c(10,10), show = FALSE)
+  hist_t <- hist2d(t_pred_U1_LT, t_pred_U2_LT, nbins = c(10,10), show = FALSE)
+  hist_clayton <- hist2d(clayton_pred_U1_LT, clayton_pred_U2_LT, nbins = c(10,10), show = FALSE)
+  hist_gumbel <- hist2d(gumbel_pred_U1_LT, gumbel_pred_U2_LT, nbins = c(10,10), show = FALSE)
+  hist_frank <- hist2d(frank_pred_U1_LT, frank_pred_U2_LT, nbins = c(10,10), show = FALSE)
   
   par(mar = c(1,1,1,1), mfrow = c(2,3))
   
@@ -633,21 +642,27 @@ if(F){
   
   library(cramer)
   
-  cramer.test(cbind(U1_LE,U2_LE), cbind(U1_LE,U2_LE))
-  cramer.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE), replicates = 10000, sim = "permutation")
-  cramer.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE), replicates = 10000)
-  cramer.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE), replicates = 10000)
-  cramer.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE), replicates = 10000)
-  cramer.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE), replicates = 10000)
+  cramer.test(cbind(U1_LT,U2_LT), cbind(U1_LT,U2_LT))
+  cramer.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT), replicates = 10000, sim = "permutation")
+  cramer.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT), replicates = 10000)
+  cramer.test(cbind(U1_LT,U2_LT), cbind(frank_pred_U1_LT, frank_pred_U2_LT), replicates = 10000)
+  cramer.test(cbind(U1_LT,U2_LT), cbind(clayton_pred_U1_LT, clayton_pred_U2_LT), replicates = 10000)
+  cramer.test(cbind(U1_LT,U2_LT), cbind(gumbel_pred_U1_LT, gumbel_pred_U2_LT), replicates = 10000)
   
   library(fasano.franceschini.test)
   
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(U1_LE,U2_LE))
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE))
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE))
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE))
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE))
-  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(U1_LT,U2_LT))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(frank_pred_U1_LT, frank_pred_U2_LT))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(clayton_pred_U1_LT, clayton_pred_U2_LT))
+  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gumbel_pred_U1_LT, gumbel_pred_U2_LT))
   
+  save(gauss_pred_U1_LT, gauss_pred_U2_LT, hist_gauss, gauss_like_val, gauss_pl_like, file = "gauss_gdp_LT_post.Rdata")
+  save(frank_pred_U1_LT, frank_pred_U2_LT, hist_frank, frank_like_val, frank_pl_like, file = "frank_gdp_LT_post.Rdata")
+  save(clayton_pred_U1_LT, clayton_pred_U2_LT, hist_clayton, clayton_like_val, clayton_pl_like, file = "clayton_gdp_LT_post.Rdata")
+  save(gumbel_pred_U1_LT, gumbel_pred_U2_LT, hist_gumbel, gumbel_like_val, gumbel_pl_like, file = "gumbel_gdp_LT_post.Rdata")
+  save(t_pred_U1_LT, t_pred_U2_LT, hist_t, t_like_val, t_pl_like, file = "t_gdp_LT_post.Rdata")
   
 }
+

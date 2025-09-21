@@ -294,7 +294,7 @@ In this section, we consider two synthetic settings to showcase the efficiency o
 		Gumbel & $\theta\in [1,\infty)$ & $h(x)=\exp(x)+1$\\
 		Frank & $\theta\in \mathbb{R}\neg \{0\}$ & $h(x)=x$\\
 		\end{tabular}
-	\caption{Copula families used for analyses, along with parameter support and corresponding link function.}
+	\caption{List of copula families used for our analyses followed by the support of conditional copula parameter and the corresponding link function which we will use to map from $\mathbb{R}$ to their support.}
 	\label{tab:cop:link}
 \end{table}
 
@@ -307,24 +307,23 @@ For data generation process, we sample $x_i$'s from a uniform distribution $U(0,
 	\end{cases}
 \end{equation}
 and
-\begin{equation}
+\begin{equation}\label{eq:sin:tau}
 	\tau_2(x_i) = 0.4\sin(2\pi x_i) + 0.5.
 \end{equation}
-We use these $\tau(x_i)$'s to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Then we use these copula datasets to perform our posterior inference. For each dataset, we run 20 parallel chains comprising of 6000 MCMC iterations. We also check the performance of our RJ-MCMC algorithm with and without adaption. For adaptive version of our algorithm we use first 1000 iterations for adaption. 
+We use these $\tau(x_i)$'s to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Then we use these copula datasets to perform our posterior inference. For each dataset, we run 20 parallel chains comprising of 6000 MCMC iterations. We also check the performance of our RJ-MCMC algorithm with and without adaption. For adaptive version of our algorithm we use first 1000 iterations for adaption. For convenience, from now on, we will use C-BART for our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version of it.
 
 One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure for that we take consider the average posterior samples. Besides that. we are also interested in the predictive performance of our approach for that we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
 
 \subsection{Example with true tree structure} 
 
-We present the summary of our analysis in 
+We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are from the true number of terminal nodes which is equal to 3 and true depth which equals to 2. We present the efficiency of our approach in \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the initial tree exploration phase where the model tends have a more complex trees. We also notice that for all five families of copula, the use of adaptive proposal gives us better estimates than estimates obtained through C-BART. We can also see that with the adaptive proposal, the acceptance rate is slightly lower. This may look counter intuitive but this can be explained from the fact that with an adaptive proposal the sampler tends to reject \textsc{grow} and \textsc{prune} steps after it recovers the true tree structure. This phenomena can be better appreciated from \cref{fig:trace:nterm:ex1} and \cref{fig:trace:depth:ex1}. We can notice that tree exploration stabilises after about 2000 iterations when we are using A-C-BART, unlike the samples from C-BART. Additionally, from these two figures, we can also see that for Clayton copula and Frank copula, the traceplots of C-BART and A-C-BART are somewhat similar, which is also visible from the \cref{tab:eff:ex1} where the acceptance rate is equal upto 2 decimal places. 
 
 \begin{table}[ht]
 	\centering
 	\begin{tabular}{l|ccc|ccc}
-		\toprule
 		\multicolumn{1}{c|}{} &
-		\multicolumn{3}{c|}{without adaption} &
-		\multicolumn{3}{c}{with adaption} \\
+		\multicolumn{3}{c|}{C-BART} &
+		\multicolumn{3}{c}{A-C-BART} \\
 		\midrule
 		& $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. & $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. \\ 
 		\midrule
@@ -333,78 +332,94 @@ We present the summary of our analysis in
 		Clayton & 3.28 & 2.14 & 0.15 & 3.25 & 2.09 & 0.15 \\ 
 		Gumbel & 3.14 & 2.07 & 0.14 & 3.10 & 2.02 & 0.14 \\ 
 		Frank & 3.14 & 2.04 & 0.14 & 3.12 & 2.02 & 0.14 \\ 
-		\hline
 	\end{tabular}
+	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We split these big columns in three smaller columns where present posterior expectation of number of terminal nodes ($\mathbb{E}(n_L\mid U_1,U_2)$); posterior expectation of depth ($\mathbb{E}(D\mid U_1,U_2)$); and acceptance rate in $[0,1]$ scale.}
+	\label{tab:eff:ex1}
 \end{table}
-
-\begin{table}[ht]
-	\centering
-	\begin{tabular}{l|ccc|ccc}
-		\toprule
-		\multicolumn{1}{c|}{} &
-		\multicolumn{3}{c|}{without adaption} &
-		\multicolumn{3}{c}{with adaption} \\
-		\midrule
-		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
-		\midrule
-		Gaussian & 0.0436 & 0.1630 & 0.994 & \textbf{0.0412} & 0.1565 & 0.994 \\ 
-		Student-t & 0.0640 & 0.1909 & \textbf{0.982} & \textbf{0.0632} & 0.1897 & 0.980 \\ 
-		Clayton & \textbf{0.0490} & 0.1442 & 0.986 & 0.0500 & 0.1466 & \textbf{0.988} \\ 
-		Gumbel & 0.0436 & 0.1529 & 0.998 & \textbf{0.0424} & 0.1529 & \textbf{1.000} \\ 
-		Frank & \textbf{0.0480} & 0.1754 & 0.998 & 0.0490 & 0.1796 & 0.998 \\ 
-		\hline
-	\end{tabular}
-\end{table}
-
-% 141.5362 190.4971 193.4512 147.1030 134.3136
-
-
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
-\end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
+	\caption{Trace plots of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with our RJ-MCMC algorithm without any adaption and the right column shows analyses with adaptive RJ-MCMC. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
+	\label{fig:trace:nterm:ex1}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
+	\caption{Trace plots of death obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
+	\label{fig:trace:depth:ex1}
 \end{figure}
 
-\subsection{Example with a general function}
+We present the trace plots of our log-likelihood in \cref{fig:trace:like:ex1}. We notice that likelihood quickly moves towards the true likelihood value shown by the black dashed line and stabilizes around that region. We see a high autocorrelation but it is not very concerning as all the 20 chains remain close towards the true likelihood value without diverging. Similar effect is also reported by \citet{Linero02012025} regarding the mixing of the likelihood. One major improvement that we can see in this regard is that all the chains are in agreement and do not get stuck in low posterior regions, a phenomena that can occur with tree priors \cite{chipman98BCART}. 
+
+We also present the accuracy of our method in terms prediction in \cref{tab:pred:ex1}. For that we discard first 1000 MCMC samples to calculate root mean squared error, 95\% credible interval length and 95\% credible interval coverage. We notice no significant differences in performance of the approaches and conclude that they are in agreement.
 
 \begin{table}[ht]
 	\centering
 	\begin{tabular}{l|ccc|ccc}
-		\toprule
 		\multicolumn{1}{c|}{} &
-		\multicolumn{3}{c|}{without adaption} &
-		\multicolumn{3}{c}{with adaption} \\
+		\multicolumn{3}{c|}{C-BART} &
+		\multicolumn{3}{c}{A-C-BART} \\
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.0648 & 0.2823 & \textbf{0.982} & \textbf{0.0616} & 0.2941 & 0.972 \\ 
-		Student-t & 0.0624 & 0.3367 & \textbf{1.000} & \textbf{0.0583} & 0.3286 & 0.996 \\ 
-		Clayton & 0.0671 & 0.2524 & 0.986 & \textbf{0.0616} & 0.2565 & \textbf{0.992} \\ 
-		Gumbel & 0.0574 & 0.2449 & 0.910 & \textbf{0.0548} & 0.2571 & \textbf{0.936} \\ 
-		Frank & 0.0600 & 0.2522 & 0.886 & \textbf{0.0592} & 0.2600 & \textbf{0.914} \\ 
-		\hline
+		Gaussian & 0.044 & 0.163 & 0.994 & \textbf{0.041} & 0.156 & 0.994 \\ 
+		Student-t & 0.064 & 0.191 & \textbf{0.982} & \textbf{0.063} & 0.190 & 0.980 \\ 
+		Clayton & \textbf{0.049} & 0.144 & 0.986 & 0.050 & 0.147 & \textbf{0.988} \\ 
+		Gumbel & 0.044 & 0.153 & 0.998 & \textbf{0.042} & 0.153 & \textbf{1.000} \\ 
+		Frank & \textbf{0.048} & 0.175 & 0.998 & 0.049 & 0.180 & 0.998 \\ 
 	\end{tabular}
+	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\label{tab:pred:ex1}
 \end{table}
 
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
+	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 141 (Gaussian copula); 190 (Student-t copula); 193 (Clayton copula); 147 (Gumbel copula); and 134 (Frank copula).}
+	\label{fig:trace:like:ex1}
 \end{figure}
+
+\subsection{Example with a general function}
+We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the confounding variable. For illustration purpose we use 10 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage like discussed before. We present the results in \cref{tab:pred:ex2}. We notice that there's a significant difference between the performance of C-BART and A-C-BART, unlike our analyses with $\tau_1(x)$. We notice that RMSE wise A-C-BART dominates C-BART for all the cases. In terms of CI coverage, A-C-BART performs significantly better than C-BART for Gumbel and Frank copula. C-BART tends to perform better for Gaussian and Student-t copula but performance of A-C-BART is not notably worse. We also plot these results in \cref{fig:trace:pred:ex2} where we present true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines.
+
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{l|ccc|ccc}
+		\multicolumn{1}{c|}{} &
+		\multicolumn{3}{c|}{C-BART} &
+		\multicolumn{3}{c}{A-C-BART} \\
+		\midrule
+		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
+		\midrule
+		Gaussian & 0.065 & 0.282 & \textbf{0.982} & \textbf{0.062} & 0.294 & 0.972 \\ 
+		Student-t & 0.062 & 0.337 & \textbf{1.000} & \textbf{0.058} & 0.329 & 0.996 \\ 
+		Clayton & 0.067 & 0.252 & 0.986 & \textbf{0.062} & 0.257 & \textbf{0.992} \\ 
+		Gumbel & 0.057 & 0.245 & 0.910 & \textbf{0.055} & 0.257 & \textbf{0.936} \\ 
+		Frank & 0.060 & 0.252 & 0.886 & \textbf{0.059} & 0.260 & \textbf{0.914} \\ 
+	\end{tabular}
+	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\label{tab:pred:ex2}
+\end{table}
 
 % 293.6331 299.5395 335.3049 291.9339 241.1606
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
+	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 10 trees. We run 20 chains in parallel with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}. To obtain the posterior estimates we discard first 1000 MCMC sample.}
+	\label{fig:trace:pred:ex2}
+\end{figure}
+
+Similar to our analyses with first case, we notice that both C-BART and A-C-BART is able to move towards the true likelihood which we present in \cref{fig:trace:like:ex2}. Suggesting the efficiency of our method in exploring the parameter space.
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 294 (Gaussian copula); 300 (Student-t copula); 335 (Clayton copula); 292 (Gumbel copula); and 241 (Frank copula).}
+	\label{fig:trace:like:ex2}
 \end{figure}
 
 
