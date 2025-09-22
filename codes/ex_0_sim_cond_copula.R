@@ -15,22 +15,19 @@ X_obs.norm <- as.matrix(X_obs.norm)
 rownames(X_obs.norm) <- 1:nrow(X_obs)
 
 # tau with tree structure
-tau_true_tree <- rep(0,nrow(X_obs))
-tau_true_tree[X_obs<0.33] <- 0.2
-tau_true_tree[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-tau_true_tree[(X_obs>=0.66)] <- 0.5
+tau_true_1 <- rep(0,nrow(X_obs))
+tau_true_1[X_obs<0.33] <- 0.2
+tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
+tau_true_1[(X_obs>=0.66)] <- 0.5
 
-tau_true_1 <- tau_true_tree + rnorm(length(tau_true_tree), sd = 0.05)
 tau_true_1 <- matrix(tau_true_1, ncol = 1)
 
 # periodoic
-tau_true_2 <- 0.2*sin(2*pi*X_obs) + 0.5 + rnorm(length(tau_true_1), sd = 0.05)
+tau_true_2 <- 0.2*sin(2*pi*X_obs) + 0.5
 
 plot(X_obs, tau_true_1, xlab = "Observations", ylab = "tau")
-points(X_obs, tau_true_tree, col = 2)
 
 plot(X_obs, tau_true_2, xlab = "Observations", ylab = "tau")
-points(X_obs, 0.2*sin(2*pi*X_obs) + 0.5, col = 2)
 
 # gauss # sin(tau*pi/2)
 
@@ -72,16 +69,15 @@ X_obs_pred.norm <- as.matrix(X_obs_pred.norm)
 rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
 
 # tau with tree structure
-tau_true_tree_pred <- rep(0,nrow(X_obs))
-tau_true_tree_pred[X_obs_pred<0.33] <- 0.2
-tau_true_tree_pred[(X_obs_pred>=0.33)&(X_obs_pred<0.66)] <- 0.7
-tau_true_tree_pred[(X_obs_pred>=0.66)] <- 0.5
+tau_true_pred_1 <- rep(0,nrow(X_obs))
+tau_true_pred_1[X_obs_pred<0.33] <- 0.2
+tau_true_pred_1[(X_obs_pred>=0.33)&(X_obs_pred<0.66)] <- 0.7
+tau_true_pred_1[(X_obs_pred>=0.66)] <- 0.5
 
-tau_true_pred_1 <- tau_true_tree_pred + rnorm(length(tau_true_tree_pred), sd = 0.05)
 tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
 
 # periodic
-tau_true_pred_2 <- 0.2*sin(2*pi*X_obs_pred) + 0.5 + rnorm(length(tau_true_1), sd = 0.05)
+tau_true_pred_2 <- 0.2*sin(2*pi*X_obs_pred) + 0.5
 
 # mcmc params
 
