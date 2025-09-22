@@ -1,7 +1,6 @@
-library(parallel)
-library(mc2d)
-library(pracma)
 library(MCMCpack)
+library(pracma)
+library(VineCopula)
 
 multichain_MCMC_copula <- function(n.iter = 6000, 
                                    n.burn = 1000, 
@@ -18,27 +17,28 @@ multichain_MCMC_copula <- function(n.iter = 6000,
                                    prop_mu, prop_sigma,
                                    theta_param_1, theta_param_2,
                                    var_param_1, var_param_2,
-                                   prior_type, cop_type){
+                                   prior_type, cop_type, adapt = T){
   
   st_time = Sys.time()
   
-  chain.list <- mclapply(1:n.chain,
-                         \(x) MCMC_copula(n.iter = n.iter, 
-                                          n.burn = n.burn,
-                                          n.tree = n.tree,
-                                          X = X,
-                                          U1 = U1,
-                                          U2 = U2,
-                                          prior_list = prior_list,
-                                          moves.prob = moves.prob,
-                                          starting.tree = starting.tree,
-                                          cont.unif = cont.unif,
-                                          include.split = include.split,
-                                          prop_mu = prop_mu, prop_sigma = prop_sigma,
-                                          theta_param_1 = theta_param_1, theta_param_2 = theta_param_2,
-                                          var_param_1 = var_param_1, var_param_2 = var_param_2,
-                                          prior_type = prior_type, cop_type = cop_type),
-                         mc.cores = n.cores)
+  chain.list <- mclapply_cbart(1:n.chain,
+                               \(x) MCMC_copula(n.iter = n.iter, 
+                                                n.burn = n.burn,
+                                                n.tree = n.tree,
+                                                X = X,
+                                                U1 = U1,
+                                                U2 = U2,
+                                                prior_list = prior_list,
+                                                moves.prob = moves.prob,
+                                                starting.tree = starting.tree,
+                                                cont.unif = cont.unif,
+                                                include.split = include.split,
+                                                prop_mu = prop_mu, prop_sigma = prop_sigma,
+                                                theta_param_1 = theta_param_1, theta_param_2 = theta_param_2,
+                                                var_param_1 = var_param_1, var_param_2 = var_param_2,
+                                                prior_type = prior_type, cop_type = cop_type,
+                                                adapt = adapt),
+                               mc.cores = n.cores)
   tree_list <- lapply(chain.list, function(x) x$trees)
   tree_list_comb <- Reduce(c, tree_list)
   
@@ -65,7 +65,7 @@ MCMC_copula <- function(n.iter,
                         prop_mu, prop_sigma, 
                         theta_param_1, theta_param_2, 
                         var_param_1, var_param_2, 
-                        prior_type, cop_type){
+                        prior_type, cop_type, adapt = T){
   
   ##############################################################################
   
@@ -119,7 +119,7 @@ MCMC_copula <- function(n.iter,
     
     for(idx.tree in idx.tree.vec){
       
-      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree])
+      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree, drop = FALSE])
       
       # cat('Tree: ', idx.tree, '\n')
       old_tree <- last.tree.list[[idx.tree]]
@@ -140,7 +140,7 @@ MCMC_copula <- function(n.iter,
                                           log_prior_fun = log_prior_fun,
                                           theta_param_1 = theta_param_1, theta_param_2 =  sqrt(sig_2[idx.tree]),
                                           var_param_1 = var_param_1, var_param_2 = var_param_2,
-                                          theta_pred_list = NULL,
+                                          theta_var_list = NULL,
                                           idx.tree = idx.tree)
       
       new_tree <- new_tree_single$tree
@@ -158,14 +158,20 @@ MCMC_copula <- function(n.iter,
     
   }
   
-  assign("sample.cond.mu.copula", sample.cond.mu.copula_after_burn)
+  var_list = lapply(idx.tree.vec, function(x)var_adapt(theta_pred_list[,x,1:n.burn]))
   
   for(idx.iter in (n.burn+1):n.iter){
     cat('Iteration: ', idx.iter, '\n')
     
     for(idx.tree in idx.tree.vec){
       
-      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree])
+      if(adapt){
+        theta_var_list_in <- var_list[[idx.tree]]$cov
+      }else {
+        theta_var_list_in <- NULL
+      }
+      
+      res_theta <- rowSums(res_theta_list[,idx.tree.vec != idx.tree, drop = FALSE])
       
       # cat('Tree: ', idx.tree, '\n')
       old_tree <- last.tree.list[[idx.tree]]
@@ -186,7 +192,7 @@ MCMC_copula <- function(n.iter,
                                           log_prior_fun = log_prior_fun,
                                           theta_param_1 = theta_param_1, theta_param_2 =  sqrt(sig_2[idx.tree]),
                                           var_param_1 = var_param_1, var_param_2 = var_param_2,
-                                          theta_pred_list = theta_pred_list[, , 1:(idx.iter-1), drop = FALSE],
+                                          theta_var_list = theta_var_list_in,
                                           idx.tree = idx.tree)
       
       new_tree <- new_tree_single$tree
@@ -201,6 +207,8 @@ MCMC_copula <- function(n.iter,
     trees.for.iter[[idx.iter]] <- last.tree.list
     df_res.for.iter[[idx.iter]] <- df_res.list
     theta_pred_list[, , idx.iter] <- res_theta_list
+    
+    var_list <- lapply(idx.tree.vec, function(x)iter_var(var_list[[x]]$cov, var_list[[x]]$mean, theta_pred_list[, x, idx.iter],idx.iter))
   }
   
   time_diff <- Sys.time() - st_time
@@ -225,7 +233,7 @@ BART_single_step <- function(X,
                              log_prior_fun,
                              theta_param_1, theta_param_2,
                              var_param_1, var_param_2,
-                             theta_pred_list,
+                             theta_var_list,
                              idx.tree){
   if(is.null(starting.tree)){
     rt_old <- generate_random_binary_tree_depth_free(1)
@@ -273,7 +281,7 @@ BART_single_step <- function(X,
                                       log_like_fun = log_like_fun, 
                                       log_prior_fun = log_prior_fun,
                                       theta_param_1 = theta_param_1, theta_param_2 = theta_param_2,
-                                      theta_pred_list= theta_pred_list,
+                                      theta_var_list= NULL,
                                       idx.tree = idx.tree)
     #cat('is tree char?' , is.character(new.tree.list), '\n')
     if(is.list(new.tree.list)){
@@ -294,6 +302,7 @@ BART_single_step <- function(X,
       }
   }
   
+  # new.tree <- new.tree.list$tree
   new.tree_mu.old <- new.tree.list$tree
   term_node_old <- get_terminal_nodes_idx(new.tree_mu.old)
   term_val_old <- sapply(term_node_old, function(i)unique(get_value_tree(new.tree_mu.old, get_obs_at_node(i, X, new.tree_mu.old,1,X))))
@@ -303,7 +312,7 @@ BART_single_step <- function(X,
                                                          X = X, 
                                                          prop_mu = prop_mu,
                                                          prop_sigma = prop_sigma,
-                                                         theta_pred_list = theta_pred_list,
+                                                         theta_var_list = theta_var_list,
                                                          idx.tree = idx.tree)
   
   term_node_new <- get_terminal_nodes_idx(new.tree_mu.new)
@@ -312,9 +321,16 @@ BART_single_step <- function(X,
   term_val_prior_old <- (sum(sapply(term_val_old, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
   term_val_prior_new <- (sum(sapply(term_val_new, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
   
-  HR <- exp(cart_log_lik_copula(new.tree_mu.new, U1, U2, res_theta, X, log_like_fun = log_like_fun) - cart_log_lik_copula(new.tree_mu.old, U1, U2, res_theta, X, log_like_fun = log_like_fun) + term_val_prior_new - term_val_prior_old)
+  ll_new <- cart_log_lik_copula(new.tree_mu.new, U1, U2, res_theta, X, log_like_fun = log_like_fun)
+  ll_old <- cart_log_lik_copula(new.tree_mu.old, U1, U2, res_theta, X, log_like_fun = log_like_fun)
   
-  if(runif(1)<HR){
+  logHR <- (ll_new - ll_old) + (term_val_prior_new - term_val_prior_old)
+  
+  if (!is.finite(logHR)) {
+    logHR <- -Inf
+  }
+  
+  if(runif(1) < exp(logHR)){
     new.tree <- new.tree_mu.new
   }else{
     new.tree <- new.tree_mu.old
@@ -353,7 +369,7 @@ tree_step_copula <- function(move.type,
                              log_like_fun, 
                              log_prior_fun,
                              theta_param_1, theta_param_2,
-                             theta_pred_list, idx.tree){
+                             theta_var_list, idx.tree){
   empty.flag = TRUE
   empty.count = 0
   if (move.type %in% c("swap", "change", "grow", "prune")) {
@@ -374,7 +390,7 @@ tree_step_copula <- function(move.type,
                             obs.per.term = obs.per.term, 
                             cont.unif = cont.unif,
                             prop_sigma = prop_sigma,
-                            theta_pred_list = theta_pred_list,
+                            theta_var_list = theta_var_list,
                             idx.tree = idx.tree
                           ),
                           
@@ -383,7 +399,7 @@ tree_step_copula <- function(move.type,
                             X = X, 
                             prop_mu = prop_mu, 
                             prop_sigma = prop_sigma,
-                            theta_pred_list = theta_pred_list,
+                            theta_var_list = theta_var_list,
                             idx.tree = idx.tree
                           )
       )
@@ -423,7 +439,7 @@ tree_step_copula <- function(move.type,
                                           log_like_fun = log_like_fun, 
                                           log_prior_fun = log_prior_fun,
                                           theta_param_1 = theta_param_1, theta_param_2 = theta_param_2,
-                                          theta_pred_list = theta_pred_list,
+                                          theta_var_list = theta_var_list,
                                           idx.tree = idx.tree)
   
   acceptance <- runif(1) <= acc.prob$alpha
@@ -459,7 +475,7 @@ assign_term_node_values_copula <- function(tree_top){
 assign_term_node_values_cond_copula <- function(tree_top, 
                                                 X, 
                                                 prop_mu, prop_sigma, 
-                                                theta_pred_list, 
+                                                theta_var_list, 
                                                 idx.tree){
   
   term.node.idx <- get_terminal_nodes_idx(tree_top)
@@ -471,7 +487,7 @@ assign_term_node_values_cond_copula <- function(tree_top,
                                                 X = X, 
                                                 prop_mu = mean(get_value_tree(tree_top, obs.at.node)),
                                                 prop_sigma = prop_sigma,
-                                                theta_pred_list = theta_pred_list,
+                                                theta_var_list = theta_var_list,
                                                 obs.id = as.numeric(rownames(obs.at.node)),
                                                 idx.tree = idx.tree)
   }
@@ -482,7 +498,7 @@ set_term_node_value_cond_copula <- function(node.idx,
                                             tree_top, 
                                             X, 
                                             prop_mu, prop_sigma, 
-                                            theta_pred_list, 
+                                            theta_var_list, 
                                             obs.id = NULL, 
                                             idx.tree){
   
@@ -494,7 +510,7 @@ set_term_node_value_cond_copula <- function(node.idx,
                                              X = X, 
                                              prop_mu = prop_mu, 
                                              prop_sigma = prop_sigma,
-                                             theta_pred_list = theta_pred_list,
+                                             theta_var_list = theta_var_list,
                                              obs.id = obs.id, 
                                              idx.tree = idx.tree)$val
       return(tree_top)
@@ -507,7 +523,7 @@ set_term_node_value_cond_copula <- function(node.idx,
                                                  X, 
                                                  prop_mu = prop_mu,
                                                  prop_sigma = prop_sigma,
-                                                 theta_pred_list = theta_pred_list,
+                                                 theta_var_list = theta_var_list,
                                                  obs.id = obs.id, 
                                                  idx.tree = idx.tree)
     
@@ -516,7 +532,7 @@ set_term_node_value_cond_copula <- function(node.idx,
                                                   X, 
                                                   prop_mu = prop_mu, 
                                                   prop_sigma = prop_sigma,
-                                                  theta_pred_list = theta_pred_list,
+                                                  theta_var_list = theta_var_list,
                                                   obs.id = obs.id, 
                                                   idx.tree = idx.tree)
     
@@ -528,8 +544,8 @@ set_term_node_value_cond_copula <- function(node.idx,
 sample.cond.mu.copula <- function(tree_top = NULL, 
                                   node.idx = NULL, 
                                   X = NULL, 
-                                  prop_mu, prop_sigma, 
-                                  theta_pred_list, 
+                                  prop_mu, prop_sigma,
+                                  theta_var_list,  
                                   obs.id = NULL, 
                                   idx.tree){
   
@@ -540,38 +556,16 @@ sample.cond.mu.copula <- function(tree_top = NULL,
   } 
   
   ##############################################################################
-  
-  proposal = rnorm(1, prop_mu, prop_sigma) 
-  
-  return(list("val"= proposal, "mu" = prop_mu, "sigma" = prop_sigma))
-}
-
-sample.cond.mu.copula_after_burn <- function(tree_top = NULL, 
-                                             node.idx = NULL, 
-                                             X = NULL, 
-                                             prop_mu, prop_sigma,
-                                             theta_pred_list,  
-                                             obs.id = NULL, 
-                                             idx.tree){
-  
-  if(is.null(obs.id)){
-    obs.at.node <- get_obs_at_node(node.idx = node.idx, X = X, tree_top = tree_top, X.orig = X)
-    obs.id <- as.numeric(rownames(obs.at.node))
-    prop_mu = mean(get_value_tree(tree_top, obs.at.node))
-  } 
-  
-  ##############################################################################
-  
-  prop_cov <- var_adapt(theta_pred_list[obs.id, ,])$cov
-  
-  n.tree <- ncol(prop_cov)
-  
-  prop_cov <- (2.4)^2/n.tree * (prop_cov + diag(0.005, nrow = n.tree, ncol = n.tree))
-  
-  prop_sigma <- ifelse(n.tree == 1, sqrt(prop_cov), sqrt(prop_cov[idx.tree, idx.tree] - 
-                                                           prop_cov[idx.tree, -idx.tree] %*% 
-                                                           chol2inv(chol(prop_cov[-idx.tree, -idx.tree])) %*% 
-                                                           prop_cov[-idx.tree, idx.tree]))
+  if(!is.null(theta_var_list)){
+    prop_cov_us <- theta_var_list[obs.id,obs.id, drop = F]
+    
+    n.vars <- ncol(prop_cov_us)
+    
+    prop_cov <- 2.4^2 / n.vars * (prop_cov_us + diag(0.005, nrow = n.vars))
+    
+    prop_sigma <- sqrt(sum(prop_cov)) / n.vars
+    
+  }
   
   proposal = rnorm(1, prop_mu, prop_sigma)
   
@@ -583,7 +577,7 @@ grow_move_copula <- function(tree_top,
                              cont.unif = TRUE, 
                              obs.per.term = 1, 
                              prop_sigma,
-                             theta_pred_list, 
+                             theta_var_list, 
                              idx.tree){ 
   
   term.node.idx <- get_terminal_nodes_idx(tree_top)
@@ -616,13 +610,13 @@ grow_move_copula <- function(tree_top,
   
   term.node.value.left <- sample.cond.mu.copula(prop_mu = mean(get_value_tree(tree_top, obs.at.node[idx.left, new.cond.list$cond$x.idx, drop = FALSE])),
                                                 prop_sigma = prop_sigma,
-                                                theta_pred_list = theta_pred_list, 
+                                                theta_var_list = theta_var_list, 
                                                 obs.id = idx.left, 
                                                 idx.tree = idx.tree)
   
   term.node.value.right <- sample.cond.mu.copula(prop_mu = mean(get_value_tree(tree_top, obs.at.node[idx.right, new.cond.list$cond$x.idx, drop = FALSE])),
                                                  prop_sigma = prop_sigma,
-                                                 theta_pred_list = theta_pred_list, 
+                                                 theta_var_list = theta_var_list, 
                                                  obs.id = idx.right, 
                                                  idx.tree = idx.tree)
   
@@ -644,7 +638,7 @@ grow_move_copula <- function(tree_top,
 prune_move_copula <- function(tree_top, 
                               X, 
                               prop_mu, prop_sigma,
-                              theta_pred_list, 
+                              theta_var_list, 
                               idx.tree){ 
   
   prune.node.idx <- get_prune_idx(tree_top)
@@ -660,7 +654,7 @@ prune_move_copula <- function(tree_top,
                                        X = X, 
                                        prop_mu = prop_mu, 
                                        prop_sigma = prop_sigma,
-                                       theta_pred_list = theta_pred_list, 
+                                       theta_var_list = theta_var_list, 
                                        obs.id = NULL, 
                                        idx.tree = idx.tree)
   
@@ -723,7 +717,7 @@ acceptance.prob.list_copula <- function(move_list,
                                         log_like_fun, 
                                         log_prior_fun,
                                         theta_param_1, theta_param_2,
-                                        theta_pred_list, 
+                                        theta_var_list, 
                                         idx.tree){ 
   
   if(identical(move_list$tree, old.tree)){
@@ -775,7 +769,7 @@ acceptance.prob.list_copula <- function(move_list,
                                           node.idx = move_list$node.idx,
                                           X = X, 
                                           prop_mu = prop_mu, 
-                                          theta_pred_list = theta_pred_list, 
+                                          theta_var_list = theta_var_list, 
                                           prop_sigma = prop_sigma,
                                           obs.id = NULL, 
                                           idx.tree = idx.tree)
@@ -820,13 +814,13 @@ acceptance.prob.list_copula <- function(move_list,
     
     term_val_old_left <- sample.cond.mu.copula(prop_mu = mean(get_value_tree(old.tree, obs.at.node[idx.left, new.cond.list$x.idx, drop = FALSE])),
                                                prop_sigma = prop_sigma,
-                                               theta_pred_list = theta_pred_list,
+                                               theta_var_list = theta_var_list,
                                                obs.id = idx.left, 
                                                idx.tree = idx.tree)
     
     term_val_old_right <- sample.cond.mu.copula(prop_mu = mean(get_value_tree(old.tree, obs.at.node[idx.right, new.cond.list$x.idx, drop = FALSE])),
                                                 prop_sigma = prop_sigma,
-                                                theta_pred_list = theta_pred_list,
+                                                theta_var_list = theta_var_list,
                                                 obs.id = idx.right, 
                                                 idx.tree = idx.tree)
     
@@ -860,7 +854,9 @@ cart_log_lik_copula <- function(tree_top, U1, U2, res_theta, X, log_like_fun = l
   
   tree.at.obs <- get_value_tree(tree_top, X)
   
-  log.prob.obs <- log_like_fun(tree.at.obs + res_theta, U1, U2)
+  rho <- tree.at.obs + res_theta
+  
+  log.prob.obs <- log_like_fun(rho, U1, U2)
   
   return(log.prob.obs)
 }
@@ -947,6 +943,54 @@ param_gumbel <- function(tau) return(1/(1-tau))
 param_clayton <- function(tau) return((2*tau)/(1-tau))
 param_frank <- function(tau) return(BiCopTau2Par(5,tau))
 
+link_gauss <- function(rho) {
+  return((2*sigmoid(rho)-1))
+}
+
+link_t <- function(rho) {
+  return((2*sigmoid(rho)-1))
+}
+
+link_clayton <- function(x) {
+  return(exp(x) + 0.0001)
+}
+
+link_gumbel <- function(x) {
+  return(exp(x) + 1.0001)
+}
+
+link_frank <- function(x) {
+  return(x)
+}
+
+var_adapt <- function(theta_var_list) {
+  
+  pred_mat <- t(theta_var_list)
+  
+  return(list("cov" = var(pred_mat), "mean" = colMeans(pred_mat)))
+}
+
+iter_var <- function(cov_mat, mean_vec_prev, theta_pred_iter, idx.iter) {
+  
+  last_row <- theta_pred_iter
+  
+  col_means <- mean_vec_prev + (last_row - mean_vec_prev) / idx.iter
+  
+  tcross_prev_mean <- tcrossprod(mean_vec_prev)
+  tcross_col_means <- tcrossprod(col_means)
+  tcross_last_row <- tcrossprod(last_row)
+  
+  coef_old <- (idx.iter - 2) / (idx.iter - 1)
+  coef_update <- 1 / ((idx.iter - 1))
+  
+  var_at_burn_new <- coef_old * cov_mat +
+    coef_update * ((idx.iter - 1) * tcross_prev_mean - 
+                     idx.iter * tcross_col_means + 
+                     tcross_last_row)
+  
+  return(list("cov" = var_at_burn_new, "mean" = col_means))
+}
+
 conv_diag <- function(post_data, n.burn, n.thin){
   
   post_mat <- (post_data)$nn
@@ -971,8 +1015,7 @@ conv_diag <- function(post_data, n.burn, n.thin){
 }
 
 nterm_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(idx = idx,
-                                                                 nn = vapply(bart_tree_list$trees[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(nn = vapply(bart_tree_list$trees[[idx]], 
                                                                              \(x) get_num_terminal_nodes(x),
                                                                              0),
                                                                  trees = factor( 1:length(bart_tree_list$trees[[idx]]))))
@@ -980,8 +1023,7 @@ nterm_BART <- function(bart_tree_list){
 }
 
 depth_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(idx = idx,
-                                                                 nn = vapply(bart_tree_list$trees[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$trees), \(idx) data.frame(nn = vapply(bart_tree_list$trees[[idx]], 
                                                                              \(x) get_depth(x),
                                                                              0),
                                                                  trees = factor( 1:length(bart_tree_list$trees[[idx]]))))
@@ -989,8 +1031,7 @@ depth_BART <- function(bart_tree_list){
 }
 
 acc_BART <- function(bart_tree_list){
-  ll <- lapply(1:length(bart_tree_list$df_res), \(idx) data.frame(idx = idx,
-                                                                  nn = unlist(lapply(bart_tree_list$df_res[[idx]], 
+  ll <- lapply(1:length(bart_tree_list$df_res), \(idx) data.frame(nn = unlist(lapply(bart_tree_list$df_res[[idx]], 
                                                                                      \(x)as.factor(x$acceptance))),
                                                                   trees = factor( 1:length(bart_tree_list$df_res[[idx]]))))
   Reduce(rbind, ll)
@@ -1001,50 +1042,3 @@ BART_calculate_pred <- function(tree_list, X){
   Reduce('+', gx)
 }
 
-link_gauss <- function(rho) {
-  return((2*sigmoid(rho)-1))
-}
-
-link_t <- function(rho) {
-  return((2*sigmoid(rho)-1))
-}
-
-link_clayton <- function(x) {
-  return(exp(x) + 0.0001)
-}
-
-link_gumbel <- function(x) {
-  return(exp(x) + 1.0001)
-}
-
-link_frank <- function(x) {
-  return(x)
-}
-
-var_adapt <- function(theta_pred_list) {
-  
-  pred_mat <- apply(theta_pred_list, c(3, 2), mean)
-  
-  return(list("cov" = cov(pred_mat), "mean" = colMeans(pred_mat)))
-}
-
-iter_var <- function(cov_mat, mean_vec_prev, theta_pred_iter, idx.iter) {
-  
-  last_row <- colMeans(theta_pred_iter)
-  
-  col_means <- mean_vec_prev + (last_row - mean_vec_prev) / idx.iter
-  
-  tcross_prev_mean <- tcrossprod(mean_vec_prev)
-  tcross_col_means <- tcrossprod(col_means)
-  tcross_last_row <- tcrossprod(last_row)
-  
-  coef_old <- (idx.iter - 2) / (idx.iter - 1)
-  coef_update <- 1 / (idx.iter - 1)
-  
-  var_at_burn_new <- coef_old * cov_mat +
-    coef_update * ((idx.iter - 1) * tcross_prev_mean - 
-                     idx.iter * tcross_col_means + 
-                     tcross_last_row)
-  
-  return(list("cov" = var_at_burn_new, "mean" = col_means))
-}
