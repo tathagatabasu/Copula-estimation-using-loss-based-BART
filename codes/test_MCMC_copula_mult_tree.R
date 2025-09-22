@@ -22,7 +22,7 @@ multichain_MCMC_copula <- function(n.iter = 6000,
   
   st_time = Sys.time()
   
-  chain.list <- mclapply(1:n.chain,
+  chain.list <- mclapply_cbart(1:n.chain,
                          \(x) MCMC_copula(n.iter = n.iter, 
                                           n.burn = n.burn,
                                           n.tree = n.tree,

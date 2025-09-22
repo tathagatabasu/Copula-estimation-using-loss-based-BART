@@ -91,10 +91,7 @@ n.tree <- 10
 # source files
 ################################################################################
 
-if(.Platform$OS.type == "windows"){
-  source('mclapply.R')
-}
-
+source('mclapply.R')
 # source('MCMC_BART_copula.R')
 source('import_functions.R')
 source('test_MCMC_copula_mult_tree.R')
@@ -306,50 +303,21 @@ if(F){
 }
 ################################################################################
 
-if(F){
+if(T){
   
-  load("gauss_gdp_LT.Rdata")
-  load("frank_gdp_LT.Rdata")
-  load("clayton_gdp_LT.Rdata")
-  load("t_gdp_LT.Rdata")
-  load("gumbel_gdp_LT.Rdata")
+  load("gauss_gdp_LE.Rdata")
+  load("frank_gdp_LE.Rdata")
+  # load("clayton_gdp_LE.Rdata")
+  load("t_gdp_LE.Rdata")
+  # load("gumbel_gdp_LE.Rdata")
   
-  gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LT$trees), \(idx) BART_calculate_pred(gauss_GDP_LT$trees[[idx]], GDP))
+  gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP))
   
   gauss_pred_val = do.call(rbind,gauss_list_pred_lb)
   
   gauss_pred_val_vec = as.vector(gauss_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
   
-  frank_list_pred_lb <- lapply(1:length(frank_GDP_LT$trees), \(idx) BART_calculate_pred(frank_GDP_LT$trees[[idx]], GDP))
-  
-  frank_pred_val = do.call(rbind,frank_list_pred_lb)
-  
-  frank_pred_val_vec = as.vector(frank_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  t_list_pred_lb <- lapply(1:length(t_GDP_LT$trees), \(idx) BART_calculate_pred(t_GDP_LT$trees[[idx]], GDP))
-  
-  t_pred_val = do.call(rbind,t_list_pred_lb)
-  
-  t_pred_val_vec = as.vector(t_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LT$trees), \(idx) BART_calculate_pred(clayton_GDP_LT$trees[[idx]], GDP))
-  
-  clayton_pred_val = do.call(rbind,clayton_list_pred_lb)
-  
-  clayton_pred_val_vec = as.vector(clayton_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LT$trees), \(idx) BART_calculate_pred(gumbel_GDP_LT$trees[[idx]], GDP))
-  
-  gumbel_pred_val = do.call(rbind,gumbel_list_pred_lb)
-  
-  gumbel_pred_val_vec = as.vector(gumbel_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  # obs
-  pred_obs = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par)))
-  
-  # like
-  
-  gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LT, U2_LT))
+  gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LE, U2_LE))
   
   gauss_like_df <-data.frame("nn" = gauss_like_val)
   gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -367,7 +335,25 @@ if(F){
   
   gauss_pl_like
   
-  frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1_LT, U2_LT))
+  GDP_gauss_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gauss(colMeans(gauss_pred_val)))
+  
+  gauss_pred_U1_LE = GDP_gauss_pred[,1]
+  gauss_pred_U2_LE = GDP_gauss_pred[,2]
+  
+  hist_gauss <- hist2d(gauss_pred_U1_LE, gauss_pred_U2_LE, nbins = c(10,10), show = FALSE)
+  
+  save(gauss_pred_U1_LE, gauss_pred_U2_LE, hist_gauss, gauss_like_val, gauss_pl_like, gauss_like_df, file = "gauss_gdp_LE_post.Rdata")
+  rm(gauss_GDP_LE)
+  gc()
+  
+  
+  frank_list_pred_lb <- lapply(1:length(frank_GDP_LE$trees), \(idx) BART_calculate_pred(frank_GDP_LE$trees[[idx]], GDP))
+  
+  frank_pred_val = do.call(rbind,frank_list_pred_lb)
+  
+  frank_pred_val_vec = as.vector(frank_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+  
+  frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1_LE, U2_LE))
   
   frank_like_df <-data.frame("nn" = frank_like_val)
   frank_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -386,7 +372,24 @@ if(F){
   
   frank_pl_like
   
-  t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LT, U2_LT))
+  GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 5, par = link_frank(colMeans(frank_pred_val)))
+  
+  frank_pred_U1_LE = GDP_frank_pred[,1]
+  frank_pred_U2_LE = GDP_frank_pred[,2]
+  
+  hist_frank <- hist2d(frank_pred_U1_LE, frank_pred_U2_LE, nbins = c(10,10), show = FALSE)
+  
+  save(frank_pred_U1_LE, frank_pred_U2_LE, hist_frank, frank_like_val, frank_pl_like, frank_like_df, file = "frank_gdp_LE_post.Rdata")
+  rm(frank_GDP_LE)
+  gc()
+  
+  t_list_pred_lb <- lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP))
+  
+  t_pred_val = do.call(rbind,t_list_pred_lb)
+  
+  t_pred_val_vec = as.vector(t_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+  
+  t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LE, U2_LE))
   
   t_like_df <-data.frame("nn" = t_like_val)
   t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
@@ -405,63 +408,98 @@ if(F){
   
   t_pl_like
   
-  clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1_LT, U2_LT))
+  GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 2, par = link_t(colMeans(t_pred_val)),par2 = 3)
   
-  clayton_like_df <-data.frame("nn" = clayton_like_val)
-  clayton_like_df$idx <- 1:(n.chain_par*n.iter_par)
+  t_pred_U1_LE = GDP_t_pred[,1]
+  t_pred_U2_LE = GDP_t_pred[,2]
   
-  clayton_like_df <-data.frame("nn" = clayton_like_val)
-  clayton_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  clayton_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  hist_t <- hist2d(t_pred_U1_LE, t_pred_U2_LE, nbins = c(10,10), show = FALSE)
   
-  clayton_pl_like <- clayton_like_df %>%
-    # filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
+  save(t_pred_U1_LE, t_pred_U2_LE, hist_t, t_like_val, t_pl_like, t_like_df, file = "t_gdp_LE_post.Rdata")
+  rm(t_GDP_LE)
+  gc()
   
-  clayton_pl_like
+  # clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LE$trees), \(idx) BART_calculate_pred(clayton_GDP_LE$trees[[idx]], GDP))
+  # 
+  # clayton_pred_val = do.call(rbind,clayton_list_pred_lb)
+  # 
+  # clayton_pred_val_vec = as.vector(clayton_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+  # 
+  # clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1_LE, U2_LE))
+  # 
+  # clayton_like_df <-data.frame("nn" = clayton_like_val)
+  # clayton_like_df$idx <- 1:(n.chain_par*n.iter_par)
+  # 
+  # clayton_like_df <-data.frame("nn" = clayton_like_val)
+  # clayton_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+  # clayton_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # clayton_pl_like <- clayton_like_df %>%
+  #   # filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "Log-likelihood"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # clayton_pl_like
+  # 
+  # GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 3, par = link_clayton(colMeans(clayton_pred_val)))
+  # 
+  # clayton_pred_U1_LE = GDP_clayton_pred[,1]
+  # clayton_pred_U2_LE = GDP_clayton_pred[,2]
+  # 
+  #
+  # gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LE$trees), \(idx) BART_calculate_pred(gumbel_GDP_LE$trees[[idx]], GDP))
+  # 
+  # gumbel_pred_val = do.call(rbind,gumbel_list_pred_lb)
+  # 
+  # gumbel_pred_val_vec = as.vector(gumbel_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
+  # 
+  # gumbel_like_val <- apply(gumbel_pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), U1_LE, U2_LE))
+  # 
+  # gumbel_like_df <-data.frame("nn" = gumbel_like_val)
+  # gumbel_like_df$idx <- 1:(n.chain_par*n.iter_par)
+  # 
+  # gumbel_like_df <-data.frame("nn" = gumbel_like_val)
+  # gumbel_like_df$idx <- rep(1:n.iter_par*n.chain_par)
+  # gumbel_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  # 
+  # gumbel_pl_like <- gumbel_like_df %>%
+  #   filter(idx > n.born.out.par) %>%
+  #   ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  #   geom_line() +
+  #   labs(
+  #     x = "Iteration",
+  #     y = "Log-likelihood"
+  #   ) +
+  #   guides(color = "none") +
+  #   theme_minimal()
+  # 
+  # gumbel_pl_like
+  # 
+  # GDP_gumbel_pred <- BiCopSim(N = nrow(GDP), family = 4, par = link_gumbel(colMeans(gumbel_pred_val)))
+  # 
+  # gumbel_pred_U1_LE = GDP_gumbel_pred[,1]
+  # gumbel_pred_U2_LE = GDP_gumbel_pred[,2]
+  # 
   
-  gumbel_like_val <- apply(gumbel_pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), U1_LT, U2_LT))
   
-  gumbel_like_df <-data.frame("nn" = gumbel_like_val)
-  gumbel_like_df$idx <- 1:(n.chain_par*n.iter_par)
-  
-  gumbel_like_df <-data.frame("nn" = gumbel_like_val)
-  gumbel_like_df$idx <- rep(1:n.iter_par*n.chain_par)
-  gumbel_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  gumbel_pl_like <- gumbel_like_df %>%
-    filter(idx > n.born.out.par) %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  gumbel_pl_like
-  
-  # dataframe for plotting
-  pred_cond <- data.frame("obs" = pred_obs)
-  pred_cond$obs = pred_obs
+  # data plotting
+  pred_cond <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
   pred_cond$gauss_y = link_gauss(gauss_pred_val_vec)
   pred_cond$gauss_tau = BiCopPar2Tau(1, pred_cond$gauss_y)
   pred_cond$frank_y = link_frank(frank_pred_val_vec)
   pred_cond$frank_tau = BiCopPar2Tau(5, pred_cond$frank_y)
   pred_cond$t_y = link_t(t_pred_val_vec)
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
-  pred_cond$clayton_y = link_clayton(clayton_pred_val_vec)
-  pred_cond$clayton_tau = BiCopPar2Tau(3, pred_cond$clayton_y)
-  pred_cond$gumbel_y = link_gumbel(gumbel_pred_val_vec)
-  pred_cond$gumbel_tau = BiCopPar2Tau(4, pred_cond$gumbel_y)
+  # pred_cond$clayton_y = link_clayton(clayton_pred_val_vec)
+  # pred_cond$clayton_tau = BiCopPar2Tau(3, pred_cond$clayton_y)
+  # pred_cond$gumbel_y = link_gumbel(gumbel_pred_val_vec)
+  # pred_cond$gumbel_tau = BiCopPar2Tau(4, pred_cond$gumbel_y)
   
   pred_cond_thin = na.omit(pred_cond[c(rep(NA,(n.thin-1)), TRUE),])
   
@@ -469,17 +507,17 @@ if(F){
     group_by(obs) %>%
     summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
               frank_theta_mean = mean(frank_y), frank_theta_q975 = quantile(frank_y, .975), frank_theta_q025 = quantile(frank_y, .025),
-              t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025),
-              clayton_theta_mean = mean(clayton_y), clayton_theta_q975 = quantile(clayton_y, .975), clayton_theta_q025 = quantile(clayton_y, .025),
-              gumbel_theta_mean = mean(gumbel_y), gumbel_theta_q975 = quantile(gumbel_y, .975), gumbel_theta_q025 = quantile(gumbel_y, .025)) 
+              t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))#,
+  # clayton_theta_mean = mean(clayton_y), clayton_theta_q975 = quantile(clayton_y, .975), clayton_theta_q025 = quantile(clayton_y, .025),
+  # gumbel_theta_mean = mean(gumbel_y), gumbel_theta_q975 = quantile(gumbel_y, .975), gumbel_theta_q025 = quantile(gumbel_y, .025)) 
   
   pred_cond_mod_tau = pred_cond_thin %>%
     group_by(obs) %>%
     summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
               frank_tau_mean = mean(frank_tau), frank_tau_q975 = quantile(frank_tau, .975), frank_tau_q025 = quantile(frank_tau, .025),
-              t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025),
-              clayton_tau_mean = mean(clayton_tau), clayton_tau_q975 = quantile(clayton_tau, .975), clayton_tau_q025 = quantile(clayton_tau, .025),
-              gumbel_tau_mean = mean(gumbel_tau), gumbel_tau_q975 = quantile(gumbel_tau, .975), gumbel_tau_q025 = quantile(gumbel_tau, .025)) 
+              t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))#,
+  # clayton_tau_mean = mean(clayton_tau), clayton_tau_q975 = quantile(clayton_tau, .975), clayton_tau_q025 = quantile(clayton_tau, .025),
+  # gumbel_tau_mean = mean(gumbel_tau), gumbel_tau_q975 = quantile(gumbel_tau, .975), gumbel_tau_q025 = quantile(gumbel_tau, .025)) 
   
   pl_tau_est <- ggplot(pred_cond_mod_tau) +
     geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
@@ -491,66 +529,40 @@ if(F){
     geom_line(aes(obs, t_tau_mean, col = "t")) +
     geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
     geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
-    geom_line(aes(obs, clayton_tau_mean, col = "clayton")) +
-    geom_line(aes(obs, clayton_tau_q975, col = "clayton"),linetype="dotted") +
-    geom_line(aes(obs, clayton_tau_q025, col = "clayton"),linetype="dotted") +
-    geom_line(aes(obs, gumbel_tau_mean, col = "gumbel")) +
-    geom_line(aes(obs, gumbel_tau_q975, col = "gumbel"),linetype="dotted") +
-    geom_line(aes(obs, gumbel_tau_q025, col = "gumbel"),linetype="dotted") +
+    # geom_line(aes(obs, clayton_tau_mean, col = "clayton")) +
+    # geom_line(aes(obs, clayton_tau_q975, col = "clayton"),linetype="dotted") +
+    # geom_line(aes(obs, clayton_tau_q025, col = "clayton"),linetype="dotted") +
+    # geom_line(aes(obs, gumbel_tau_mean, col = "gumbel")) +
+    # geom_line(aes(obs, gumbel_tau_q975, col = "gumbel"),linetype="dotted") +
+    # geom_line(aes(obs, gumbel_tau_q025, col = "gumbel"),linetype="dotted") +
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
   
-  cor(U1_LT,U2_LT, method = "kendall")
-  cor(U1_LT,U2_LT, method = "kendall")
+  save(pred_cond, pred_cond_mod_tau, pl_tau_est, file = "pred_tau_LE.Rdata")
   
-  GDP_gauss_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gauss(colMeans(gauss_pred_val)))
+  cor(U1_LE,U2_LE, method = "kendall")
+  cor(U1_LE,U2_LE, method = "kendall")
   
-  gauss_pred_U1_LT = GDP_gauss_pred[,1]
-  gauss_pred_U2_LT = GDP_gauss_pred[,2]
+  plot(U1_LE,U2_LE)
+  plot(gauss_pred_U1_LE,gauss_pred_U2_LE)
   
-  plot(U1_LT,U2_LT)
-  plot(gauss_pred_U1_LT,gauss_pred_U2_LT)
+  plot(U1_LE,U2_LE)
+  plot(frank_pred_U1_LE,frank_pred_U2_LE)
   
-  GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 5, par = link_frank(colMeans(frank_pred_val)))
+  plot(U1_LE,U2_LE)
+  plot(t_pred_U1_LE,t_pred_U2_LE)
   
-  frank_pred_U1_LT = GDP_frank_pred[,1]
-  frank_pred_U2_LT = GDP_frank_pred[,2]
+  # plot(U1_LE,U2_LE)
+  # plot(clayton_pred_U1_LE,clayton_pred_U2_LE)
+  # 
+  # plot(U1_LE,U2_LE)
+  # plot(gumbel_pred_U1_LE,gumbel_pred_U2_LE)
   
-  plot(U1_LT,U2_LT)
-  plot(frank_pred_U1_LT,frank_pred_U2_LT)
+  hist_true <- hist2d(U1_LE, U2_LE, nbins = c(10,10), show = FALSE)
   
-  GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 2, par = link_t(colMeans(t_pred_val)),par2 = 3)
-  
-  t_pred_U1_LT = GDP_t_pred[,1]
-  t_pred_U2_LT = GDP_t_pred[,2]
-  
-  plot(U1_LT,U2_LT)
-  plot(t_pred_U1_LT,t_pred_U2_LT)
-  
-  GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 3, par = link_clayton(colMeans(clayton_pred_val)))
-  
-  clayton_pred_U1_LT = GDP_clayton_pred[,1]
-  clayton_pred_U2_LT = GDP_clayton_pred[,2]
-  
-  plot(U1_LT,U2_LT)
-  plot(clayton_pred_U1_LT,clayton_pred_U2_LT)
-  
-  GDP_gumbel_pred <- BiCopSim(N = nrow(GDP), family = 4, par = link_gumbel(colMeans(gumbel_pred_val)))
-  
-  gumbel_pred_U1_LT = GDP_gumbel_pred[,1]
-  gumbel_pred_U2_LT = GDP_gumbel_pred[,2]
-  
-  plot(U1_LT,U2_LT)
-  plot(gumbel_pred_U1_LT,gumbel_pred_U2_LT)
-  
-  hist_true <- hist2d(U1_LT, U2_LT, nbins = c(10,10), show = FALSE)
-  
-  hist_gauss <- hist2d(gauss_pred_U1_LT, gauss_pred_U2_LT, nbins = c(10,10), show = FALSE)
-  hist_t <- hist2d(t_pred_U1_LT, t_pred_U2_LT, nbins = c(10,10), show = FALSE)
-  hist_clayton <- hist2d(clayton_pred_U1_LT, clayton_pred_U2_LT, nbins = c(10,10), show = FALSE)
-  hist_gumbel <- hist2d(gumbel_pred_U1_LT, gumbel_pred_U2_LT, nbins = c(10,10), show = FALSE)
-  hist_frank <- hist2d(frank_pred_U1_LT, frank_pred_U2_LT, nbins = c(10,10), show = FALSE)
+  # hist_clayton <- hist2d(clayton_pred_U1_LE, clayton_pred_U2_LE, nbins = c(10,10), show = FALSE)
+  # hist_gumbel <- hist2d(gumbel_pred_U1_LE, gumbel_pred_U2_LE, nbins = c(10,10), show = FALSE)
   
   par(mar = c(1,1,1,1), mfrow = c(2,3))
   
@@ -596,19 +608,19 @@ if(F){
     main = "student t"
   )
   
-  hist3D(
-    x = hist_clayton$x,
-    y = hist_clayton$y,
-    z = hist_clayton$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = "Clayton"
-  )
+  # hist3D(
+  #   x = hist_clayton$x,
+  #   y = hist_clayton$y,
+  #   z = hist_clayton$counts,
+  #   colvar = NULL,  # disables color mapping
+  #   col = "lightblue",  # solid monochrome color
+  #   border = "black",
+  #   theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  #   lighting = TRUE,
+  #   ltheta = 120, ticktype = "detailed",
+  #   xlab = "", ylab = "", zlab = "",
+  #   main = "Clayton"
+  # )
   
   hist3D(
     x = hist_frank$x,
@@ -624,46 +636,43 @@ if(F){
     main = "Frank"
   )
   
-  hist3D(
-    x = hist_gumbel$x,
-    y = hist_gumbel$y,
-    z = hist_gumbel$counts,
-    colvar = NULL,  # disables color mapping
-    col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
-    lighting = TRUE,
-    ltheta = 120, ticktype = "detailed",
-    xlab = "", ylab = "", zlab = "",
-    main = "gumbel"
-  )
+  # hist3D(
+  #   x = hist_gumbel$x,
+  #   y = hist_gumbel$y,
+  #   z = hist_gumbel$counts,
+  #   colvar = NULL,  # disables color mapping
+  #   col = "lightblue",  # solid monochrome color
+  #   border = "black",
+  #   theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+  #   lighting = TRUE,
+  #   ltheta = 120, ticktype = "detailed",
+  #   xlab = "", ylab = "", zlab = "",
+  #   main = "gumbel"
+  # )
   
   ################################################################################
   # helper for test statistics
   
   library(cramer)
   
-  cramer.test(cbind(U1_LT,U2_LT), cbind(U1_LT,U2_LT))
-  cramer.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT), replicates = 10000, sim = "permutation")
-  cramer.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT), replicates = 10000)
-  cramer.test(cbind(U1_LT,U2_LT), cbind(frank_pred_U1_LT, frank_pred_U2_LT), replicates = 10000)
-  cramer.test(cbind(U1_LT,U2_LT), cbind(clayton_pred_U1_LT, clayton_pred_U2_LT), replicates = 10000)
-  cramer.test(cbind(U1_LT,U2_LT), cbind(gumbel_pred_U1_LT, gumbel_pred_U2_LT), replicates = 10000)
+  cramer.test(cbind(U1_LE,U2_LE), cbind(U1_LE,U2_LE))
+  cramer.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE), replicates = 10000, sim = "permutation")
+  cramer.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE), replicates = 10000)
+  cramer.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE), replicates = 10000)
+  # cramer.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE), replicates = 10000)
+  # cramer.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE), replicates = 10000)
   
   library(fasano.franceschini.test)
   
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(U1_LT,U2_LT))
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT))
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT))
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(frank_pred_U1_LT, frank_pred_U2_LT))
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(clayton_pred_U1_LT, clayton_pred_U2_LT))
-  fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gumbel_pred_U1_LT, gumbel_pred_U2_LT))
+  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(U1_LE,U2_LE))
+  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE))
+  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE))
+  fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE))
+  # fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE))
+  # fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE))
   
-  save(gauss_pred_U1_LT, gauss_pred_U2_LT, hist_gauss, gauss_like_val, gauss_pl_like, gauss_like_df, file = "gauss_gdp_LT_post.Rdata")
-  save(frank_pred_U1_LT, frank_pred_U2_LT, hist_frank, frank_like_val, frank_pl_like, frank_like_df, file = "frank_gdp_LT_post.Rdata")
-  save(clayton_pred_U1_LT, clayton_pred_U2_LT, hist_clayton, clayton_like_val, clayton_pl_like, clayton_like_df, file = "clayton_gdp_LT_post.Rdata")
-  save(gumbel_pred_U1_LT, gumbel_pred_U2_LT, hist_gumbel, gumbel_like_val, gumbel_pl_like, gumbel_like_df, file = "gumbel_gdp_LT_post.Rdata")
-  save(t_pred_U1_LT, t_pred_U2_LT, hist_t, t_like_val, t_pl_like, t_like_df, file = "t_gdp_LT_post.Rdata")
-  save(pred_cond, pred_cond_mod_tau, pl_tau_est, file = "pred_tau_LT.Rdata")
+  # save(clayton_pred_U1_LE, clayton_pred_U2_LE, hist_clayton, clayton_like_val, clayton_pl_like, clayton_like_df, file = "clayton_gdp_LE_post.Rdata")
+  # save(gumbel_pred_U1_LE, gumbel_pred_U2_LE, hist_gumbel, gumbel_like_val, gumbel_pl_like, gumbel_like_df, file = "gumbel_gdp_LE_post.Rdata")
+  
 }
 

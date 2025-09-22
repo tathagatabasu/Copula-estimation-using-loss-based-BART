@@ -21,7 +21,7 @@
 #' @examples
 #' mclapply.hack()
 #' 
-mclapply <- function(..., verbose=FALSE, mc.cores=NULL) {
+mclapply_cbart <- function(..., verbose=FALSE, mc.cores=NULL) {
   require(parallel)
   require(doParallel)
   
@@ -42,6 +42,7 @@ mclapply <- function(..., verbose=FALSE, mc.cores=NULL) {
     sessionInfo()$basePkgs,
     ## Additional packages
     names( sessionInfo()$otherPkgs ))
+  run_func <- list(...)[[2]]
   
   tryCatch( {
     
@@ -66,7 +67,7 @@ mclapply <- function(..., verbose=FALSE, mc.cores=NULL) {
     })
     
     ## Run the lapply in parallel
-    return( parLapply( cl, ...) )
+    return( parLapply( cl, list(...)[[1]], function(x){set.seed(x);run_func(x)}) )
   }, finally = {
     ## Stop the cluster
     stopCluster(cl)

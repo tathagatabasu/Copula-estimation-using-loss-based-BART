@@ -1,19 +1,22 @@
 # packages
 library(data.tree)
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
-library(VineCopula)
-library(MASS)   # For multivariate normal functions
-library(coda)   # For MCMC diagnostics
-library(plot3D)
-library(gplots)
-library(xtable)
 require(foreach)
 require(parallel)
 require(doParallel)
-library(patchwork)
+library(VineCopula)
 
+if(F){
+  library(dplyr)
+  library(ggplot2)
+  library(ggpubr)
+  library(MASS)   # For multivariate normal functions
+  library(coda)   # For MCMC diagnostics
+  library(plot3D)
+  library(gplots)
+  library(xtable)
+  library(patchwork)
+  
+}
 ################################################################################
 # data generation
 ################################################################################
@@ -97,7 +100,7 @@ if(F){
   tau_true_pred_2 <- 0.4*sin(2*pi*X_obs_pred) + 0.5 + rnorm(length(tau_true_1), sd = 0.01)
   
   # mcmc params
-  n.chain_par <- 20
+  n.chain_par <- 10
   n.iter_par <- 6000
   n.born.out.par <- 1000
   n.thin <- 1
@@ -110,10 +113,7 @@ if(F){
 # source files
 ################################################################################
 
-if(.Platform$OS.type == "windows"){
-  source('mclapply.R')
-}
-
+source('mclapply.R')
 # source('MCMC_BART_copula.R')
 source('import_functions.R')
 source('test_MCMC_copula_mult_tree.R')
