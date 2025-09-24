@@ -28,9 +28,9 @@ rownames(X_obs.norm) <- 1:nrow(X_obs)
 
 # tau with tree structure
 tau_true_1 <- rep(0,nrow(X_obs))
-tau_true_1[X_obs<0.33] <- 0.2
+tau_true_1[X_obs<0.33] <- 0.1
 tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-tau_true_1[(X_obs>=0.66)] <- 0.5
+tau_true_1[(X_obs>=0.66)] <- 0.3
 
 tau_true_1 <- matrix(tau_true_1, ncol = 1)
 
