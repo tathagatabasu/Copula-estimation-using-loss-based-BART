@@ -27,15 +27,17 @@ X_obs.norm <- as.matrix(X_obs.norm)
 rownames(X_obs.norm) <- 1:nrow(X_obs)
 
 # tau with tree structure
-tau_true_1 <- rep(0,nrow(X_obs))
-tau_true_1[X_obs<0.33] <- 0.1
-tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-tau_true_1[(X_obs>=0.66)] <- 0.3
+tau_true_1_true <- rep(0,nrow(X_obs))
+tau_true_1_true[X_obs<0.33] <- 0.2
+tau_true_1_true[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
+tau_true_1_true[(X_obs>=0.66)] <- 0.3
 
-tau_true_1 <- matrix(tau_true_1, ncol = 1)
+tau_true_1 <- matrix(tau_true_1_true, ncol = 1) + rnorm(n, sd = 0.05)
 
 # periodoic
-tau_true_2 <- 0.2*sin(2*pi*X_obs) + 0.5
+tau_true_2_true <- 0.2*sin(2*pi*X_obs) + 0.5
+
+tau_true_2 <- tau_true_2_true + rnorm(n, sd = 0.05)
 
 plot(X_obs, tau_true_1, xlab = "Observations", ylab = "tau")
 
@@ -73,8 +75,8 @@ for (i in 1:2) {
 
 # mcmc params
 
-n.chain_par <- 20
-n.iter_par <- 6000
+n.chain_par <- 50
+n.iter_par <- 2000
 n.born.out.par <- 1000
 n.thin <- 1
 
@@ -226,7 +228,7 @@ rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_lik
    pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
 gc()
 
-if(F){
+if(T){
   
   model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -358,7 +360,7 @@ gc()
 
 # t
 
-if(T){
+if(F){
   
   model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
   rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree))
@@ -750,7 +752,7 @@ rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_lik
    pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
 gc()
 
-if(F){
+if(T){
   
   model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1012,7 +1014,7 @@ rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_lik
    pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
 gc()
 
-if(F){
+if(T){
   
   model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
@@ -1274,7 +1276,7 @@ rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_lik
    pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
 gc()
 
-if(F){
+if(T){
   
   model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
   rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
