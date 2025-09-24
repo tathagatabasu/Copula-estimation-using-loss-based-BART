@@ -16,9 +16,9 @@ rownames(X_obs.norm) <- 1:nrow(X_obs)
 
 # tau with tree structure
 tau_true_1 <- rep(0,nrow(X_obs))
-tau_true_1[X_obs<0.33] <- 0.2
+tau_true_1[X_obs<0.33] <- 0.1
 tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-tau_true_1[(X_obs>=0.66)] <- 0.5
+tau_true_1[(X_obs>=0.66)] <- 0.3
 
 tau_true_1 <- matrix(tau_true_1, ncol = 1)
 
@@ -59,26 +59,6 @@ for (i in 1:2) {
   assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = BiCopTau2Par(5, get(paste0("tau_true_",i)))))
 }
 
-# dataset for prediction
-
-X_obs_pred = matrix(runif(n), ncol = 1)
-
-# normalise predictors 
-X_obs_pred.norm <- as.data.frame(apply(X_obs_pred, 2, \(x) (x - min(x))/(max(x) - min(x))))
-X_obs_pred.norm <- as.matrix(X_obs_pred.norm)
-rownames(X_obs_pred.norm) <- 1:nrow(X_obs_pred)
-
-# tau with tree structure
-tau_true_pred_1 <- rep(0,nrow(X_obs))
-tau_true_pred_1[X_obs_pred<0.33] <- 0.2
-tau_true_pred_1[(X_obs_pred>=0.33)&(X_obs_pred<0.66)] <- 0.7
-tau_true_pred_1[(X_obs_pred>=0.66)] <- 0.5
-
-tau_true_pred_1 <- matrix(tau_true_pred_1, ncol = 1)
-
-# periodic
-tau_true_pred_2 <- 0.2*sin(2*pi*X_obs_pred) + 0.5
-
 # mcmc params
 
 n.chain_par <- 20
@@ -105,7 +85,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 if(T){
   n.tree <- 1
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -130,7 +110,7 @@ if(T){
     gc()
   }
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -163,7 +143,7 @@ if(T){
 if(T){
   n.tree <- 1
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                        X = X_obs.norm,
@@ -188,7 +168,7 @@ if(T){
     gc()
   }
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                        n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                        X = X_obs.norm,
@@ -221,7 +201,7 @@ if(T){
 if(T){
   n.tree <- 1
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                                       X = X_obs.norm,
@@ -246,7 +226,7 @@ if(T){
     gc()
   }
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                              X = X_obs.norm,
@@ -279,7 +259,7 @@ if(T){
 if(T){
   n.tree <- 1
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                             X = X_obs.norm,
@@ -304,7 +284,7 @@ if(T){
     gc()
   }
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                             n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                             X = X_obs.norm,
@@ -337,7 +317,7 @@ if(T){
 if(T){
   n.tree <- 1
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,
@@ -362,7 +342,7 @@ if(T){
     gc()
   }
   
-  for (i in 1:2) {
+  for (i in 1) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                            n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                                                            X = X_obs.norm,

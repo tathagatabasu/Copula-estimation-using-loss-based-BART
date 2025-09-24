@@ -170,7 +170,8 @@ if(F){
   save(frank_GDP_LE, file = paste0("frank_gdp_LE_tree_",n.tree,".Rdata"))
   rm(frank_GDP_LE)
   gc()
-  
+}
+if(T){
   gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
                                          X = GDP,
