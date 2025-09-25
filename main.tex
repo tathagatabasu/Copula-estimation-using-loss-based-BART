@@ -301,14 +301,14 @@ In this section, we consider two synthetic settings to showcase the efficiency o
 For data generation process, we sample $x_i$'s from a uniform distribution $U(0,1)$ for $1\le i\le n$. Afterwards we get our conditional Kendall's tau $(\tau(x_i))$ using following two equations.
 \begin{equation}\label{eq:tree:tau}
 	\tau_1(x_i) = \begin{cases}
-		0.1 & x_i \le 0.33\\
+		0.2 & x_i \le 0.33\\
 		0.7 & 0.33 < x_i \le 0.66\\
 		0.3 & 0.66 < x_i
 	\end{cases}
 \end{equation}
 and
 \begin{equation}\label{eq:sin:tau}
-	\tau_2(x_i) = 0.4\sin(2\pi x_i) + 0.5.
+	\tau_2(x_i) = 0.2\sin(2\pi x_i) + 0.5.
 \end{equation}
 We use these $\tau(x_i)$'s to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Then we use these copula datasets to perform our posterior inference. For each dataset, we run 20 parallel chains comprising of 6000 MCMC iterations. We also check the performance of our RJ-MCMC algorithm with and without adaption. For adaptive version of our algorithm we use first 1000 iterations for adaption. For convenience, from now on, we will use C-BART for our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version of it.
 
@@ -394,11 +394,11 @@ We use the second case ($\tau_2(x)$) to check the prediction accuracy of our pro
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.065 & 0.282 & \textbf{0.982} & \textbf{0.062} & 0.294 & 0.972 \\ 
-		Student-t & 0.062 & 0.337 & \textbf{1.000} & \textbf{0.058} & 0.329 & 0.996 \\ 
-		Clayton & 0.067 & 0.252 & 0.986 & \textbf{0.062} & 0.257 & \textbf{0.992} \\ 
-		Gumbel & 0.057 & 0.245 & 0.910 & \textbf{0.055} & 0.257 & \textbf{0.936} \\ 
-		Frank & 0.060 & 0.252 & 0.886 & \textbf{0.059} & 0.260 & \textbf{0.914} \\ 
+		Gaussian & 0.055 & 0.297 & 1.000 & 0.055 & 0.295 & 1.000 \\ 
+		Student-t & 0.052 & 0.333 & 1.000 & 0.051 & 0.336 & 1.000 \\ 
+		Clayton & 0.040 & 0.264 & 1.000 & 0.040 & 0.262 & 1.000 \\ 
+		Gumbel & 0.037 & 0.289 & 1.000 & 0.037 & 0.288 & 1.000 \\ 
+		Frank & 0.051 & 0.241 & 1.000 & 0.050 & 0.238 & 1.000 \\  
 	\end{tabular}
 	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex2}
@@ -418,7 +418,7 @@ Similar to our analyses with first case, we notice that both C-BART and A-C-BART
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 294 (Gaussian copula); 300 (Student-t copula); 335 (Clayton copula); 292 (Gumbel copula); and 241 (Frank copula).}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 192 (Gaussian copula); 216 (Student-t copula); 243 (Clayton copula); 220 (Gumbel copula); and 187 (Frank copula).}
 	\label{fig:trace:like:ex2}
 \end{figure}
 
