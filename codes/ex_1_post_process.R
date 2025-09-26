@@ -85,7 +85,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 
 if(T){
   
-  load("gauss_gdp_LE.Rdata")
+  load("gauss_gdp_LE_tree_10.Rdata")
   
   gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP))
   
@@ -122,7 +122,7 @@ if(T){
   rm(gauss_GDP_LE, gauss_pred_U1_LE, gauss_pred_U2_LE, hist_gauss, gauss_like_val, gauss_pl_like, gauss_like_df, GDP_gauss_pred, gauss_pred_val, gauss_list_pred_lb, gauss_pred_val_vec)
   gc()
   
-  load("frank_gdp_LE.Rdata")
+  load("frank_gdp_LE_tree_10.Rdata")
   
   frank_list_pred_lb <- lapply(1:length(frank_GDP_LE$trees), \(idx) BART_calculate_pred(frank_GDP_LE$trees[[idx]], GDP))
   
@@ -148,7 +148,7 @@ if(T){
   
   frank_pl_like
   
-  GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_frank(colMeans(frank_pred_val)))
+  GDP_frank_pred <- BiCopSim(N = nrow(GDP), family = 5, par = link_frank(colMeans(frank_pred_val)))
   
   frank_pred_U1_LE = GDP_frank_pred[,1]
   frank_pred_U2_LE = GDP_frank_pred[,2]
@@ -159,7 +159,7 @@ if(T){
   rm(frank_GDP_LE, frank_pred_U1_LE, frank_pred_U2_LE, hist_frank, frank_like_val, frank_pl_like, frank_like_df, GDP_frank_pred, frank_pred_val, frank_list_pred_lb, frank_pred_val_vec)
   gc()
   
-  load("t_gdp_LE.Rdata")
+  load("t_gdp_LE_tree_10.Rdata")
   
   t_list_pred_lb <- lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP))
   
@@ -185,7 +185,7 @@ if(T){
   
   t_pl_like
   
-  GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_t(colMeans(t_pred_val)))
+  GDP_t_pred <- BiCopSim(N = nrow(GDP), family = 2, par = link_t(colMeans(t_pred_val)), par2 = 3)
   
   t_pred_U1_LE = GDP_t_pred[,1]
   t_pred_U2_LE = GDP_t_pred[,2]
@@ -198,7 +198,7 @@ if(T){
   
   
   
-  load("clayton_gdp_LE.Rdata")
+  load("clayton_gdp_LE_tree_10.Rdata")
   
   clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LE$trees), \(idx) BART_calculate_pred(clayton_GDP_LE$trees[[idx]], GDP))
   
@@ -224,7 +224,7 @@ if(T){
   
   clayton_pl_like
   
-  GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_clayton(colMeans(clayton_pred_val)))
+  GDP_clayton_pred <- BiCopSim(N = nrow(GDP), family = 3, par = link_clayton(colMeans(clayton_pred_val)))
   
   clayton_pred_U1_LE = GDP_clayton_pred[,1]
   clayton_pred_U2_LE = GDP_clayton_pred[,2]
@@ -235,7 +235,7 @@ if(T){
   rm(clayton_GDP_LE, clayton_pred_U1_LE, clayton_pred_U2_LE, hist_clayton, clayton_like_val, clayton_pl_like, clayton_like_df, GDP_clayton_pred, clayton_pred_val, clayton_list_pred_lb, clayton_pred_val_vec)
   gc()
   
-  load("gumbel_gdp_LE.Rdata")
+  load("gumbel_gdp_LE_tree_10.Rdata")
   
   gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LE$trees), \(idx) BART_calculate_pred(gumbel_GDP_LE$trees[[idx]], GDP))
   
@@ -261,7 +261,7 @@ if(T){
   
   gumbel_pl_like
   
-  GDP_gumbel_pred <- BiCopSim(N = nrow(GDP), family = 1, par = link_gumbel(colMeans(gumbel_pred_val)))
+  GDP_gumbel_pred <- BiCopSim(N = nrow(GDP), family = 4, par = link_gumbel(colMeans(gumbel_pred_val)))
   
   gumbel_pred_U1_LE = GDP_gumbel_pred[,1]
   gumbel_pred_U2_LE = GDP_gumbel_pred[,2]
@@ -333,9 +333,10 @@ if(F){
     ylab('estimated tau') +
     theme_classic()
   
+  pl_tau_est
+  
   save(pred_cond, pred_cond_mod_tau, pl_tau_est, file = "pred_tau_LE.Rdata")
   
-  cor(U1_LE,U2_LE, method = "kendall")
   cor(U1_LE,U2_LE, method = "kendall")
   
   plot(U1_LE,U2_LE)
@@ -355,7 +356,7 @@ if(F){
   
   hist_true <- hist2d(U1_LE, U2_LE, nbins = c(10,10), show = FALSE)
   
-  par(mar = c(1,1,1,1), mfrow = c(2,3))
+  par(mar = c(1,1,1,1), mfrow = c(3,2))
   
   hist3D(
     x = hist_true$x,
@@ -363,8 +364,8 @@ if(F){
     z = hist_true$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -377,8 +378,8 @@ if(F){
     z = hist_gauss$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -391,8 +392,8 @@ if(F){
     z = hist_t$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -405,8 +406,8 @@ if(F){
     z = hist_clayton$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -419,8 +420,8 @@ if(F){
     z = hist_gumbel$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -433,8 +434,8 @@ if(F){
     z = hist_frank$counts,
     colvar = NULL,  # disables color mapping
     col = "lightblue",  # solid monochrome color
-    border = "black",
-    theta = -30, scale = FALSE, expand = 0.02, bty = "g", phi = 45,    # shading gives 3D effect
+    border = "grey",
+    theta = -45, scale = FALSE, expand = 0.02, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "detailed",
     xlab = "", ylab = "", zlab = "",
@@ -461,5 +462,14 @@ if(F){
   fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE))
   fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE))
   fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE))
+  
+  library(ks)
+  
+  kde.test(cbind(U1_LE,U2_LE), cbind(U1_LE,U2_LE))
+  kde.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE))
+  kde.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE))
+  kde.test(cbind(U1_LE,U2_LE), cbind(frank_pred_U1_LE, frank_pred_U2_LE))
+  kde.test(cbind(U1_LE,U2_LE), cbind(clayton_pred_U1_LE, clayton_pred_U2_LE))
+  kde.test(cbind(U1_LE,U2_LE), cbind(gumbel_pred_U1_LE, gumbel_pred_U2_LE))
   
 }
