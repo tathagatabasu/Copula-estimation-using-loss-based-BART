@@ -1411,7 +1411,7 @@ if(F){
   gauss_adapt <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_plot_adapt", ".Rdata")))
   gauss_stat_adapt <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_stat_adapt", ".Rdata")))
   
-  gauss_like_true <- loglik_gauss((sin(get(paste0("tau_true_",i)) * pi/2)), get(paste0("copula_uu_gauss_",test_case))[,1] , get(paste0("copula_uu_gauss_",test_case))[,2])
+  gauss_like_true <- loglik_gauss((sin(get(paste0("tau_true_",test_case)) * pi/2)), get(paste0("copula_uu_gauss_",test_case))[,1] , get(paste0("copula_uu_gauss_",test_case))[,2])
   
   
   t <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_plot", ".Rdata")))
@@ -1420,7 +1420,7 @@ if(F){
   t_adapt <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_plot_adapt", ".Rdata")))
   t_stat_adapt <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_stat_adapt", ".Rdata")))
   
-  t_like_true <- loglik_t((sin(get(paste0("tau_true_",i)) * pi/2)), get(paste0("copula_uu_t_",test_case))[,1] , get(paste0("copula_uu_t_",test_case))[,2])
+  t_like_true <- loglik_t((sin(get(paste0("tau_true_",test_case)) * pi/2)), get(paste0("copula_uu_t_",test_case))[,1] , get(paste0("copula_uu_t_",test_case))[,2])
   
   
   clayton <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_plot", ".Rdata")))
@@ -1429,7 +1429,7 @@ if(F){
   clayton_adapt <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_plot_adapt", ".Rdata")))
   clayton_stat_adapt <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_stat_adapt", ".Rdata")))
   
-  clayton_like_true <- loglik_clayton((2*get(paste0("tau_true_",i)) / (1-get(paste0("tau_true_",i)))), get(paste0("copula_uu_clayton_",test_case))[,1] , get(paste0("copula_uu_clayton_",test_case))[,2])
+  clayton_like_true <- loglik_clayton((2*get(paste0("tau_true_",test_case)) / (1-get(paste0("tau_true_",test_case)))), get(paste0("copula_uu_clayton_",test_case))[,1] , get(paste0("copula_uu_clayton_",test_case))[,2])
   
   
   gumbel <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_plot", ".Rdata")))
@@ -1438,7 +1438,7 @@ if(F){
   gumbel_adapt <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_plot_adapt", ".Rdata")))
   gumbel_stat_adapt <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_stat_adapt", ".Rdata")))
   
-  gumbel_like_true <- loglik_gumbel((1 / (1-get(paste0("tau_true_",i)))), get(paste0("copula_uu_gumbel_",test_case))[,1] , get(paste0("copula_uu_gumbel_",test_case))[,2])
+  gumbel_like_true <- loglik_gumbel((1 / (1-get(paste0("tau_true_",test_case)))), get(paste0("copula_uu_gumbel_",test_case))[,1] , get(paste0("copula_uu_gumbel_",test_case))[,2])
   
   
   frank <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_plot", ".Rdata")))
@@ -1448,7 +1448,7 @@ if(F){
   frank_stat_adapt <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_stat_adapt", ".Rdata")))
   
   
-  frank_like_true <- loglik_frank(BiCopTau2Par(5,get(paste0("tau_true_",i))), get(paste0("copula_uu_frank_",test_case))[,1] , get(paste0("copula_uu_frank_",test_case))[,2])
+  frank_like_true <- loglik_frank(BiCopTau2Par(5,get(paste0("tau_true_",test_case))), get(paste0("copula_uu_frank_",test_case))[,1] , get(paste0("copula_uu_frank_",test_case))[,2])
   
   c(gauss_like_true, t_like_true, clayton_like_true, gumbel_like_true, frank_like_true)
   
@@ -1480,7 +1480,7 @@ if(F){
     (frank$like + labs(title="Frank (without adaption)")+ geom_hline(yintercept = frank_like_true, linetype = 2) + frank_adapt$like + labs(title="Frank (with adaption)")+ geom_hline(yintercept = frank_like_true, linetype = 2))
   
   (gauss$pred + labs(title="Gaussian (without adaption)") + ylim(0,1) + gauss_adapt$pred + labs(title="Gaussian (with adaption)") + ylim(0,1)) / 
-    (t$pred + labs(title="Student-t (without adaption)") + ylim(-0.25,1) + t_adapt$pred + labs(title="Student-t (with adaption)") + ylim(-0.25,1)) /
+    (t$pred + labs(title="Student-t (without adaption)") + ylim(0,1) + t_adapt$pred + labs(title="Student-t (with adaption)") + ylim(0,1)) /
     (clayton$pred + labs(title="Clayton (without adaption)") + ylim(0,1) + clayton_adapt$pred + labs(title="Clayton (with adaption)") + ylim(0,1)) /
     (gumbel$pred + labs(title="Gumbel (without adaption)") + ylim(0,1) + gumbel_adapt$pred + labs(title="Gumbel (with adaption)") + ylim(0,1)) /
     (frank$pred + labs(title="Frank (without adaption)") + ylim(0,1) + frank_adapt$pred + labs(title="Frank (with adaption)") + ylim(0,1))

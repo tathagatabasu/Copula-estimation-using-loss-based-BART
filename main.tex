@@ -316,7 +316,7 @@ One specific goal of our analyses is to understand the efficiency of our method 
 
 \subsection{Example with true tree structure} 
 
-We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are from the true number of terminal nodes which is equal to 3 and true depth which equals to 2. We present the efficiency of our approach in \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the initial tree exploration phase where the model tends have a more complex trees. We also notice that for all five families of copula, the use of adaptive proposal gives us better estimates than estimates obtained through C-BART. We can also see that with the adaptive proposal, the acceptance rate is slightly lower. This may look counter intuitive but this can be explained from the fact that with an adaptive proposal the sampler tends to reject \textsc{grow} and \textsc{prune} steps after it recovers the true tree structure. This phenomena can be better appreciated from \cref{fig:trace:nterm:ex1} and \cref{fig:trace:depth:ex1}. We can notice that tree exploration stabilises after about 2000 iterations when we are using A-C-BART, unlike the samples from C-BART. Additionally, from these two figures, we can also see that for Clayton copula and Frank copula, the traceplots of C-BART and A-C-BART are somewhat similar, which is also visible from the \cref{tab:eff:ex1} where the acceptance rate is equal upto 2 decimal places. 
+We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are from the true number of terminal nodes which is equal to 3 and true depth which equals to 2. We present the efficiency of our approach in \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the initial tree exploration phase where the model tends have a more complex trees. We also notice that for all five families of copula, the use of adaptive proposal gives us better estimates than estimates obtained through C-BART. We can also see that with the adaptive proposal, the acceptance rate does not improve. This may look counter intuitive but this can be explained from the fact that with an adaptive proposal the sampler tends to reject \textsc{grow} and \textsc{prune} steps after it recovers the true tree structure. This phenomena can be better appreciated from \cref{fig:trace:nterm:ex1} and \cref{fig:trace:depth:ex1}. We can notice that tree exploration stabilises after about 1000 iterations with our proposed approaches except for Frank copula where it takes about 3000 iterations. Additionally, from these two figures, we can also see that for Clayton copula and Frank copula, the traceplots of C-BART and A-C-BART are somewhat similar, which is also visible from the \cref{tab:eff:ex1} where the acceptance rate is equal upto 2 decimal places. 
 
 \begin{table}[ht]
 	\centering
@@ -327,11 +327,11 @@ We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed ap
 		\midrule
 		& $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. & $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. \\ 
 		\midrule
-		Gaussian & 3.33 & 2.17 & 0.15 & 3.20 & 2.08 & 0.14 \\ 
-		Student t & 3.16 & 2.07 & 0.15 & 3.11 & 2.03 & 0.14 \\ 
-		Clayton & 3.28 & 2.14 & 0.15 & 3.25 & 2.09 & 0.15 \\ 
-		Gumbel & 3.14 & 2.07 & 0.14 & 3.10 & 2.02 & 0.14 \\ 
-		Frank & 3.14 & 2.04 & 0.14 & 3.12 & 2.02 & 0.14 \\ 
+		Gaussian & 3.19 & 2.09 & 0.15 & 3.16 & 2.07 & 0.15 \\ 
+		Student-t & 3.11 & 2.02 & 0.15 & 3.11 & 2.02 & 0.15 \\ 
+		Clayton & 3.15 & 2.03 & 0.17 & 3.16 & 2.05 & 0.17 \\ 
+		Gumbel & 3.12 & 2.02 & 0.15 & 3.12 & 2.02 & 0.15 \\ 
+		Frank & 3.03 & 1.98 & 0.13 & 3.04 & 1.99 & 0.13 \\ 
 	\end{tabular}
 	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We split these big columns in three smaller columns where present posterior expectation of number of terminal nodes ($\mathbb{E}(n_L\mid U_1,U_2)$); posterior expectation of depth ($\mathbb{E}(D\mid U_1,U_2)$); and acceptance rate in $[0,1]$ scale.}
 	\label{tab:eff:ex1}
@@ -364,11 +364,12 @@ We also present the accuracy of our method in terms prediction in \cref{tab:pred
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.044 & 0.163 & 0.994 & \textbf{0.041} & 0.156 & 0.994 \\ 
-		Student-t & 0.064 & 0.191 & \textbf{0.982} & \textbf{0.063} & 0.190 & 0.980 \\ 
-		Clayton & \textbf{0.049} & 0.144 & 0.986 & 0.050 & 0.147 & \textbf{0.988} \\ 
-		Gumbel & 0.044 & 0.153 & 0.998 & \textbf{0.042} & 0.153 & \textbf{1.000} \\ 
-		Frank & \textbf{0.048} & 0.175 & 0.998 & 0.049 & 0.180 & 0.998 \\ 
+		Gaussian & 0.052 & 0.178 & 0.996 & 0.053 & 0.182 & 0.996 \\ 
+		Student-t & 0.048 & 0.182 & 0.998 & 0.048 & 0.187 & 0.996 \\ 
+		Clayton & 0.066 & 0.171 & 0.998 & 0.065 & 0.169 & 0.996 \\ 
+		Gumbel & 0.050 & 0.156 & 0.998 & 0.051 & 0.155 & 0.996 \\ 
+		Frank & 0.051 & 0.193 & 0.994 & 0.051 & 0.192 & 0.994 \\ 
+		\hline 
 	\end{tabular}
 	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex1}
@@ -382,7 +383,7 @@ We also present the accuracy of our method in terms prediction in \cref{tab:pred
 \end{figure}
 
 \subsection{Example with a general function}
-We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the confounding variable. For illustration purpose we use 10 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage like discussed before. We present the results in \cref{tab:pred:ex2}. We notice that there's a significant difference between the performance of C-BART and A-C-BART, unlike our analyses with $\tau_1(x)$. We notice that RMSE wise A-C-BART dominates C-BART for all the cases. In terms of CI coverage, A-C-BART performs significantly better than C-BART for Gumbel and Frank copula. C-BART tends to perform better for Gaussian and Student-t copula but performance of A-C-BART is not notably worse. We also plot these results in \cref{fig:trace:pred:ex2} where we present true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines.
+We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the confounding variable. For illustration purpose we use 10 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage like discussed before. We present the results in \cref{tab:pred:ex2}. Similar to our analyses with $\tau_1(x)$, we notice that A-C-BART and C-BART are in good agreements.  We also plot these results in \cref{fig:trace:pred:ex2} where we present true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines. 
 
 
 \begin{table}[ht]
