@@ -23,11 +23,6 @@ cia_wf_data = cia_wf_data %>%
 
 cia_wf_data <- na.omit(cia_wf_data)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F)
-
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F)
 
 U1_LE = ecdf(cia_wf_data$Life_expectancy_F)(cia_wf_data$Life_expectancy_F)
 U2_LE = ecdf(cia_wf_data$Life_expectancy_M)(cia_wf_data$Life_expectancy_M)
@@ -35,11 +30,18 @@ U2_LE = ecdf(cia_wf_data$Life_expectancy_M)(cia_wf_data$Life_expectancy_M)
 U1_LT = ecdf(cia_wf_data$Liter_F)(cia_wf_data$Liter_F)
 U2_LT = ecdf(cia_wf_data$Liter_M)(cia_wf_data$Liter_M)
 
-plot(U1_LE,U2_LE)
-plot(cia_wf_data$Life_expectancy_F,cia_wf_data$Life_expectancy_M)
+par(mar = c(5,5,2,1), mfrow = c(1,3))
 
-plot(U1_LT,U2_LT)
-plot(cia_wf_data$Liter_F,cia_wf_data$Liter_M)
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M, xlab = "GDP (log-scale)", ylab = "Life Expectancy (M)")
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F, xlab = "GDP (log-scale)", ylab = "Life Expectancy (F)")
+plot(U1_LE,U2_LE, xlab = "Life Expectancy (F)", ylab = "Life Expectancy (M)")
+
+# 10, 3.5
+par(mar = c(5,5,2,1), mfrow = c(1,3))
+
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M, xlab = "GDP (log-scale)", ylab = "Literacy (M)")
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F, xlab = "GDP (log-scale)", ylab = "Literacy (F)")
+plot(U1_LT,U2_LT, xlab = "Literacy (F)", ylab = "Literacy (M)")
 
 GDP <- as.data.frame((log(cia_wf_data$GDP_PPP) - min(log(cia_wf_data$GDP_PPP)))/(max(log(cia_wf_data$GDP_PPP)) - min(log(cia_wf_data$GDP_PPP))))
 GDP <- as.matrix(GDP)
@@ -81,7 +83,7 @@ if(F){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "gauss",
-                                         adapt = T)
+                                         adapt = F)
   
   save(gauss_GDP_LE, file = paste0("gauss_gdp_LE_tree_",n.tree,".Rdata"))
   rm(gauss_GDP_LE)
@@ -102,7 +104,7 @@ if(F){
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
                                      cop_type = "t",
-                                     adapt = T)
+                                     adapt = F)
   
   save(t_GDP_LE, file = paste0("t_gdp_LE_tree_",n.tree,".Rdata"))
   rm(t_GDP_LE)
@@ -123,7 +125,7 @@ if(F){
                                            var_param_1 = 1, var_param_2 = 2,
                                            prior_type = "N",
                                            cop_type = "clayton",
-                                           adapt = T)
+                                           adapt = F)
   
   save(clayton_GDP_LE, file = paste0("clayton_gdp_LE_tree_",n.tree,".Rdata"))
   rm(clayton_GDP_LE)
@@ -144,7 +146,7 @@ if(F){
                                           var_param_1 = 1, var_param_2 = 2,
                                           prior_type = "N",
                                           cop_type = "gumbel",
-                                          adapt = T)
+                                          adapt = F)
   
   save(gumbel_GDP_LE, file = paste0("gumbel_gdp_LE_tree_",n.tree,".Rdata"))
   rm(gumbel_GDP_LE)
@@ -165,12 +167,13 @@ if(F){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "frank",
-                                         adapt = T)
+                                         adapt = F)
   
   save(frank_GDP_LE, file = paste0("frank_gdp_LE_tree_",n.tree,".Rdata"))
   rm(frank_GDP_LE)
   gc()
 }
+
 if(T){
   gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
@@ -187,7 +190,7 @@ if(T){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "gauss",
-                                         adapt = T)
+                                         adapt = F)
   
   save(gauss_GDP_LT, file = paste0("gauss_gdp_LT_tree_",n.tree,".Rdata"))
   rm(gauss_GDP_LT)
@@ -208,7 +211,7 @@ if(T){
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
                                      cop_type = "t",
-                                     adapt = T)
+                                     adapt = F)
   
   save(t_GDP_LT, file = paste0("t_gdp_LT_tree_",n.tree,".Rdata"))
   rm(t_GDP_LT)
@@ -229,7 +232,7 @@ if(T){
                                            var_param_1 = 1, var_param_2 = 2,
                                            prior_type = "N",
                                            cop_type = "clayton",
-                                           adapt = T)
+                                           adapt = F)
   
   save(clayton_GDP_LT, file = paste0("clayton_gdp_LT_tree_",n.tree,".Rdata"))
   rm(clayton_GDP_LT)
@@ -250,7 +253,7 @@ if(T){
                                           var_param_1 = 1, var_param_2 = 2,
                                           prior_type = "N",
                                           cop_type = "gumbel",
-                                          adapt = T)
+                                          adapt = F)
   
   save(gumbel_GDP_LT, file = paste0("gumbel_gdp_LT_tree_",n.tree,".Rdata"))
   rm(gumbel_GDP_LT)
@@ -271,7 +274,7 @@ if(T){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "frank",
-                                         adapt = T)
+                                         adapt = F)
   
   save(frank_GDP_LT, file = paste0("frank_gdp_LT_tree_",n.tree,".Rdata"))
   rm(frank_GDP_LT)

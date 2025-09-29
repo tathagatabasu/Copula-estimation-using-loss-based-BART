@@ -92,7 +92,7 @@ moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 
 n.tree <- 1
-test_case <- 1
+test_case <- 2
 
 # gauss
 
