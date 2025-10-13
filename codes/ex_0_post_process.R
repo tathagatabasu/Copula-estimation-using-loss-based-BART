@@ -73,7 +73,7 @@ for (i in 1:2) {
 
 # mcmc params
 
-n.chain_par <- 20
+n.chain_par <- 4
 n.iter_par <- 6000
 n.born.out.par <- 1000
 n.thin <- 1
@@ -92,7 +92,7 @@ moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 
 n.tree <- 1
-test_case <- 2
+test_case <- 1
 
 # gauss
 
@@ -101,14 +101,14 @@ if(F){
   model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
   rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm[[1]]))
   
   pred_val = do.call(rbind,list_pred_lb)
   
   rm(list_pred_lb)
   
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
+  pred_cond <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
   pred_cond$y = BiCopPar2Tau(1,link_gauss(as.vector(pred_val)))
   pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
@@ -123,7 +123,7 @@ if(F){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -142,13 +142,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[,1], get(paste0("copula_uu_gauss_",test_case))[,2])))
+  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[[1]][,1], get(paste0("copula_uu_gauss_",test_case))[[1]][,2])))
   like_df$idx <- rep(1:n.iter_par, n.chain_par)
   like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
   pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+    # filter(idx > 1000) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -157,6 +157,8 @@ if(F){
     ) +
     guides(color = "none") +
     theme_minimal()
+  
+  gauss_like_true <- loglik_gauss((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_gauss_",test_case))[[1]][,1] , get(paste0("copula_uu_gauss_",test_case))[[1]][,2])
   
   if((n.tree==1)||(test_case == 1)){
     # nterm
