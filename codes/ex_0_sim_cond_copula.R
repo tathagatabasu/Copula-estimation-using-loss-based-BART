@@ -23,17 +23,17 @@ X_obs.norm <- lapply(1:R, function(i)data_norm(X_obs[[i]]))
 # tau with tree structure
 tree_tau_func <- function(X_obs){
   tau_true_1 <- rep(0,nrow(X_obs))
-  tau_true_1[X_obs<0.33] <- 0.2
+  tau_true_1[X_obs<0.33] <- 0.3
   tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-  tau_true_1[(X_obs>=0.66)] <- 0.3
+  tau_true_1[(X_obs>=0.66)] <- 0.4
   
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
 }
 
-tau_true_1 <- lapply(1:R, function(i)tree_tau_func(X_obs[[i]]))
+tau_true_1 <- lapply(1:R, function(i){tree_tau_func(X_obs[[i]]) + rnorm(n,0,0.05)})
 
 # periodoic
-tau_true_2 <- lapply(1:R, function(i){0.2*sin(2*pi*X_obs[[i]]) + 0.5})
+tau_true_2 <- lapply(1:R, function(i){0.2*sin(2*pi*X_obs[[i]]) + 0.5 + rnorm(n,0,0.05)})
 
 plot(X_obs[[1]], tau_true_1[[1]], xlab = "Observations", ylab = "tau")
 
@@ -72,7 +72,7 @@ for (i in 1:2) {
 # mcmc params
 
 n.chain_par <- 4
-n.iter_par <- 6000
+n.iter_par <- 3000
 n.born.out.par <- 500
 n.thin <- 1
 
@@ -119,7 +119,7 @@ if(T){
     rm(list = paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
-  
+  gc()
   for (i in 1) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
@@ -144,9 +144,9 @@ if(T){
     rm(list = paste0("gauss_mcmc_",i,"_tree_",n.tree))
     gc()
   }
-  
+  gc()
 }
-
+gc()
 ################################################################################
 # t
 ################################################################################
@@ -177,7 +177,7 @@ if(T){
     rm(list = paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
-  
+  gc()
   for (i in 1) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                 n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
@@ -202,9 +202,9 @@ if(T){
     rm(list = paste0("t_mcmc_",i,"_tree_",n.tree))
     gc()
   }
-  
+  gc()
 }
-
+gc()
 ################################################################################
 # clayton
 ################################################################################
@@ -235,7 +235,7 @@ if(T){
     rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
-  
+  gc()
   for (i in 1) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
@@ -260,9 +260,9 @@ if(T){
     rm(list = paste0("clayton_mcmc_",i,"_tree_",n.tree))
     gc()
   }
-  
+  gc()
 }
-
+gc()
 ################################################################################
 # Gumbel
 ################################################################################
@@ -293,7 +293,7 @@ if(T){
     rm(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
-  
+  gc()
   for (i in 1) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
@@ -318,9 +318,9 @@ if(T){
     rm(list = paste0("gumbel_mcmc_",i,"_tree_",n.tree))
     gc()
   }
-  
+  gc()
 }
-
+gc()
 ################################################################################
 # frank
 ################################################################################
@@ -351,7 +351,7 @@ if(T){
     rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
-  
+  gc()
   for (i in 1) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
@@ -376,4 +376,6 @@ if(T){
     rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree))
     gc()
   }
+  gc()
 }
+gc()
