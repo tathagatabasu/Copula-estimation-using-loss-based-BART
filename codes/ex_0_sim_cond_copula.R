@@ -30,10 +30,10 @@ tree_tau_func <- function(X_obs){
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
 }
 
-tau_true_1 <- lapply(1:R, function(i){tree_tau_func(X_obs[[i]]) + rnorm(n,0,0.05)})
+tau_true_1 <- lapply(1:R, function(i){tree_tau_func(X_obs[[i]])})
 
 # periodoic
-tau_true_2 <- lapply(1:R, function(i){0.2*sin(2*pi*X_obs[[i]]) + 0.5 + rnorm(n,0,0.05)})
+tau_true_2 <- lapply(1:R, function(i){0.2*sin(2*pi*X_obs[[i]]) + 0.5})
 
 plot(X_obs[[1]], tau_true_1[[1]], xlab = "Observations", ylab = "tau")
 
@@ -93,9 +93,9 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 # gaussian
 ################################################################################
 if(T){
-  n.tree <- 1
+  n.tree <- 5
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree,"_adapt"), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                       X = X_obs.norm[[x]],
@@ -111,7 +111,7 @@ if(T){
                                                                                                       var_param_1 = 1, var_param_2 = 2,
                                                                                                       prior_type = "N",
                                                                                                       cop_type = "gauss",
-                                                                                                      adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                      adapt = T), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -120,7 +120,7 @@ if(T){
     gc()
   }
   gc()
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gauss_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                     X = X_obs.norm[[x]],
@@ -136,7 +136,7 @@ if(T){
                                                                                                     var_param_1 = 1, var_param_2 = 2,
                                                                                                     prior_type = "N",
                                                                                                     cop_type = "gauss",
-                                                                                                    adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                    adapt = F), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -151,9 +151,9 @@ gc()
 # t
 ################################################################################
 if(T){
-  n.tree <- 1
+  n.tree <- 5
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree,"_adapt"), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                          X = X_obs.norm[[x]],
@@ -169,7 +169,7 @@ if(T){
                                                                                                          var_param_1 = 1, var_param_2 = 2,
                                                                                                          prior_type = "N",
                                                                                                          cop_type = "t",
-                                                                                                         adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                         adapt = T), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -178,7 +178,7 @@ if(T){
     gc()
   }
   gc()
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("t_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                 n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                 X = X_obs.norm[[x]],
@@ -194,7 +194,7 @@ if(T){
                                                                                                 var_param_1 = 1, var_param_2 = 2,
                                                                                                 prior_type = "N",
                                                                                                 cop_type = "t",
-                                                                                                adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                adapt = F), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -209,9 +209,9 @@ gc()
 # clayton
 ################################################################################
 if(T){
-  n.tree <- 1
+  n.tree <- 5
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree,"_adapt"), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                                n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                                X = X_obs.norm[[x]],
@@ -227,7 +227,7 @@ if(T){
                                                                                                                var_param_1 = 1, var_param_2 = 2,
                                                                                                                prior_type = "N",
                                                                                                                cop_type = "clayton",
-                                                                                                               adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                               adapt = T), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -236,7 +236,7 @@ if(T){
     gc()
   }
   gc()
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("clayton_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                       n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                       X = X_obs.norm[[x]],
@@ -252,7 +252,7 @@ if(T){
                                                                                                       var_param_1 = 1, var_param_2 = 2,
                                                                                                       prior_type = "N",
                                                                                                       cop_type = "clayton",
-                                                                                                      adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                      adapt = F), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -267,9 +267,9 @@ gc()
 # Gumbel
 ################################################################################
 if(T){
-  n.tree <- 1
+  n.tree <- 5
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree,"_adapt"), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                               n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                               X = X_obs.norm[[x]],
@@ -285,7 +285,7 @@ if(T){
                                                                                                               var_param_1 = 1, var_param_2 = 2,
                                                                                                               prior_type = "N",
                                                                                                               cop_type = "gumbel",
-                                                                                                              adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                              adapt = T), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -294,7 +294,7 @@ if(T){
     gc()
   }
   gc()
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("gumbel_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                      X = X_obs.norm[[x]],
@@ -310,7 +310,7 @@ if(T){
                                                                                                      var_param_1 = 1, var_param_2 = 2,
                                                                                                      prior_type = "N",
                                                                                                      cop_type = "gumbel",
-                                                                                                     adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                     adapt = F), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -325,9 +325,9 @@ gc()
 # frank
 ################################################################################
 if(T){
-  n.tree <- 1
+  n.tree <- 5
   
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                              n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                              X = X_obs.norm[[x]],
@@ -343,7 +343,7 @@ if(T){
                                                                                                              var_param_1 = 1, var_param_2 = 2,
                                                                                                              prior_type = "N",
                                                                                                              cop_type = "frank",
-                                                                                                             adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                             adapt = T), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -352,7 +352,7 @@ if(T){
     gc()
   }
   gc()
-  for (i in 1) {
+  for (i in 2) {
     assign(paste0("frank_mcmc_",i,"_tree_",n.tree), mclapply_manual(1:R, \(x)multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                                                                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 1,
                                                                                                     X = X_obs.norm[[x]],
@@ -368,7 +368,7 @@ if(T){
                                                                                                     var_param_1 = 1, var_param_2 = 2,
                                                                                                     prior_type = "N",
                                                                                                     cop_type = "frank",
-                                                                                                    adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                    adapt = F), mc.cores = 20, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
