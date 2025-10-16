@@ -111,7 +111,7 @@ if(T){
                                                                                                       var_param_1 = 1, var_param_2 = 2,
                                                                                                       prior_type = "N",
                                                                                                       cop_type = "gauss",
-                                                                                                      adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                      adapt = T), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -136,7 +136,7 @@ if(T){
                                                                                                     var_param_1 = 1, var_param_2 = 2,
                                                                                                     prior_type = "N",
                                                                                                     cop_type = "gauss",
-                                                                                                    adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                    adapt = F), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -169,7 +169,7 @@ if(T){
                                                                                                          var_param_1 = 1, var_param_2 = 2,
                                                                                                          prior_type = "N",
                                                                                                          cop_type = "t",
-                                                                                                         adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                         adapt = T), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -194,7 +194,7 @@ if(T){
                                                                                                 var_param_1 = 1, var_param_2 = 2,
                                                                                                 prior_type = "N",
                                                                                                 cop_type = "t",
-                                                                                                adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                adapt = F), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -227,7 +227,7 @@ if(T){
                                                                                                                var_param_1 = 1, var_param_2 = 2,
                                                                                                                prior_type = "N",
                                                                                                                cop_type = "clayton",
-                                                                                                               adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                               adapt = T), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -252,7 +252,7 @@ if(T){
                                                                                                       var_param_1 = 1, var_param_2 = 2,
                                                                                                       prior_type = "N",
                                                                                                       cop_type = "clayton",
-                                                                                                      adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                      adapt = F), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -285,7 +285,7 @@ if(T){
                                                                                                               var_param_1 = 1, var_param_2 = 2,
                                                                                                               prior_type = "N",
                                                                                                               cop_type = "gumbel",
-                                                                                                              adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                              adapt = T), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -310,7 +310,7 @@ if(T){
                                                                                                      var_param_1 = 1, var_param_2 = 2,
                                                                                                      prior_type = "N",
                                                                                                      cop_type = "gumbel",
-                                                                                                     adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                     adapt = F), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -343,7 +343,7 @@ if(T){
                                                                                                              var_param_1 = 1, var_param_2 = 2,
                                                                                                              prior_type = "N",
                                                                                                              cop_type = "frank",
-                                                                                                             adapt = T), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                             adapt = T), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
@@ -368,7 +368,7 @@ if(T){
                                                                                                     var_param_1 = 1, var_param_2 = 2,
                                                                                                     prior_type = "N",
                                                                                                     cop_type = "frank",
-                                                                                                    adapt = F), mc.cores = 10, seed.list = rep(1,R)))
+                                                                                                    adapt = F), mc.cores = 5, seed.list = rep(1,R)))
     
     cat('done case', i, '\n')
     
