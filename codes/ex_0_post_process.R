@@ -2,80 +2,81 @@
 library(VineCopula)
 library(dplyr)
 library(ggplot2)
-library(ggpubr)
-library(MASS)   # For multivariate normal functions
-library(coda)   # For MCMC diagnostics
-library(plot3D)
-library(gplots)
-library(xtable)
 library(patchwork)
-library(parallel)
-library(mc2d)
-library(pracma)
 
 ################################################################################
 # data generation
 ################################################################################
 set.seed(1e3)
 
-n <- 500
-X_obs <- matrix(runif(n), ncol = 1)
+n <- 200
+R <- 100
+X_obs <- lapply(1:R, function(x)matrix(runif(n), ncol = 1))
 
 # normalise predictors 
-X_obs.norm <- as.data.frame(apply(X_obs, 2, \(x) (x - min(x))/(max(x) - min(x))))
-X_obs.norm <- as.matrix(X_obs.norm)
-rownames(X_obs.norm) <- 1:nrow(X_obs)
+data_norm <- function(X_obs){
+  X_obs.norm <- as.data.frame(apply(X_obs, 2, \(x) (x - min(x))/(max(x) - min(x))))
+  X_obs.norm <- as.matrix(X_obs.norm)
+  rownames(X_obs.norm) <- 1:nrow(X_obs)
+  return(X_obs.norm)
+}
+
+X_obs.norm <- lapply(1:R, function(i)data_norm(X_obs[[i]]))
 
 # tau with tree structure
-tau_true_1 <- rep(0,nrow(X_obs))
-tau_true_1[X_obs<0.33] <- 0.2
-tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
-tau_true_1[(X_obs>=0.66)] <- 0.3
+tree_tau_func <- function(X_obs){
+  tau_true_1 <- rep(0,nrow(X_obs))
+  tau_true_1[X_obs<0.33] <- 0.3
+  tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.7
+  tau_true_1[(X_obs>=0.66)] <- 0.4
+  
+  tau_true_1 <- matrix(tau_true_1, ncol = 1)
+}
 
-tau_true_1 <- matrix(tau_true_1, ncol = 1)
+tau_true_1 <- lapply(1:R, function(i){tree_tau_func(X_obs[[i]])})
 
 # periodoic
-tau_true_2 <- 0.2*sin(2*pi*X_obs) + 0.5
+tau_true_2 <- lapply(1:R, function(i){0.2*sin(2*pi*X_obs[[i]]) + 0.5})
 
-plot(X_obs, tau_true_1, xlab = "Observations", ylab = "tau")
+plot(X_obs[[1]], tau_true_1[[1]], xlab = "Observations", ylab = "tau")
 
-plot(X_obs, tau_true_2, xlab = "Observations", ylab = "tau")
+plot(X_obs[[1]], tau_true_2[[1]], xlab = "Observations", ylab = "tau")
 
 # gauss # sin(tau*pi/2)
 
 for (i in 1:2) {
-  assign(paste0("copula_uu_gauss_",i), BiCopSim(n, family = 1, par = sin(get(paste0("tau_true_",i)) * pi/2)))
+  assign(paste0("copula_uu_gauss_",i), lapply(1:R,function(k){BiCopSim(n, family = 1, par = sin(get(paste0("tau_true_",i))[[k]] * pi/2))}))
 }
 
 # t # sin(tau*pi/2)
 
 for (i in 1:2) {
-  assign(paste0("copula_uu_t_",i), BiCopSim(n, family = 2, par = sin(get(paste0("tau_true_",i)) * pi/2), par2 = 3))
+  assign(paste0("copula_uu_t_",i), lapply(1:R, function(k){BiCopSim(n, family = 2, par = sin(get(paste0("tau_true_",i))[[k]] * pi/2), par2 = 3)}))
 }
 
 # gumbel # 1/(1-tau)
 
 for (i in 1:2) {
-  assign(paste0("copula_uu_gumbel_",i), BiCopSim(n, family = 4, par = 1/(1-get(paste0("tau_true_",i)))))
+  assign(paste0("copula_uu_gumbel_",i), lapply(1:R, function(k){BiCopSim(n, family = 4, par = 1/(1-get(paste0("tau_true_",i))[[k]]))}))
 }
 
 # clayton # (2*tau)/(1-tau)
 
 for (i in 1:2) {
-  assign(paste0("copula_uu_clayton_",i), BiCopSim(n, family = 3, par = (2*get(paste0("tau_true_",i)))/(1-get(paste0("tau_true_",i)))))
+  assign(paste0("copula_uu_clayton_",i), lapply(1:R, function(k){BiCopSim(n, family = 3, par = (2*get(paste0("tau_true_",i))[[k]])/(1-get(paste0("tau_true_",i))[[k]]))}))
 }
 
 # frank # numerical
 
 for (i in 1:2) {
-  assign(paste0("copula_uu_frank_",i), BiCopSim(n, family = 5, par = BiCopTau2Par(5, get(paste0("tau_true_",i)))))
+  assign(paste0("copula_uu_frank_",i), lapply(1:R, function(k){BiCopSim(n, family = 5, par = BiCopTau2Par(5, get(paste0("tau_true_",i))[[k]]))}))
 }
 
 # mcmc params
 
 n.chain_par <- 4
-n.iter_par <- 6000
-n.born.out.par <- 1000
+n.iter_par <- 3000
+n.discard <- 1500
 n.thin <- 1
 
 incl.split_par <- TRUE
@@ -94,36 +95,57 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 n.tree <- 1
 test_case <- 1
 
+data_pred <- function(pred_list, x_list){
+  
+  pred_cond_mod <- list()
+  for (i in c(1:length(x_list))) {
+    pred_cond <- data.frame("obs" = rep(x_list[[i]], each = (n.chain_par * n.iter_par)))
+    pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))[[i]]), each = (n.chain_par * (n.iter_par)))
+    pred_cond$y = BiCopPar2Tau(1,link_gauss(as.vector(pred_list[[i]])))
+    pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+    pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
+    pred_cond$set = rep(i, (n.iter_par*n.chain_par*n))
+    
+    pred_cond_mod[[i]] = pred_cond %>%
+      filter(idx > n.discard) %>%
+      group_by(obs, chain, theta_true) %>%
+      summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
+    
+  }
+  return(pred_cond_mod)
+}
+
+
 # gauss
 
-if(F){
+if(T){
   
-  model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
+  load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree)), X_obs.norm, others = T)
+  
   rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm[[1]]))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(1,link_gauss(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(1,link_gauss(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -131,6 +153,12 @@ if(F){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -142,13 +170,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[[1]][,1], get(paste0("copula_uu_gauss_",test_case))[[1]][,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[[1]][,1], get(paste0("copula_uu_gauss_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > 1000) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -157,19 +185,21 @@ if(F){
     ) +
     guides(color = "none") +
     theme_minimal()
+  
+  pl_like
   
   gauss_like_true <- loglik_gauss((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_gauss_",test_case))[[1]][,1] , get(paste0("copula_uu_gauss_",test_case))[[1]][,2])
   
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -179,14 +209,15 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -196,66 +227,69 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
 
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  gauss_dat_list <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    gauss_stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    gauss_plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    gauss_stat_list <- list("pred" = pred_cond_summary)
+    gauss_plot_list <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
-  save(stat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
-  save(plot_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
+  save(gauss_dat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
+  save(gauss_stat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
+  save(gauss_plot_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gauss_dat_list, gauss_stat_list, gauss_plot_list)
 gc()
 
 if(T){
   
-  model <- get(load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
+  load(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt")), X_obs.norm, others = T)
+  
   rm(list = paste0("gauss_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(1,link_gauss(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(1,link_gauss(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -263,6 +297,12 @@ if(T){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -274,13 +314,13 @@ if(T){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[,1], get(paste0("copula_uu_gauss_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_gauss(link_gauss(x), get(paste0("copula_uu_gauss_",test_case))[[1]][,1], get(paste0("copula_uu_gauss_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -290,16 +330,20 @@ if(T){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  gauss_like_true <- loglik_gauss((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_gauss_",test_case))[[1]][,1] , get(paste0("copula_uu_gauss_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -309,14 +353,15 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -326,68 +371,71 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  gauss_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    gauss_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    gauss_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    gauss_stat_list_adapt <- list("pred" = pred_cond_summary)
+    gauss_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
-  save(stat_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
-  save(plot_list, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
+  save(gauss_dat_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
+  save(gauss_stat_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
+  save(gauss_plot_list_adapt, file = paste0("gauss_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gauss_dat_list_adapt, gauss_stat_list_adapt, gauss_plot_list_adapt)
 gc()
 
 # t
 
-if(F){
+if(T){
   
-  model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
+  load(paste0("t_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("t_mcmc_",test_case,"_tree_",n.tree)), X_obs.norm, others = T)
+  
   rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(2,link_t(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(2,link_t(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -395,6 +443,12 @@ if(F){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -406,13 +460,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",test_case))[,1], get(paste0("copula_uu_t_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",test_case))[[1]][,1], get(paste0("copula_uu_t_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -422,16 +476,20 @@ if(F){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  t_like_true <- loglik_t((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_t_",test_case))[[1]][,1] , get(paste0("copula_uu_t_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -441,14 +499,15 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -458,66 +517,69 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  t_dat_list <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    t_stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    t_plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    t_stat_list <- list("pred" = pred_cond_summary)
+    t_plot_list <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
-  save(stat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
-  save(plot_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
+  save(t_dat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
+  save(t_stat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
+  save(t_plot_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, t_dat_list, t_stat_list, t_plot_list)
 gc()
 
 if(T){
   
-  model <- get(load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
+  load(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt")), X_obs.norm, others = T)
+  
   rm(list = paste0("t_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(2,link_t(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(2,link_t(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -525,6 +587,12 @@ if(T){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -536,13 +604,13 @@ if(T){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",test_case))[,1], get(paste0("copula_uu_t_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_t(link_t(x), get(paste0("copula_uu_t_",test_case))[[1]][,1], get(paste0("copula_uu_t_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -552,16 +620,20 @@ if(T){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  t_like_true <- loglik_t((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_t_",test_case))[[1]][,1] , get(paste0("copula_uu_t_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -571,14 +643,15 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -588,68 +661,71 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  t_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    t_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    t_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    t_stat_list_adapt <- list("pred" = pred_cond_summary)
+    t_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
-  save(stat_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
-  save(plot_list, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
+  save(t_dat_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
+  save(t_stat_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
+  save(t_plot_list_adapt, file = paste0("t_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, t_dat_list_adapt, t_stat_list_adapt, t_plot_list_adapt)
 gc()
 
 # clayton
 
-if(F){
+if(T){
   
-  model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
+  load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("clayton_mcmc_",test_case,"_tree_",n.tree)), X_obs.norm, others = T)
+  
   rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(3,link_clayton(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(3,link_clayton(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -657,6 +733,12 @@ if(F){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -668,13 +750,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_clayton(link_clayton(x), get(paste0("copula_uu_clayton_",test_case))[,1], get(paste0("copula_uu_clayton_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_clayton(link_clayton(x), get(paste0("copula_uu_clayton_",test_case))[[1]][,1], get(paste0("copula_uu_clayton_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -684,16 +766,20 @@ if(F){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  clayton_like_true <- loglik_clayton((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_clayton_",test_case))[[1]][,1] , get(paste0("copula_uu_clayton_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -703,14 +789,15 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -720,66 +807,69 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  clayton_dat_list <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    clayton_stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    clayton_plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    clayton_stat_list <- list("pred" = pred_cond_summary)
+    clayton_plot_list <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
-  save(stat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
-  save(plot_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
+  save(clayton_dat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
+  save(clayton_stat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
+  save(clayton_plot_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, clayton_dat_list, clayton_stat_list, clayton_plot_list)
 gc()
 
 if(T){
   
-  model <- get(load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
+  load(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt")), X_obs.norm, others = T)
+  
   rm(list = paste0("clayton_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(3,link_clayton(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(3,link_clayton(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -787,6 +877,12 @@ if(T){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -798,13 +894,13 @@ if(T){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_clayton(link_clayton(x), get(paste0("copula_uu_clayton_",test_case))[,1], get(paste0("copula_uu_clayton_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_clayton(link_clayton(x), get(paste0("copula_uu_clayton_",test_case))[[1]][,1], get(paste0("copula_uu_clayton_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -814,16 +910,20 @@ if(T){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  clayton_like_true <- loglik_clayton((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_clayton_",test_case))[[1]][,1] , get(paste0("copula_uu_clayton_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -833,14 +933,15 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -850,68 +951,71 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  clayton_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    clayton_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    clayton_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    clayton_stat_list_adapt <- list("pred" = pred_cond_summary)
+    clayton_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
-  save(stat_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
-  save(plot_list, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
+  save(clayton_dat_list_adapt, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
+  save(clayton_stat_list_adapt, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
+  save(clayton_plot_list_adapt, file = paste0("clayton_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, clayton_dat_list_adapt, clayton_stat_list_adapt, clayton_plot_list_adapt)
 gc()
 
 # gumbel
 
-if(F){
+if(T){
   
-  model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
+  load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree)), X_obs.norm, others = T)
+  
   rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(4,link_gumbel(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(4,link_gumbel(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -919,6 +1023,12 @@ if(F){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -930,13 +1040,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), get(paste0("copula_uu_gumbel_",test_case))[,1], get(paste0("copula_uu_gumbel_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_gumbel(link_gumbel(x), get(paste0("copula_uu_gumbel_",test_case))[[1]][,1], get(paste0("copula_uu_gumbel_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -946,16 +1056,20 @@ if(F){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  gumbel_like_true <- loglik_gumbel((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_gumbel_",test_case))[[1]][,1] , get(paste0("copula_uu_gumbel_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -965,14 +1079,15 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -982,66 +1097,69 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  gumbel_dat_list <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    gumbel_stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    gumbel_plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    gumbel_stat_list <- list("pred" = pred_cond_summary)
+    gumbel_plot_list <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
-  save(stat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
-  save(plot_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
+  save(gumbel_dat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
+  save(gumbel_stat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
+  save(gumbel_plot_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gumbel_dat_list, gumbel_stat_list, gumbel_plot_list)
 gc()
 
 if(T){
   
-  model <- get(load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
+  load(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt")), X_obs.norm, others = T)
+  
   rm(list = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(4,link_gumbel(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(4,link_gumbel(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1049,6 +1167,12 @@ if(T){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -1060,13 +1184,13 @@ if(T){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), get(paste0("copula_uu_gumbel_",test_case))[,1], get(paste0("copula_uu_gumbel_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_gumbel(link_gumbel(x), get(paste0("copula_uu_gumbel_",test_case))[[1]][,1], get(paste0("copula_uu_gumbel_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -1076,16 +1200,20 @@ if(T){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  gumbel_like_true <- loglik_gumbel((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_gumbel_",test_case))[[1]][,1] , get(paste0("copula_uu_gumbel_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1095,14 +1223,15 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1112,68 +1241,71 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  gumbel_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    gumbel_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    gumbel_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    gumbel_stat_list_adapt <- list("pred" = pred_cond_summary)
+    gumbel_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
-  save(stat_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
-  save(plot_list, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
+  save(gumbel_dat_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
+  save(gumbel_stat_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
+  save(gumbel_plot_list_adapt, file = paste0("gumbel_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gumbel_dat_list_adapt, gumbel_stat_list_adapt, gumbel_plot_list_adapt)
 gc()
 
 # frank
 
-if(F){
+if(T){
   
-  model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree, ".Rdata")))
+  load(paste0("frank_mcmc_",test_case,"_tree_",n.tree, ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("frank_mcmc_",test_case,"_tree_",n.tree)), X_obs.norm, others = T)
+  
   rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(5,link_frank(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(5,link_frank(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1181,6 +1313,12 @@ if(F){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -1192,13 +1330,13 @@ if(F){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_frank(link_frank(x), get(paste0("copula_uu_frank_",test_case))[,1], get(paste0("copula_uu_frank_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_frank(link_frank(x), get(paste0("copula_uu_frank_",test_case))[[1]][,1], get(paste0("copula_uu_frank_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -1208,16 +1346,20 @@ if(F){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  frank_like_true <- loglik_frank((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_frank_",test_case))[[1]][,1] , get(paste0("copula_uu_frank_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1227,14 +1369,15 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1244,66 +1387,69 @@ if(F){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  frank_dat_list <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    frank_stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    frank_plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    frank_stat_list <- list("pred" = pred_cond_summary)
+    frank_plot_list <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
-  save(stat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
-  save(plot_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
+  save(frank_dat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_dat.Rdata"))
+  save(frank_stat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_stat.Rdata"))
+  save(frank_plot_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_plot.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, frank_dat_list, frank_stat_list, frank_plot_list)
 gc()
 
 if(T){
   
-  model <- get(load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata")))
+  load(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt", ".Rdata"))
+  
+  summ_list <- BART_summary(get(paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt")), X_obs.norm, others = T)
+  
   rm(list = paste0("frank_mcmc_",test_case,"_tree_",n.tree,"_adapt"))
+  gc()
   
-  list_pred_lb <- lapply(1:length(model$trees), \(idx) BART_calculate_pred(model$trees[[idx]], X_obs.norm))
+  pred_cond_mod_list <- data_pred(summ_list$pred, X_obs.norm)
   
-  pred_val = do.call(rbind,list_pred_lb)
+  pred_cond_case_1 <- data.frame("obs" = rep(X_obs.norm[[1]], each = (n.chain_par * n.iter_par)))
+  pred_cond_case_1$theta_true = rep((get(paste0("tau_true_",test_case))[[1]]), each = (n.chain_par * (n.iter_par)))
+  pred_cond_case_1$y = BiCopPar2Tau(5,link_frank(as.vector(summ_list$pred[[1]])))
+  pred_cond_case_1$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
+  pred_cond_case_1$idx = rep(rep(1:n.iter_par, n.chain_par),n)
   
-  rm(list_pred_lb)
-  
-  pred_cond <- data.frame("obs" = rep(X_obs.norm, each = (n.chain_par * n.iter_par)))
-  pred_cond$theta_true = rep((get(paste0("tau_true_",test_case))), each = (n.chain_par * (n.iter_par)))
-  pred_cond$y = BiCopPar2Tau(5,link_frank(as.vector(pred_val)))
-  pred_cond$chain = rep(rep(1:n.chain_par, each = n.iter_par),n)
-  pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),n)
-  
-  pred_cond_mod = pred_cond %>%
-    filter(idx > n.born.out.par) %>%
+  pred_cond_case_1_mod = pred_cond_case_1 %>%
+    filter(idx > n.discard) %>%
     group_by(obs, chain, theta_true) %>%
     summarise(theta_mean = mean(y), theta_q975 = quantile(y, .975), theta_q025 = quantile(y, .025)) 
   
-  pred_cond_mod_avg = pred_cond_mod %>%
+  pred_cond_case_1_mod_avg = pred_cond_case_1_mod %>%
     group_by(obs, theta_true) %>%
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  pl_pred <- ggplot(pred_cond_mod_avg) +
+  ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1311,6 +1457,12 @@ if(T){
     xlab('X') +
     ylab('estimated tau') +
     theme_classic()
+  
+  pred_cond_mod <- do.call(rbind, pred_cond_mod_list)
+  
+  pred_cond_mod_avg = pred_cond_mod %>%
+    group_by(obs, theta_true) %>%
+    summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   pred_cond_stat = pred_cond_mod_avg %>%
     mutate(RMSE = ((theta_true - theta_mean)^2)) %>%
@@ -1322,13 +1474,13 @@ if(T){
   
   # like
   
-  like_df <-data.frame("nn" = apply(pred_val, 1, function(x)loglik_frank(link_frank(x), get(paste0("copula_uu_frank_",test_case))[,1], get(paste0("copula_uu_frank_",test_case))[,2])))
-  like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+  like_df_case_1 <-data.frame("nn" = apply(summ_list$pred[[1]], 1, function(x)loglik_frank(link_frank(x), get(paste0("copula_uu_frank_",test_case))[[1]][,1], get(paste0("copula_uu_frank_",test_case))[[1]][,2])))
+  like_df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+  like_df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
   
   
-  pl_like <- like_df %>%
-    # filter(idx > n.born.out.par) %>%
+  pl_like <- like_df_case_1 %>%
+    filter(idx > n.discard) %>%
     ggplot(aes(x = idx, y = nn, color = factor(chain))) +
     geom_line() +
     labs(
@@ -1338,16 +1490,20 @@ if(T){
     guides(color = "none") +
     theme_minimal()
   
+  pl_like
+  
+  frank_like_true <- loglik_frank((sin(get(paste0("tau_true_",test_case))[[1]] * pi/2)), get(paste0("copula_uu_frank_",test_case))[[1]][,1] , get(paste0("copula_uu_frank_",test_case))[[1]][,2])
+  
   if((n.tree==1)||(test_case == 1)){
     # nterm
     
-    nt_lb.df <- nterm_BART(model)
-    nt_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    nt_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    nt_lb.df_case_1 <- summ_list$nterm[[1]]
+    nt_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    nt_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
     
-    pl_nl <- nt_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_nl <- nt_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1357,14 +1513,15 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_nl
     # depth
     
-    depth_lb.df <- depth_BART(model)
-    depth_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    depth_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    depth_lb.df_case_1 <- summ_list$depth[[1]]
+    depth_lb.df_case_1$idx <- rep(1:n.iter_par, n.chain_par)
+    depth_lb.df_case_1$chain <- rep(1:n.chain_par, each = n.iter_par)
     
-    pl_dp <- depth_lb.df %>%
-      # filter(idx > n.born.out.par) %>%
+    pl_dp <- depth_lb.df_case_1 %>%
+      # filter(idx > n.discard) %>%
       ggplot(aes(x = idx, y = nn, color = factor(chain))) +
       geom_line() +
       labs(
@@ -1374,36 +1531,39 @@ if(T){
       guides(color = "none") +
       theme_minimal()
     
+    pl_dp
     # acceptance
     
-    acc_lb.df <- acc_BART(model)
-    acc_lb.df$idx <- rep(1:n.iter_par, n.chain_par)
-    acc_lb.df$chain <- rep(1:n.chain_par, each = n.iter_par)
+    acc_lb.df <- do.call(rbind,summ_list$acc)
+    nt_lb.df <- do.call(rbind, summ_list$nterm)
+    depth_lb.df <- do.call(rbind, summ_list$depth)
     
-    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.born.out.par]), mean(depth_lb.df$nn[depth_lb.df$idx > n.born.out.par]), mean(acc_lb.df$nn[acc_lb.df$idx > n.born.out.par]==TRUE))
+    
+    tree_stat_summary = c(mean(nt_lb.df$nn[nt_lb.df$idx > n.discard]), mean(depth_lb.df$nn[depth_lb.df$idx > n.discard]), mean(acc_lb.df$nn[acc_lb.df$idx > n.discard]==TRUE))
     
     names(tree_stat_summary) <- c("nterm", "depth", "acc")
   }
   
   
-  dat_list <- list("pred" = pred_cond, "like" = like_df)
+  frank_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
   
   if((n.tree==1)||(test_case == 1)){
-    stat_list <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
+    frank_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
+    frank_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred, "depth" = pl_dp, "nterm" = pl_nl)
   } else{
-    stat_list <- list("pred" = pred_cond_summary)
-    plot_list <- list("like" = pl_like, "pred" = pl_pred)
+    frank_stat_list_adapt <- list("pred" = pred_cond_summary)
+    frank_plot_list_adapt <- list("like" = pl_like, "pred" = pl_pred)
   }
   
-  save(dat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
-  save(stat_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
-  save(plot_list, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
+  save(frank_dat_list_adapt, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_dat_adapt.Rdata"))
+  save(frank_stat_list_adapt, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_stat_adapt.Rdata"))
+  save(frank_plot_list_adapt, file = paste0("frank_mcmc_",test_case,"_tree_",n.tree, "_plot_adapt.Rdata"))
   
 }
 
-rm(acc_lb.df, depth_lb.df, like_df, list_pred_lb, model, nt_lb.df, pl_dp, pl_like, pl_nl, pred_cond, pred_cond_mod, pred_cond_stat, 
-   pred_val, pred_cond_summary, tree_stat_summary, pl_pred, plot_list, dat_list,stat_list,pred_cond_mod_avg)
+rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
+   pred_cond_summary, like_df_case_1, pl_like, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, frank_dat_list_adapt, frank_stat_list_adapt, frank_plot_list_adapt)
 gc()
 
 if(F){

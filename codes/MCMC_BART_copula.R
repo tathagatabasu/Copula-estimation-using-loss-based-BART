@@ -1062,3 +1062,34 @@ BART_calculate_pred <- function(tree_list, X){
   Reduce('+', gx)
 }
 
+BART_summary <- function(model, x, others = T){
+  pred_list <- list()
+  nterm_list <- list()
+  depth_list <- list()
+  acc_list <- list()
+  if(others){
+    for (i in seq_len(length(x))) {
+      pred_list[[i]] <- do.call(rbind, lapply(1:length(model[[i]]$trees), \(idx) BART_calculate_pred(model[[i]]$trees[[idx]], x[[i]])))
+      nterm_list[[i]] <- nterm_BART(model[[i]])
+      nterm_list[[i]]$idx <- rep(1:n.iter_par, n.chain_par)
+      nterm_list[[i]]$chain <- rep(1:n.chain_par, each = n.iter_par)
+      
+      depth_list[[i]] <- depth_BART(model[[i]])
+      depth_list[[i]]$idx <- rep(1:n.iter_par, n.chain_par)
+      depth_list[[i]]$chain <- rep(1:n.chain_par, each = n.iter_par)
+      
+      acc_list[[i]] <- acc_BART(model[[i]])
+      acc_list[[i]]$idx <- rep(1:n.iter_par, n.chain_par)
+      acc_list[[i]]$chain <- rep(1:n.chain_par, each = n.iter_par)
+      
+    }
+    return(list("pred" = pred_list, "nterm" = nterm_list, "depth" = depth_list, "acc" = acc_list))
+  } else {
+    for (i in seq_len(length(x))) {
+      pred_list[[i]] <- BART_calculate_pred(model[[i]]$trees, x[[i]])
+    }
+    return(list("pred" = pred_list))
+  }
+}
+
+
