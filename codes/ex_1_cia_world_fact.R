@@ -47,9 +47,9 @@ GDP <- as.data.frame((log(cia_wf_data$GDP_PPP) - min(log(cia_wf_data$GDP_PPP)))/
 GDP <- as.matrix(GDP)
 rownames(GDP) <- 1:nrow(GDP)
 
-n.chain_par <- 10
-n.iter_par <- 15000
-n.born.out.par <- 1000
+n.chain_par <- 5
+n.iter_par <- 100000
+n.born.out.par <- 500
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
@@ -67,9 +67,9 @@ source('import_functions.R')
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ##########################################################
 
-if(F){
-  gauss_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+if(T){
+  gauss_GDP_LE_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP,
                                          U1 = U1_LE,
                                          U2 = U2_LE,
@@ -83,14 +83,15 @@ if(F){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "gauss",
-                                         adapt = F)
+                                         adapt = T)
   
-  save(gauss_GDP_LE, file = paste0("gauss_gdp_LE_tree_",n.tree,".Rdata"))
-  rm(gauss_GDP_LE)
+  save(gauss_GDP_LE_adapt, file = paste0("gauss_GDP_LE_adapt_tree_",n.tree,".Rdata"))
+  rm(gauss_GDP_LE_adapt)
+  gc()
   gc()
   
-  t_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+  t_GDP_LE_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                      X = GDP,
                                      U1 = U1_LE,
                                      U2 = U2_LE,
@@ -104,14 +105,16 @@ if(F){
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
                                      cop_type = "t",
-                                     adapt = F)
+                                     adapt = T)
   
-  save(t_GDP_LE, file = paste0("t_gdp_LE_tree_",n.tree,".Rdata"))
-  rm(t_GDP_LE)
+  save(t_GDP_LE_adapt, file = paste0("t_GDP_LE_adapt_tree_",n.tree,".Rdata"))
+  rm(t_GDP_LE_adapt)
   gc()
-  
+  gc()
+}
+if(F){
   clayton_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                            X = GDP,
                                            U1 = U1_LE,
                                            U2 = U2_LE,
@@ -130,9 +133,10 @@ if(F){
   save(clayton_GDP_LE, file = paste0("clayton_gdp_LE_tree_",n.tree,".Rdata"))
   rm(clayton_GDP_LE)
   gc()
+  gc()
   
   gumbel_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                           X = GDP,
                                           U1 = U1_LE,
                                           U2 = U2_LE,
@@ -151,9 +155,10 @@ if(F){
   save(gumbel_GDP_LE, file = paste0("gumbel_gdp_LE_tree_",n.tree,".Rdata"))
   rm(gumbel_GDP_LE)
   gc()
+  gc()
   
   frank_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP,
                                          U1 = U1_LE,
                                          U2 = U2_LE,
@@ -172,11 +177,13 @@ if(F){
   save(frank_GDP_LE, file = paste0("frank_gdp_LE_tree_",n.tree,".Rdata"))
   rm(frank_GDP_LE)
   gc()
+  gc()
+  
 }
 
 if(T){
-  gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+  gauss_GDP_LT_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP,
                                          U1 = U1_LT,
                                          U2 = U2_LT,
@@ -190,14 +197,15 @@ if(T){
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
                                          cop_type = "gauss",
-                                         adapt = F)
+                                         adapt = T)
   
-  save(gauss_GDP_LT, file = paste0("gauss_gdp_LT_tree_",n.tree,".Rdata"))
-  rm(gauss_GDP_LT)
+  save(gauss_GDP_LT_adapt, file = paste0("gauss_GDP_LT_adapt_tree_",n.tree,".Rdata"))
+  rm(gauss_GDP_LT_adapt)
+  gc()
   gc()
   
-  t_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+  t_GDP_LT_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
+                                     n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                      X = GDP,
                                      U1 = U1_LT,
                                      U2 = U2_LT,
@@ -211,14 +219,16 @@ if(T){
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
                                      cop_type = "t",
-                                     adapt = F)
+                                     adapt = T)
   
-  save(t_GDP_LT, file = paste0("t_gdp_LT_tree_",n.tree,".Rdata"))
-  rm(t_GDP_LT)
+  save(t_GDP_LT_adapt, file = paste0("t_GDP_LT_adapt_tree_",n.tree,".Rdata"))
+  rm(t_GDP_LT_adapt)
   gc()
-  
+  gc()
+}
+if(F){
   clayton_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                           n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                            X = GDP,
                                            U1 = U1_LT,
                                            U2 = U2_LT,
@@ -237,9 +247,10 @@ if(T){
   save(clayton_GDP_LT, file = paste0("clayton_gdp_LT_tree_",n.tree,".Rdata"))
   rm(clayton_GDP_LT)
   gc()
+  gc()
   
   gumbel_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                           X = GDP,
                                           U1 = U1_LT,
                                           U2 = U2_LT,
@@ -258,9 +269,10 @@ if(T){
   save(gumbel_GDP_LT, file = paste0("gumbel_gdp_LT_tree_",n.tree,".Rdata"))
   rm(gumbel_GDP_LT)
   gc()
+  gc()
   
   frank_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
-                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 10,
+                                         n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP,
                                          U1 = U1_LT,
                                          U2 = U2_LT,
@@ -278,6 +290,7 @@ if(T){
   
   save(frank_GDP_LT, file = paste0("frank_gdp_LT_tree_",n.tree,".Rdata"))
   rm(frank_GDP_LT)
+  gc()
   gc()
   
 }
