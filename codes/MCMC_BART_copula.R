@@ -1081,12 +1081,13 @@ BART_summary <- function(model, x, others = T){
       acc_list[[i]] <- acc_BART(model[[i]])
       acc_list[[i]]$idx <- rep(1:n.iter_par, n.chain_par)
       acc_list[[i]]$chain <- rep(1:n.chain_par, each = n.iter_par)
-      
+      print(i)
     }
     return(list("pred" = pred_list, "nterm" = nterm_list, "depth" = depth_list, "acc" = acc_list))
   } else {
     for (i in seq_len(length(x))) {
       pred_list[[i]] <- BART_calculate_pred(model[[i]]$trees, x[[i]])
+      print(i)
     }
     return(list("pred" = pred_list))
   }

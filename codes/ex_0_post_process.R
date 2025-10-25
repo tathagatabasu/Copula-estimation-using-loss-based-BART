@@ -145,7 +145,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -258,7 +258,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gauss_dat_list, gauss_stat_list, gauss_plot_list)
 gc()
 
@@ -289,7 +289,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -385,7 +385,7 @@ if(T){
   }
   
   
-  gauss_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
+  gauss_dat_list_adapt <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
     gauss_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
@@ -402,7 +402,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, gauss_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gauss_dat_list_adapt, gauss_stat_list_adapt, gauss_plot_list_adapt)
 gc()
 
@@ -435,7 +435,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -548,7 +548,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, t_dat_list, t_stat_list, t_plot_list)
 gc()
 
@@ -579,7 +579,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -675,7 +675,7 @@ if(T){
   }
   
   
-  t_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
+  t_dat_list_adapt <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
     t_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
@@ -692,7 +692,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, t_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, t_dat_list_adapt, t_stat_list_adapt, t_plot_list_adapt)
 gc()
 
@@ -725,7 +725,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -838,7 +838,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, clayton_dat_list, clayton_stat_list, clayton_plot_list)
 gc()
 
@@ -869,7 +869,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -965,7 +965,7 @@ if(T){
   }
   
   
-  clayton_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
+  clayton_dat_list_adapt <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
     clayton_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
@@ -982,7 +982,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, clayton_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, clayton_dat_list_adapt, clayton_stat_list_adapt, clayton_plot_list_adapt)
 gc()
 
@@ -1015,7 +1015,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1128,7 +1128,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gumbel_dat_list, gumbel_stat_list, gumbel_plot_list)
 gc()
 
@@ -1159,7 +1159,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1255,7 +1255,7 @@ if(T){
   }
   
   
-  gumbel_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
+  gumbel_dat_list_adapt <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
     gumbel_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
@@ -1272,7 +1272,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, gumbel_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, gumbel_dat_list_adapt, gumbel_stat_list_adapt, gumbel_plot_list_adapt)
 gc()
 
@@ -1305,7 +1305,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1418,7 +1418,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, frank_dat_list, frank_stat_list, frank_plot_list)
 gc()
 
@@ -1449,7 +1449,7 @@ if(T){
     summarise(theta_mean = mean(theta_mean), theta_q975 = mean(theta_q975), theta_q025 = mean(theta_q025)) 
   
   
-  ggplot(pred_cond_case_1_mod_avg) +
+  pl_pred <- ggplot(pred_cond_case_1_mod_avg) +
     geom_point(aes(obs, theta_true), col = 2) +
     geom_line(aes(obs, theta_mean)) +
     geom_line(aes(obs, theta_q975), col = 3) +
@@ -1545,7 +1545,7 @@ if(T){
   }
   
   
-  frank_dat_list_adapt <- list("pred" = pred_cond, "like" = like_df)
+  frank_dat_list_adapt <- list("all" = summ_list, "pred" = pred_cond_mod_list)
   
   if((n.tree==1)||(test_case == 1)){
     frank_stat_list_adapt <- list("pred" = pred_cond_summary, "tree" = tree_stat_summary)
@@ -1562,7 +1562,7 @@ if(T){
 }
 
 rm(summ_list, pred_cond_mod_list, pred_cond_case_1, pred_cond_case_1_mod, pred_cond_case_1_mod_avg, pred_cond_mod, pred_cond_mod_avg, pred_cond_stat,
-   pred_cond_summary, like_df_case_1, pl_like, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
+   pred_cond_summary, like_df_case_1, pl_like, pl_pred, frank_like_true, nt_lb.df_case_1, pl_nl, depth_lb.df_case_1, pl_dp,
    acc_lb.df, nt_lb.df, depth_lb.df, tree_stat_summary, frank_dat_list_adapt, frank_stat_list_adapt, frank_plot_list_adapt)
 gc()
 
