@@ -18,6 +18,7 @@
 \usepackage{algorithm}
 \usepackage{amsthm}
 \usepackage{soul}
+\usepackage{makecell}
 \usepackage{color}
 \usepackage{hyperref}
 \usepackage[capitalise]{cleveref}
@@ -27,11 +28,14 @@
 \newtheorem{definition}{Definition}[section]
 %
 
-\usepackage[numbers]{natbib}
+\usepackage[authoryear, round]{natbib}
 \usepackage{url} % not crucial - just used below for the URL 
 \usepackage{doi}
 
 \newcommand{\dashrule}{\hdashline\noalign{\vskip 0.5ex}}
+\renewcommand\theadalign{l}
+\renewcommand\theadfont{}
+\renewcommand\theadgape{}
 
 \title{Conditional Copula models using loss-based Bayesian Additive Regression Trees}
 \author{Tathagata Basu$^1$}
@@ -55,74 +59,67 @@
 \maketitle
 
 \section{Introduction}
-Modelling the dependence structure is an important problem in multivariate analysis. To model such dependence structures, we often require non-trivial multivariate distribution functions which makes this problem extremely challenging. Sklar's theorem\cite{sklar:1959} simplified such tasks, which states that a multivariate distribution can be modelled using it's marginals and copula that is a joint cumulative distribution function on the unit hypercube. Following this, several other theoretical advancements (\citet{kimeldori1975uniform,ruschendorf1976,schweizer1981,Genest01091993,Genest1993mult}) in the field made copula inference popular in the context of statistical modelling leading to its prominence in applied statistical literature involving  survival analysis (\citet 	{clayton1978model,oakes1989bivariate,zheng1995estimates,shih1995inferences,braekers2005copula}); risk management (\citet{fama1993common,BURGERT2006289,engle1990asset}); engineering applications (\citet{salvadori2007use,aghakouchak2010copula}); genetics (\citet{li2006quantitative}) etc. We refer readers to \citet{GENEST2024105278}'s review on copula modelling in remembrance of Abe Sklar for a detailed literature review.
+In multivariate analysis, we often observe that random variables exhibit a dependence in their behaviour and the study of such dependence is extremely important due to its implications in real-life modelling. However, analysing such dependence structures can be very cumbersome as we often require non-trivial multivariate distributions which makes this problem extremely challenging. Sklar's theorem\citep{sklar:1959} simplified such tasks, which states that a multivariate distribution can be modelled using it's marginals and a copula, that is, a joint cumulative distribution function on the unit hypercube. Following this, several other theoretical advancements \citep{kimeldori1975uniform,ruschendorf1976,schweizer1981,Genest01091993,Genest1993mult} in the field, made copula inference popular in the context of statistical modelling leading to its prominence in applied statistical literature involving  survival analysis \citep 	{clayton1978model,oakes1989bivariate,zheng1995estimates,shih1995inferences,braekers2005copula}; risk management \citep{fama1993common,BURGERT2006289,engle1990asset}; engineering applications \citep{salvadori2007use,aghakouchak2010copula}; genetics \citep{li2006quantitative} etc. While copula modelling remained popular in multivariate analyses, a major computational improvement can be credited to \citet{bedford_vine_2002}, where they introduced a nested graphical model for copula construction and coined it as `Vine Copula'. Later, based on their work \citet{czado_pair_cop_2010} introduced pair wise copula for multivariate modelling which improved the computational aspect further.  We refer readers to \citet{GENEST2024105278}'s review on copula modelling in remembrance of Abe Sklar for a detailed literature review.
 
-Despite the use of copulas in applied statistics, adjustment for confounding in copulas is a relatively new concept. \citet{patton2006} formalised the conditional version of Sklar's theorem for its applicability in financial time series modelling. Initial works on conditional copulas were mostly for estimating time varying dependence structures using likelihood based approaches for autoregressive models (\citet{patton2006,JONDEAU2006827,BARTRAM20071461}). Later \citet{acar2010} proposed a non-parametric approach for estimating conditional copula for general problems. Several other likelihood-based non-parametric (\citet{GIJBELS20111919,Gijbels2012mult_cop}) and semi-parametric (\citet{ABEGAZ201243}) approaches were proposed in this regard. \citet{valle_cond_cop} proposed a Dirichlet mixture models for estimating conditional copula and \citet{GRAZIAN2022107417} proposed an approximate Bayesian approach for the same. While likelihood-based approaches rely on kernel estimators, \citet{BonacinaLopezThomas+2025} proposed a ``Classification and Regression Tree'' (CART) \cite{brei_CART} algorithm for modelling conditional copula and investigated consistency of the CART algorithm in conditional copula estimation.
+In many situations, the dependence between random variables can have an external influence, in such cases it is useful to adjust for external covariates in copulas. To tackle this issue, \citet{patton2006} formalised the conditional version of Sklar's theorem for its applicability in financial time series modelling. Initial works on conditional copulas were mostly for estimating time varying dependence structures using likelihood based approaches for autoregressive models \citep{patton2006,JONDEAU2006827,BARTRAM20071461}. Later \citet{acar2010} proposed a non-parametric approach for estimating conditional copulas for general problems. Several other likelihood-based non-parametric \citep{GIJBELS20111919,Gijbels2012mult_cop} and semi-parametric \citep{ABEGAZ201243} approaches have been proposed in this regard. \citet{valle_cond_cop} proposed a Dirichlet mixture models for estimating conditional copulas and \citet{GRAZIAN2022107417} proposed an approximate Bayesian approach for the same. Recently, \citet{BonacinaLopezThomas+2025} proposed a ``Classification and Regression Tree'' (CART) based \citep{brei_CART} algorithm for modelling conditional copulas and investigated the consistency of the CART algorithm in conditional copula estimation.
 
-The introduction of CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative of CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier Bayesian CART models (\citet{chipman98BCART,denison98BCART}) where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression (\citet{Murray03042021}); survival analysis (\citet{Sparapani_BART}); gamma regression (\citet{Linero_BART_gamma}); generalised BART (\citet{Linero02012025}). While the original tree prior proposed by \citet{chipman98BCART} is most commonly used in BART literatures, it is not very straightforward to incorporate prior information on the number of terminal nodes. The prior proposed by \citet{denison98BCART} can address incorporate such information on the number of terminal nodes but tends to produce skewed trees. Several alternatives were proposed (\citet{Wu_CART,rockova_BART,Linero_BART_VS}) to tackle this issue but choice of hyperparameters remains subjective. In order to reduce such subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression tree using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree which considers both the loss in information and complexity of the tree, making it appealing for BART models.
+The introduction of the CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative of CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier Bayesian CART models \citep{chipman98BCART,denison98BCART} where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression \citep{Murray03042021}; survival analysis \citep{Sparapani_BART}; gamma regression \citep{Linero_BART_gamma}; generalised BART \citep{Linero02012025}. While the original tree prior proposed by \citet{chipman98BCART} is most commonly used in BART literatures, it is not very straightforward to incorporate prior information on the number of terminal nodes. On the other hand the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives are proposed \citep{Wu_CART,rockova_BART,Linero_BART_VS} to tackle this issue but choice of hyperparameters remains subjective. In order to reduce such subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression trees using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree, which considers both the loss in information and complexity of the tree, making it appealing for BART models.
 
-In this article, we exploit the loss-based BART prior proposed \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straight forward likelihood function to chose a conjugate prior. While, the method proposed by \citet{Linero02012025} is appealing for most problems, we noticed that a Laplace approximation based approach is not
-viable for conditional copula modelling as the first and second order derivatives may not be numerically stable. So we propose a reversible jump MCMC algorithm to sample from the posterior. We also propose an adaptive routine for the proposal distribution to estimate the posteriors of the terminal node values. Moreover, we notice from initial analyses, such adaptive approach also converges faster to a higher likelihood regions. We illustrate our method using different copula models to show the efficiency of our approach in identifying the true tree structure as well as estimating the true conditional dependence. Furthermore, due to its simple and explicable implementation, it can easily be adapted for other modelling problems. 
+In this article, we exploit the loss-based BART prior developed by \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straight forward likelihood function to chose a conjugate prior. Therefore, we opt for a trans-dimensional MCMC algorithm that can sample a new tree of a different dimension as well as sample new terminal node values. Similar method, proposed by \citet{Linero02012025} uses a Laplace approximation based approach for sampling terminal node values. Unfortunately, Laplace approximation is not viable for conditional copula modelling as the first and second order derivatives of the likelihood may not be numerically stable. To overcome this issue, we propose an efficient reversible jump MCMC (RJ MCMC) type algorithm \citep{green_RJMCMC} to sample from the posterior. However, we notice that choosing the parameters of the proposal distribution is rather difficult task for the sum of trees models and mixing can be extremely slow in some cases. This motivates us to introduce an adaptive formulation for the choice of proposal distribution which efficiently updates the variance of a Gaussian proposal using previously accumulated MCMC samples. Initial analyses shows that our adaptive approach also converges faster to higher likelihood regions. We illustrate our method using different copula models to show the efficiency of our approach in identifying the true tree structure, as well as estimating the true conditional dependence. Furthermore, due to its simple and explicable implementation, it can easily be adapted for other modelling problems using BART. 
 
-The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees followed by our semi-parametric estimation approach for conditional copulas. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior along with its adaptive variant. After that, we illustrate our method using synthetic dataset in \cref{sec:sim} to monitor it's efficiency and accuracy; followed by case studies involving real life dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and conclude it in \cref{sec:conc}.
+The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees, followed by our semi-parametric estimation approach for conditional copulas in \cref{sec:cond:cop}. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior, along with its adaptive variant. After that, we illustrate our method using two synthetic datasets in \cref{sec:sim} to show its efficiency and accuracy; followed by case studies using CIA world fact dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and conclude it in \cref{sec:conc}.
 
 \section{Preliminaries}\label{sec:prelim}
 
 In this section, we present a formal description of conditional copulas followed by the BART models and the loss-based prior for BART proposed by \citet{serafini2024lossbasedpriortreetopologies}, which we will incorporate for modelling.
 
 \subsection{Conditional copula}
-Let $Y_1$ and $Y_2$ be two continuous random variables and $X$ be a continuous random variable that might affect the relationship between $Y_1$ and $Y_2$. Let $H_x(y_1,y_2)$ denotes the joint distribution of $(Y_1,Y_2)$ conditional on $X$. Then, according to Patton's\cite{patton2006} interpretation of Sklar's\cite{sklar:1959} theorem, there exists a unique copula $C_x$ such that
+Let $Y_1$ and $Y_2$ denote two random variables such that they have continuous marginal cumulative distribution functions $F_1(y_1)$ and $F_2(y_2)$. Then according to \citet{sklar:1959}, we can use a copula $C$ with parameter $\theta$ to model the dependence between $Y_1$ and $Y_2$ so that
 \begin{equation*}
-	H_x(y_1,y_2) = C_x(F_{1x}(y_1),F_{2x}(y_2))
+	H(y_1,y_2) = C\left(F_{1}(y_1),F_{2}(y_2)\mid \theta\right)
 \end{equation*}
-where $F_{ix}(y_i)$ is the cdf of $Y_i$ conditional on $X$ for $i=1,2$. Alternatively, we can write the following form of copula distribution function given by:
+where $H(y_1,y_2)$ is the joint cumulative distribution function of $Y_1$ and $Y_2$.  
+
+In many practical situations, the dependence between $Y_1$ and $Y_2$ can be influenced by an external variable $X$. To tackle such issues, \citet{patton2006} suggested a conditional version of \citet{sklar:1959}'s theorem. Let, $H_x(y_1,y_2)$ denote joint cumulative distribution of $Y_1$ and $Y_2$ and $F_{ix}(y_i)$ is the marginal of $Y_i$ conditional on $X$ for $i=1,2$. Then we can write the following
 \begin{equation*}
-	C_x(u_1,u_2) = H_x\left(F_{1x}^{-1}(u_1),F_{2x}^{-1}(u_2)\right)
+	H_x(y_1,y_2) = C\left(F_{1x}(y_1),F_{2x}(y_2)\mid \theta(x)\right)
 \end{equation*}
-where $u_i = F_{ix}(y_i)$ are pseudo observations and $F_{ix}^{-1}(u_i)$s are conditional quantile functions
-for $i=1,2$. For a more detailed introduction to the concept, we recommend the works of \citet{patton2006,acar2010,GIJBELS20111919} etc.
+where $\theta(x)$ is the copula parameter conditional on $x$. Alternatively, let $u_i = F_{ix}(y_i)$ be the pseudo observations and $F_{ix}^{-1}(u_i)$s be the conditional quantile functions
+for $i=1,2$. Then alternate formulation holds as well:
+\begin{equation*}
+	C\left(u_1,u_2\mid \theta(x)\right) = H_x\left(F_{1x}^{-1}(u_1),F_{2x}^{-1}(u_2)\right).
+\end{equation*}
+For a more detailed introduction to the concept check \citet{patton2006,acar2010,GIJBELS20111919} etc.
 
 \subsection{Loss-based BART}
 
-Let, $Z\coloneqq(Z_1,\cdots,Z_n)$ denote $n$ outputs and $x\coloneqq(x_1,\cdots,x_n)$ denote corresponding $p$-dimensional inputs. \citet{chipman2010BART} showed that we can approximate the functional relationship between $Z$ and $x$ using sum of regression trees given by:
-
+Before defining the loss-based prior for BART, we first discuss regression tree models. Let $T$ denote a regression tree with a set of internal nodes depicting decision rules and a set of terminal nodes that assigns functional values corresponding to decision rules. We denote this set of terminal node values by $M =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T)}\}$ where $n_L(T)$ is the number of terminal nodes of the tree $T$. Then we can predict an output $Z\coloneqq(Z_1,\cdots,Z_n)$ in the following way:
+\begin{equation*}
+	Z_i = g(x_i, T, M) + \epsilon_i; \qquad \epsilon_i\sim \mathcal{N}(0,\sigma^2)
+\end{equation*} 
+where $g$ is a function that assigns a terminal node value to $x_i$ for $i=1,\cdots,n$ and $\epsilon_i$ is the associated noise that follows a normal distribution with variance $\sigma^2$. This is a single tree model developed by \citet{chipman98BCART}, this is extended to a sum of trees model by \citet{chipman2010BART} in the following way:
 \begin{equation}\label{eq:BART}
-	Z_i \sim \mathcal{N}\left(\sum_{t=1}^m g(x_i, T_t, M_t),\sigma^2\right);\qquad 1\le i\le n.
+	Z_i = \sum_{t=1}^m g(x_i, T_t, M_t) + \epsilon_i; \qquad \epsilon_i\sim \mathcal{N}(0,\sigma^2)
 \end{equation}
-where $T_t$ denotes the $t$-th tree; $M_t$ denotes the vector of terminal node values $M_t =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T_t)}\}$ of the $t$-th tree; $n_L(T_t)$ denotes the number of terminal nodes of the $t$-th tree; and $g(x_i, T_t, M_t)$ denotes the $t$-th regression tree.
+where $T_t$ denotes the $t$-th tree; $M_t$ denotes the $t$-th vector of terminal node values $M_t =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T_t)}\}$ of the $t$-th tree; and $n_L(T_t)$ denotes the number of terminal nodes of the $t$-th tree.
 
-Such representation allows us to approximate a function with piecewise constant values on a partitioned domain. The internal nodes of the tree create these partitions by assigning a splitting rule $x_{\cdot j}\le \kappa$ for $1\le j \le p$ on each internal node where the value $\kappa$ is either chosen from one of the observed values $x_{ij}$ or chosen uniformly in a range of values $(\underline{x}_{\cdot j},\overline{x}_{\cdot j})$. In order to be able to estimate the value at the terminal nodes, we want to ensure that at least one observation is associated with each terminal node. Such partitions are called \textit{valid}.  \citet{serafini2024lossbasedpriortreetopologies} introduce the following to formal definition in this regard.
+This representation allows us to approximate a function with piecewise constant values on a partitioned domain. These partitions are constructed by assigning a splitting rule $x_{\cdot j}\le \kappa$ for $1\le j \le p$ on each internal node, where the value $\kappa$ is either chosen from one of the observed values $x_{ij}$ or chosen uniformly within a range of values $(\underline{x}_{\cdot j},\overline{x}_{\cdot j})$.
 
-\begin{definition}[Cell size] Given a partition $\mathbf{\Omega} = \{\Omega_k\}_{k=1}^N$ of $\mathcal{X} = [0,1]^p$ and a set of observations $x_1, x_2, \cdots, x_n$ such that $x_i\in \mathcal{X}$ for $i=1,2,\cdots, n$, the cell size $S(\Omega_k)$ of $\Omega_k$
-	is the fraction of observations contained in $\Omega_k$.
-	\begin{equation*}
-		S(\Omega_k) = \frac{1}{n}\sum_{i=1}^n \mathbb{I}(x_i\in \Omega_k).
-	\end{equation*}
-\end{definition}
-
-\begin{definition}[Valid partition]
-	A partition is said to be valid if
-	\begin{equation*}
-		S(\Omega_k) \ge \frac{C^2}{n}, \quad\text{for any } k=1,2,\cdots, N
-	\end{equation*}
-	for a constant $C^2\ge 1$.
-\end{definition}
-
-The most used prior for tree topology was introduced by \citet{chipman98BCART} for a single tree. Afterwards \citet{chipman2010BART} extended the framework for sum of regression trees. Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed an alternate prior for the tree topology. They consider a loss-based approach \cite{villa_loss-prior} where the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. In doing so, they define the following hierarchical prior
+The most popular choice for a tree prior was introduced by \citet{chipman98BCART}, which later was used by \citet{chipman2010BART} for sum of regression trees models. Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed an alternate prior for the tree topology. They consider a loss-based approach, which allows us to design objective priors \citep{villa_loss-prior}. They suggested that the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. Further, they showed that the loss in complexity can be defined as $\omega n_L(T_t) - \zeta \Delta(T_t)$, where $\omega\ge 0$ and $\zeta\in\mathbb{R}$ are prior parameters; $\Delta(T_t)$ is the difference between the right terminal nodes and the left terminal nodes of $t$-th given tree; $n_L(T_t)$ is number of terminal nodes of the $t$-th tree. This leads to the following hierarchical prior
 
 \begin{align}\label{eq:L-BART}
 	\begin{split}
 		T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
-		T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
+		T_t &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
 		\pi(M_t\mid T_t) & = \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t).
 	\end{split}
 \end{align}
-where $\Delta(T_t)$ is the difference between right terminal nodes and left terminal nodes of $t$-th given tree.
+where $\pi$ denotes the prior density.
 
 
 \section{Conditional Copula Modelling}\label{sec:cond:cop}
 
-As hinted earlier, our main objective is to model the dependence structure of a conditional copula. While some works are done based on estimating the margins of the copula, our approach is focused on estimating the conditional copula parameter. To do so, we use a suitable link function $h$, to model the conditional copula parameter such that 
+Our main goal in this paper is to model the dependence structure of a conditional copula using regression trees. However, the conditional copula parameter $\theta(x)$ may have a finite range. Therefore, we use a suitable link function $h$ that maps a sum of trees model to the range of $\theta(x)$ in the following way:
 
 \begin{equation*}
 	\theta(x_i) \coloneqq h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right);\qquad 1\le i\le n.
@@ -131,36 +128,35 @@ Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula den
 \begin{align}\label{eq:bayes:hier}
 	\begin{split}
 		u_{1i},u_{2i} \mid \theta(x_i) & \sim c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\\
-		T_t &\propto \exp\left(\omega n_L(T_t)-\gamma\Delta(T_t)\right)\\
-		\pi(M_t\mid T_t) &\propto \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\\
-		t & = 1,2,\cdots m.
+		T_t &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
+		\pi(M_t\mid T_t) &\propto \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t); \qquad t = 1,2,\cdots m.
 	\end{split}
 \end{align}
 
-\subsection{Choice of link functions} The choice of link function to relate the tree structure with the conditional copula parameter is dependent on the family of copula. Use of such link function is not completely unusual in the context of conditional copula modelling. \citet{ABEGAZ201243,valle_cond_cop} used such functions for calibrating the parameter. In our case, we wish to keep the sum of trees flexible and it can take any value in $\mathbb{R}$. So we consider functions that can map from $\mathbb{R}$ to the domain of $\theta$. A relevant table provided in \cref{sec:sim} where we evaluate the performance of our approach for different copula families. 
-
-Note that, one may also want to use link function on the conditional Kendall's $\tau$ such that
-\begin{equation*}
-	\theta(x_i) \coloneqq h'(\tau(x_i))\quad\text{and}\quad \tau(x_i) = \sum_{t=1}^m g'(x_i, T_t, M_t).
-\end{equation*}
-This will allow one to estimate the conditional Kendall's $\tau$ directly whilst modelling the copula parameter. However, we refrain from doing so as the domain of $h'$ may vary based on the family of copula. For instance, Gaussian copula can take any value of $\tau$ in $(-1,1)$ where as for Gumbel family $\tau$ can only have non-negative values.
+\subsection{Choice of link functions} The choice of link function to relate the tree structure with the conditional copula parameter is dependent on the family of copula. Use of a link function is not unusual in the context of conditional copula modelling. \citet{ABEGAZ201243,valle_cond_cop} used such functions for calibrating the conditional copula parameter. This way the sum of trees remains flexible and it can take any value in $\mathbb{R}$. So we consider functions that can map from $\mathbb{R}$ to the range of $\theta$. We provide a table for 5 different families in \cref{tab:cop:link}.
 
 \subsection{Choice of priors on $\mu_j$}
-Earlier adaptions of BART models (\citet{chipman2010BART,Sparapani_BART,Murray03042021}) suggested a conjugate prior for the terminal node values $\mu_j$, for integrating it out. In our case, we lack that benefit so we consider default $\mathcal{N}(0,\sigma_{t}^2)$ on $\mu_j$ as suggested by \citet{chipman2010BART,Linero02012025} where $\sigma_{t}^2$ is variance specific to the $t$-th tree. For $\sigma_{t}^2$ we use a flat inverse-gamma prior.
+Earlier adaptions of BART models \citep{chipman2010BART,Sparapani_BART,Murray03042021} suggested a conjugate prior for the terminal node values $\mu_j$, this allows us to compute the marginal likelihood easily. In our case, we simply consider the default $\mathcal{N}(0,\sigma_{t}^2)$ on $\mu_j$ as suggested by \citet{chipman2010BART,Linero02012025} where $\sigma_{t}^2$ is variance specific to the $t$-th tree. For $\sigma_{t}^2$ we use a flat inverse-gamma hyperprior.
 
-Note that, similar to our arguments around the link function, we can also consider a transformed beta prior \cite{gokhale_prior_cor} for $\mu_j$ if we wish to model the copula parameter with a link function on Kendall's $\tau$.
-
-\subsection{Choice of $m$} The choice of the total number of trees still remains an open problem. \citet{chipman2010BART} considered a default of 500 trees whereas \citet{Linero02012025} suggested to 200 trees for analysis. In our case, we follow the approach of \citet{serafini2024lossbasedpriortreetopologies}, we start with 10 trees and increase it by 10 to monitor the change in performance.
+\subsection{Choice of $m$} The choice of the total number of trees remains an open problem. \citet{chipman2010BART} considered a default of 500 trees whereas, \citet{Linero02012025} suggested 200 trees for analysis. In our case, we follow a similar approach to that of \citet{serafini2024lossbasedpriortreetopologies}. We start with 5 trees and increase it by 5 to monitor the change in performance for case studies. 
 
 \section{RJ-MCMC for Parameter Estimation}\label{sec:rjmcmc}
 
-In this section we provide the MCMC algorithm for sampling from the posterior. First, let $(U_1,U_2)$ denote the pseudo observations $\{(u_{1i},u_{2i}):1\le i \le n\}$ and $X$ denote the covariates. The hierarchical model described in \cref{eq:bayes:hier} gives us a posterior proportional to the following form:
-\begin{align}
+In this section we provide the MCMC algorithm for sampling from the posterior. In general, for BART models with a conjugate prior, a Metropolis Hastings type algorithm is used. In our case, we need to sample terminal node values along side a new tree structure in each MCMC iteration. So we will employ a reversible jump MCMC type algorithm first proposed by \citet{green_RJMCMC}. Since, RJ-MCMC type algorithms are known for its slow mixing properties, we propose an adaptive alternative that improves the mixing speed, without needing to spend much time on selecting the optimal parameter values of the proposal distribution.
+
+\subsection{Backfitting algorithm}
+
+The major building block of sum of tree models is the backfitting algorithm. We modify this backfitting algorithm to meet our needs, which we will discuss below. First, let $(U_1,U_2)$ denote the pseudo observations $\{(u_{1i},u_{2i}):1\le i \le n\}$ and $X$ denote the covariates. Then the posterior obtained from the hierarchical model described in \cref{eq:bayes:hier} is proportional to the following:
+\begin{align*}
 	\begin{split}
 		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\prod_{t=1}^{m}\pi(T_t)\prod_{t=1}^{m}\left(\prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\right)\prod_{t=1}^{m}\pi(\sigma_{t}).
 	\end{split}
-\end{align}
-So, to sample from the posterior we use a backfitting algorithm proposed by \citet{chipman2010BART} where we sample $(T_k, M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
+\end{align*}
+To sample from such posterior formulations, \citet{chipman2010BART} suggested a Bayesian backfitting algorithm where we sample the $k$-th pair $(T_k,M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, let 
+\begin{equation*}
+	(T_{-k},M_{-k})\coloneq \left\{(T_1,M_1),\cdots,(T_{k-1},M_{k-1}),(T_{k+1},M_{k+1}),\cdots(T_m,M_m)\right\},
+\end{equation*}
+then in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
 \begin{equation*}
 	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma^2_{k}, U_1, U_2, X
 \end{equation*}
@@ -168,141 +164,160 @@ followed by a sample of the variance term $\sigma_{k}$ from the following condit
 \begin{equation*}
 	\sigma^2_{k} \mid (T_k,M_k),U_1,U_2,X.
 \end{equation*}
-So in order to implement the backfitting algorithm, we define 
+So, in order to implement the backfitting algorithm, we define 
 \begin{equation*}
 	R_{ik} = \sum_{t\not=k}g(x_i, T_t, M_t)\quad\text{and}\quad R_{\cdot k}\coloneqq(R_{1k},R_{2k},\cdots,R_{nk}).
 \end{equation*}
-Here $R_{ik}$ is similar to the notion of residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead we will add these residual terms with terminal node values of the $k$-th regression tree which give us the following posterior of $(T_k,M_k)$ conditional on $R_{\cdot k}$ and $\sigma_{k}$
+Here $R_{ik}$ is similar to the notion of the residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead we will add these $R_{ik}$s with the terminal node values of the $k$-th regression tree, which give us the following conditional posterior
 \begin{align}\label{eq:post:res}
 	\begin{split}
 		\pi(T_k,M_k \mid R_{\cdot k}, \sigma^2_{k}, U_1,U_2, X) &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
 	\end{split}
 \end{align}
-For standard BART model, the use of conjugate prior allows us to marginalise the likelihood with respect to $\mu\coloneqq\left(\mu_1,\mu_2,\cdots,\mu_{n_L(T_k)}\right)$ such that:
+For the standard BART model, the use of a conjugate prior allows us to marginalise the likelihood with respect to $\mu\coloneqq\left(\mu_1,\mu_2,\cdots,\mu_{n_L(T_k)}\right)$ such that:
 \begin{equation*}
 	\mathcal{L}(U_1,U_2\mid X, T_k, \sigma^2_{k})\propto \bigint_{\mu}\left(\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)\right)d\mu.
 \end{equation*}
-Unfortunately, we do not have the conjugacy property in our case. So we use a reversible jump MCMC algorithm \cite{green_RJMCMC} to compute from the posterior given by \cref{eq:post:res}. We follow, a similar setup to that of \citet{Linero02012025} to build our algorithm. However, for tree space exploration, we consider the original tree steps suggested by \cite{chipman98BCART}.
+Unfortunately, we do not have the conjugacy property in our case, and we use a reversible jump MCMC algorithm \citep{green_RJMCMC} to sample from the posterior given by \cref{eq:post:res}. We follow, a similar setup to that of \citet{Linero02012025} to build our algorithm. However, for tree space exploration, we consider the original tree steps suggested by \citep{chipman98BCART}.
 
 \subsection{Proposal for RJ-MCMC}
 
-Reversible jump MCMC algorithms is a common strategy for trans-dimensional cases. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. For that, we consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at $\gamma+1$ iteration given by:
+Reversible jump MCMC is a common strategy for trans-dimensional cases where we need to grow or reduce the dimension of our model. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. For that, we consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at the $(\eta+1)$-th iteration given by:
 \begin{align}\label{eq:prop}
-	q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right) = q\left( T_k^\ast\mid T_k^{\gamma}\right) q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right).
+	q\left(T_k^\ast, M_k^\ast \mid T_k^{\eta},M_k^{\eta}\right) = q\left( T_k^\ast\mid T_k^{\eta}\right) q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right).
 \end{align}
-Here, $q\left( T_k^\ast\mid T_k^{\gamma}\right)$ denote the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps given by:
+Here, $q\left( T_k^\ast\mid T_k^{\eta}\right)$ denotes the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps given by:
 \begin{itemize}
 	\item \textsc{grow}: Randomly choose a terminal node and split it into two terminal nodes
 	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn into a terminal node
 	\item \textsc{change}: Randomly choose an internal node and assign a new splitting rule
 	\item \textsc{swap}: Randomly choose a parent-child pair of internal node and swap their splitting rules
 \end{itemize}
-For a detailed discussion on the splitting rule, we suggest the readers to look into \citet{chipman98BCART}. 
+For a detailed discussion on the splitting rule, we suggest the readers to look into \citet{chipman98BCART,serafini2024lossbasedpriortreetopologies}. 
 
-The generation of new terminal node values rely on the proposed tree structure that we represent with $q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$. For obvious reasons, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
+The generation of new terminal node values rely on the proposed tree structure that we represent with $q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$. Clearly, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
 \begin{itemize}
 	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_l$ and$j_r$ so,
-	$q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$ = $\pi_{prop}(\mu_{j_l})\times\pi_{prop}(\mu_{j_r})$
-	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned then $q\left(M_k^\ast\mid T_k^\ast, T_k^{\gamma}, M_k^{\gamma}\right)$ = $\pi_{prop}(\mu_j)$
+	$q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ = $\pi_{prop}(\mu_{j_l})\times\pi_{prop}(\mu_{j_r})$
+	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned then $q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ = $\pi_{prop}(\mu_j)$
 \end{itemize}
-For the choice of proposal we consider a normal distribution with mean being the average of terminal node values after iteration $\gamma$ and variance $\sigma_{\text{prop}}$. We notice that fixing $\sigma_{\text{prop}}$ is rather difficult. While eye-balling the likelihood give us some idea but due to slow mixing nature of RJ-MCMC it still exhibits high autocorrelation. So, we suggest an adaptive variance for the proposal. Our approach is motivated from the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the co-variance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on the partition of the predictor space in \cref{alg:ada:prop}.
+where $\pi_{prop}$ denotes the proposal density function.
 
-\begin{algorithm}[H]
+For the choice of proposal we consider a normal distribution with mean being the average of terminal node values at the $\eta$-th iteration and variance $\sigma_{\text{prop}}$. We notice that fixing $\sigma_{\text{prop}}$ is rather difficult. While monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a longer iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated from the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the co-variance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on the partition of the predictor space, which we discuss below. First, we let our RJ-MCMC run for $\eta_0$ iterations without any adaption. We collect the values at observations with respect to each tree and each iteration defined by:
+\begin{equation*}
+	V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0.
+\end{equation*}
+Now, let $V_{.k}^{\eta}\coloneq (V_{1k}^{\eta}, \cdots, V_{nk}^{\eta})$ denote the vector of values at observation for the $k$-th tree at $\eta$-th iteration. We will use these vectors of samples to compute the covariance matrix for all $\eta>\eta_0$.
+\begin{equation*}
+	C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0,
+\end{equation*}
+where $\mathbf{I}_n$ is the identity matrix of order $n$. This additional term $\epsilon\mathbf{I}_n$ ensures that the matrix is positive definite. Once we have this covariance matrix for the $t$-th tree, we can use this to calculate the proposal variance at a new terminal node value.
+
+Let $\mathbf{\Omega}^{k}\coloneqq \left\{\Omega_j^{k}\right\}_{j=1}^{n_L(T_k)}$ denote the partition of the observations created by the $k$-th tree. Then for any $\Omega_{j}^{k}\in \mathbf{\Omega}^{k}$, we can define a set of indices $\mathcal{I}_{j}^{k}\coloneqq \left\{i:x_i\in \Omega_{j}^{k}\right\}$ that we will use for calculating the proposal variance at the $j$-th terminal node of the $k$-th tree in the following way:
+\begin{equation}\label{eq:var:adapt}
+	\sigma_{\text{prop};j}^2 \coloneqq \frac{2.4^2}{\left(\#\left\{\mathcal{I}_{j}^{k}\right\}\right)^3}
+	\sum_{c\in\mathcal{I}_{j}^{k}}\sum_{d\in\mathcal{I}_{j}^{k}}\left[C_k^{\eta}\right]_{cd},
+\end{equation}
+where $\#(.)$ denotes the cardinality of a set. Lastly, we update $C_k^{\eta+1}$ using the iterative formula discussed by \citet{haario_AMH}. The formulation in \cref{eq:var:adapt} ensures that the proposal variance represents the variance of the mean value at observations at each terminal node, which is equivalent to using a marginal likelihood in traditional BART models. We summarise this algorithm in \cref{alg:ada:prop}.
+
+
+\begin{algorithm}
 	\caption{Computation of adaptive proposal}\label{alg:ada:prop}
 	\begin{algorithmic}[1]
-		\State Perform $t_0$ iterations with a fixed variance.
+		\State Perform $\eta_0$ iterations with a fixed variance.
 		
 		\For{$k =1, \cdots, m$}
-		\State Collect MCMC samples for initial $t_0$ iterations such that for the $k$-th tree so that:
+		\State Collect MCMC samples for initial $\eta_0$ iterations of the $k$-th tree:
 		\begin{equation*}
-			V_{ik}^{t} = g(x_i,T_k^{t},M_k^{t})\quad 1\le i \le n; 1\le t \le t_0
+			V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0.
 		\end{equation*}
 		
 		\State Calculate sample covariance matrix :
 		\begin{equation*}
-			C_k^{t} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{t-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } t>t_0
+			C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0.
 		\end{equation*}
 		
-		\State Identify the indices of the observations that is contained in the partition $\Omega_\ast$ corresponding to the new terminal node such that $\mathcal{I}\coloneqq\left\{i:x_i \in \Omega_\ast\right\}$
-		
-		\State Calculate the new variance corresponding to the new terminal node value such that
-		
-		\begin{equation}\label{eq:var:adapt}
-			\sigma_{\text{prop}}^2 \coloneqq \frac{2.4^2}{(\#\{\mathcal{I}\})^3}\sum_{i\in\mathcal{I}}\sum_{j\in\mathcal{I}}\left[C_k^{t}\right]_{ij}
-		\end{equation}
+		\State Calculate the proposal variance of the $j$-th terminal node value:
+		\begin{equation*}
+			\sigma_{\text{prop};j}^2 \coloneqq \frac{2.4^2}{\left(\#\left\{\mathcal{I}_{j}^{k}\right\}\right)^3}
+			\sum_{c\in\mathcal{I}_{j}^{k}}\sum_{d\in\mathcal{I}_{j}^{k}}\left[C_k^{\eta}\right]_{cd};\qquad\mathcal{I}_{j}^{k}\coloneqq \left\{i:x_i\in \Omega_{j}^{k}\right\};\qquad 1\le j\le n_L(T_k).
+		\end{equation*}
 		
 		\EndFor
 		
 		\State Update sample covariance using iterative formula such that
 		\begin{equation*}
-			C_k^{t+1} \coloneqq \frac{t-1}{t} C_k^{t+1} + \frac{1}{t}\left(t \left(\overline{V}_{\cdot k}^{t-1}\right)\left(\overline{V}_{\cdot k}^{t-1}\right)^T - (t+1)\left(\overline{V}_{\cdot k}^{t}\right)\left(\overline{V}_{\cdot k}^{t}\right)^T + \left({V}_{\cdot k}^{t}\right)\left({V}_{\cdot k}^{t}\right)^T + \epsilon\mathbf{I}_n\right)
+			C_k^{\eta+1} \coloneqq \frac{\eta-1}{\eta} C_k^{\eta+1} + \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot k}^{\eta-1}\right)\left(\overline{V}_{\cdot k}^{\eta-1}\right)^T - (\eta+1)\left(\overline{V}_{\cdot k}^{\eta}\right)\left(\overline{V}_{\cdot k}^{\eta}\right)^T + \left({V}_{\cdot k}^{\eta}\right)\left({V}_{\cdot k}^{\eta}\right)^T + \epsilon\mathbf{I}_n\right)
 		\end{equation*}
 	\end{algorithmic}
 \end{algorithm}
 
+Once we have the proposals for both trees and the terminal node values, we define the acceptance probability in the following way:
+\begin{equation}\label{eq:acc:prob}
+	\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)
+	= \frac{\mathcal{L}(U_1,U_2\mid T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^{\eta},M_k^{\eta}\mid T_k^\ast, M_k^\ast\right)}
+	{\mathcal{L}(U_1,U_2\mid T_k^{\eta},M_k^{\eta})\pi(T_k^{\eta},M_k^{\eta}) q\left(T_k^\ast, M_k^\ast \mid T_k^{\eta},M_k^{\eta}\right)}.
+\end{equation}
+where 
+\begin{equation*}
+	\mathcal{L}(U_1,U_2\mid T_k, M_{k})\coloneqq \prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right).
+\end{equation*}
+
+
+Lastly, once we have sampled a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values of $M_k^{\eta+1}$ using an MH step followed by a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We summarise one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
+
 \begin{algorithm}[H]
 	\caption{One iteration of RJ-MCMC for copula BART}\label{alg:MCMC}
 	\begin{algorithmic}[1]
-		\State The previous steps gives us $(T_k^{\gamma},M_k^{\gamma})$
-		\State Set $\theta(x_i) \leftarrow h\left(\sum_{t=1}^{m} g(x_i, T_t^{\gamma},M_t^{\gamma})\right)$ for $i = 1, \ldots, n$
+		\State The $\eta$-th iteration gives us $(T_k^{\eta},M_k^{\eta})$.
+		\State Set $\theta(x_i) \leftarrow h\left(\sum_{t=1}^{m} g(x_i, T_t^{\eta},M_t^{\eta})\right)$ for $i = 1, \ldots, n$.
 		\For{$k = 1, \ldots, m$}
-		\State Set $R_{ik} \leftarrow \sum_{t\not=k}g(x_i, T_t^{\gamma},M_t^{\gamma})$ for $i = 1, \ldots, n$
+		\State Set $R_{ik} \leftarrow \sum_{t\not=k}g(x_i, T_t^{\eta},M_t^{\eta})$ for $i = 1, \ldots, n$.
 		
-		\State Sample $(T_k^\ast, M_k^\ast)$ using $q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{swap}, and \textsc{change} 
+		\State Sample $(T_k^\ast, M_k^\ast)$ using $q\left(T_k^\ast, M_k^\ast \mid T_k^{\eta},M_k^{\eta}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap}.
 		
-		\State Compute acceptance probability using $\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)$ in \cref{eq:acc:prob}.
+		\State Compute the acceptance probability using $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ in \cref{eq:acc:prob}.
 		
-		\State Set $(T_k^{\gamma+1}, M_k^{\gamma+1})=(T_k^\ast, M_k^\ast)$ with probability $\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)$ or $(T_t^{k+1}, M_t^{k+1})=(T_t^k,M_t^k)$.
-		\State Set $\theta(x_i) \leftarrow h(R_{ik} + g(x_i, T_k^{\gamma+1}, M_k^{\gamma+1}))$ for $i = 1, \ldots, n$
+		\State Set $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^\ast, M_k^\ast\right)$ with probability $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ or $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^{\eta},M_k^{\eta}\right)$.
 		
-		\State Sample $M_t$ from the full conditional using MH step once all the new trees are formed.
+		\State Set $\theta(x_i) \leftarrow h\left(R_{ik} + g\left(x_i, T_k^{\eta+1}, M_k^{\eta+1}\right)\right)$ for $i = 1, \ldots, n$
 		
-		\State Sample $\sigma_{k}^2$ from 
+		\State Update $M_k^{\eta+1}$ using an MH step targeting the full conditional.
+		
+		\State Sample $\sigma_{k}^{2;(\eta+1)}$ from 
 		\begin{equation*}
-			\text{InvGamma}\left(a+\frac{n_L(T_k)}{2} , b + \frac{\sum_{j=1}^{n_L(T_k)}\mu_j^2}{2}\right)
+			\text{InvGamma}\left(a+\frac{n_L\left(T_k^{\eta+1}\right)}{2} , b + \frac{\sum_{j=1}^{n_L\left(T_k^{\eta+1}\right)}\mu_j^2}{2}\right)
 		\end{equation*}
 		\EndFor
 	\end{algorithmic}
 \end{algorithm}
 
-The formulation in \cref{eq:var:adapt} ensures that the proposal variance is represents the variance of the mean of the observed values at each terminal nodes, which is equivalent to using marginal likelihood in traditional BART models.
-
-
-Once we have a proposal for both the trees and terminal node values, we can define the acceptance probability in the following way:
-\begin{equation}\label{eq:acc:prob}
-	\alpha\left(T_k^{\gamma},M_k^{\gamma};T_k^\ast, M_k^\ast\right)
-	= \frac{\mathcal{L}(T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^{\gamma},M_k^{\gamma}\mid T_k^\ast, M_k^\ast\right)}
-	{\mathcal{L}(T_k^{\gamma},M_k^{\gamma})\pi(T_k^{\gamma},M_k^{\gamma}) q\left(T_k^\ast, M_k^\ast \mid T_k^{\gamma},M_k^{\gamma}\right)}.
-\end{equation}
-where $\mathcal{L}(T_k,M_k)$ denotes the likelihood for a given pair of $(T_k,M_k)$.
-
-Finally, once we have sampled a new $(T_k,M_k)$ we can employ a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We summarise one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC} for the sake of clarity.
-
-
 \section{Simulation Studies}\label{sec:sim}
 
-In this section, we consider two synthetic settings to showcase the efficiency of our proposed approach in recovering the true parsimonious model as well approximating a complicated test function correctly. For both the setting, we investigate the performance of our method for five different copula families: Gaussian, Students-t, Clayton, Gumbel and Frank. As hinted earlier, to model the conditional copula parameter, we consider different link functions which we summarise in \cref{tab:cop:link}.
+In this section, we present our analyses with two simulated datasets with a known data generating process. The first dataset is constructed to understand the efficiency of our method in recovering the true model. To be more precise, we use the first dataset to check whether we can avoid overfitting and if our method is able to determine the true tree structure, present in the data generation process. The second dataset is simulated using a more complicated function to check the efficiency of our method in estimating the dependence structure for general functions.
+
+For both, we investigate the performance of the proposed method for five different copula families: Gaussian, Students-t, Clayton, Gumbel and Frank. As we discussed in \cref{sec:cond:cop}, to model the conditional copula parameter, we consider different link functions which we summarise in \cref{tab:cop:link}. This way, we ensure that the terminal node values can take any value in $\mathbb{R}$ and the link function maps it to the range of the conditional copula parameter. Similar approach was taken by \citet{ABEGAZ201243,valle_cond_cop} for calibrating the conditional copula parameter.
 
 \begin{table}[H]
 	\centering
 	\begin{tabular}{l|c|c}
 		Family & Support & Link function\\
 		\midrule
-		Gaussian & $\rho \in (-1,1)$ & $h(x)=2\text{sigmoid}(x) -1$\\
-		Student-t & $\rho \in (-1,1)$ & $h(x)=2\text{sigmoid}(x) -1$\\
+		\thead{Gaussian \& \\
+		Student-t} & $\rho \in (-1,1)$ & $h(x)=\frac{\exp(x)-1}{\exp(x)+1}$\\
 		Clayton & $\theta \in (0,\infty)$ & $h(x)=\exp(x)$\\
 		Gumbel & $\theta\in [1,\infty)$ & $h(x)=\exp(x)+1$\\
 		Frank & $\theta\in \mathbb{R}\neg \{0\}$ & $h(x)=x$\\
 		\end{tabular}
-	\caption{List of copula families used for our analyses followed by the support of conditional copula parameter and the corresponding link function which we will use to map from $\mathbb{R}$ to their support.}
+	\caption{List of copula families used for our analyses followed by the range of the conditional copula parameter and the corresponding link function.}
 	\label{tab:cop:link}
 \end{table}
 
-For data generation process, we sample $x_i$'s from a uniform distribution $U(0,1)$ for $1\le i\le n$. Afterwards we get our conditional Kendall's tau $(\tau(x_i))$ using following two equations.
+For our analyses, we simulate 200 observations where the $x_i$-th predictor is sampled from a uniform distribution $U(0,1)$ for $1\le i\le 200$. The two sets of the conditional Kendall's taus are defined using the following equations:
 \begin{equation}\label{eq:tree:tau}
 	\tau_1(x_i) = \begin{cases}
-		0.2 & x_i \le 0.33\\
-		0.7 & 0.33 < x_i \le 0.66\\
+		0.3 & x_i \le 0.33\\
+		0.8 & 0.33 < x_i \le 0.66\\
 		0.3 & 0.66 < x_i
 	\end{cases}
 \end{equation}
@@ -310,50 +325,78 @@ and
 \begin{equation}\label{eq:sin:tau}
 	\tau_2(x_i) = 0.2\sin(2\pi x_i) + 0.5.
 \end{equation}
-We use these $\tau(x_i)$'s to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Then we use these copula datasets to perform our posterior inference. For each dataset, we run 20 parallel chains comprising of 6000 MCMC iterations. We also check the performance of our RJ-MCMC algorithm with and without adaption. For adaptive version of our algorithm we use first 1000 iterations for adaption. For convenience, from now on, we will use C-BART for our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version of it.
+We use these $\tau_j(x_i)$'s ($j=1,2; 1\le i\le 200$) to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Additionally, we get 100 replicates of each copula dataset to monitor the posterior coverage of our proposed method.
 
-One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure for that we take consider the average posterior samples. Besides that. we are also interested in the predictive performance of our approach for that we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
+For modelling of the dependence structure, we consider the default loss-based prior ($\omega = 1.62$ and $\zeta = 0.62$) as suggested by \citet{serafini2024lossbasedpriortreetopologies}. For the hyperior prior on $\sigma_t^2$, we consider InvGamma(1,2). We then run 3000 MCMC iterations with 4 chains for all 100 replicates of each dataset. We employ both types of our proposed RJ-MCMC algorithm; with and without adaption. For the adaptive version of the algorithm, we use the first 500 iterations for adaption. For convenience, from now on, we will use C-BART for our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version. For posterior estimates, we discard the first 1500 iterations as burnin phase.
+
+One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure,, we consider the posterior expectations averaged over 100 replicates. Additionally, we are interested in the predictive performance of our approach and we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
+
+Let, $n_R, n_C, n$ denote the number of replicates, number of chains and number of observations respectively; and $\overline{\theta}_{ijk}, {\theta}^{(2.5)}_{ijk}, {\theta}^{(97.5)}_{ijk}$ denote the mean, 2.5th quantile and 97.5th quantile of the conditional copula parameter at the $i$-th observation in the $j$-th MCMC chain of the $k$-th replicate. Most importantly, let $\theta_i$ denote the true value of the conditional copula parameter at the $i$-th observation. Then we define the following metrics
+
+\begin{equation*}
+	\text{RMSE} = \frac{1}{n_R}\sum_{k=1}^{n_R}\left(\frac{1}{n_C}\frac{1}{n}\sum_{j=1}^{n_C}\sum_{i=1}^{n}\left(\theta_i - \overline{\theta}_{ijk}\right)^2\right),
+\end{equation*}
+
+\begin{equation*}
+	\text{CI-length} = \frac{1}{n_R}\frac{1}{n_C}\frac{1}{n}\sum_{k=1}^{n_R}\sum_{j=1}^{n_C}\sum_{i=1}^{n}\left({\theta}^{(97.5)}_{ijk}-{\theta}^{(2.5)}_{ijk}\right),
+\end{equation*}
+and
+\begin{equation*}
+	\text{CI-cov} = \frac{1}{n_R}\frac{1}{n_C}\frac{1}{n}\sum_{k=1}^{n_R}\sum_{j=1}^{n_C}\sum_{i=1}^{n}\mathbb{I}\left({\theta}^{(97.5)}_{ijk}\le\theta_i\le {\theta}^{(2.5)}_{ijk}\right)
+\end{equation*}
+where $\mathbb{I}(.)$ is the indicator function.
 
 \subsection{Example with true tree structure} 
 
-We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are from the true number of terminal nodes which is equal to 3 and true depth which equals to 2. We present the efficiency of our approach in \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the initial tree exploration phase where the model tends have a more complex trees. We can also see that with the adaptive proposal, the acceptance rate does not give us a significant improvement. This may look counter intuitive but this can be explained from the fact that with an adaptive proposal the sampler tends to reject \textsc{grow} and \textsc{prune} steps after it recovers the true tree structure. This phenomena can be better appreciated from the traceplots presented in \cref{fig:trace:nterm:ex1} and \cref{fig:trace:depth:ex1}. We can also notice that tree exploration stabilises after about 1000 iterations with our proposed approaches except for Frank copula, where it takes about 3000 iterations. 
+We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are to the true number of terminal nodes ($=3$) and true depth ($=2$). For the Gaussian, Student-t, Clayton and Gumbel copula datasets, we set our initial proposal variance to be equal to $0.2$, whereas for the Frank copula datasets, we set our proposal variance to be equal to $1$. The main reason behind this is the type of link function we chose for these datasets. Since for the frank copula datasets the link function is identity therefore it takes much longer iterations to reach the true likelihood region. For sanity, we also perform a complete analyses with proposal variance being equal to 0.2, which we provide in the \cref{app:results}.
+
+To check the efficiency of our approach in recovering the true model, we look into the following quantities into posterior expectations of the number of terminal nodes and depth averaged over 100 replicates along with their respective standard deviations over 100 replicates. We denote these quantities by `Mean ($\hat{n}_L$)', `SD ($\hat{n}_L$)', `Mean ($\hat{D}$)' and `SD ($\hat{D}$)'.
+
+We present the efficiency  \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the tree exploration steps where the model tends grow leaves in tree MCMC steps. We also present the traceplots of the number of terminal nodes in \cref{fig:trace:nterm:ex1} and the depth in \cref{fig:trace:depth:ex1} for the first replicate corresponding to each copula dataset. We notice that the tree exploration stabilises after about 1000 iterations with our proposed approaches. We present the likelihood plot after discarding 1500 burn in samples in \cref{fig:trace:like:ex1}. We see that our method is able to converge towards the true likelihood region for all the cases, shown by the black dashed line. We also present the averaged acceptance rate over 100 replicates along with the standard deviation. We notice that the acceptance rate lies within $[0.16, 0.18]$, which is a reasonable range for a transdimensional MCMC algorithm. A similar effect is also reported by \citet{Linero02012025} regarding the mixing of the likelihood. 
+
+Recall, that for the Frank copula family, we fixed the initial proposal variance to be equal to 1, while the proposal variance for all the other families is equal to 0.2. We also perform an additional analysis, fixing the proposal variance as 0.2 for the Frank copula family. This particular case, gives us an insight on the benefit of the adaptive version of our algorithm. We notice that only one out of 4 chains converge to true likelihood region for C-BART after 7500 iterations, whereas all 4 chains converge to the true likelihood region for A-C-BART. We present the traceplots of the number of terminal nodes, depth and likelihood in \cref{fig:trace:frank}. We also notice that the posterior estimates for the number of terminal nodes and depth of the tree is closer to the true value for A-C-BART and the credible interval coverage is significantly better than C-BART. We present these tables in \cref{app:results}
 
 \begin{table}[ht]
 	\centering
-	\begin{tabular}{l|ccc|ccc}
+	\begin{tabular}{l|cccccc}
 		\multicolumn{1}{c|}{} &
-		\multicolumn{3}{c|}{C-BART} &
-		\multicolumn{3}{c}{A-C-BART} \\
+		\multicolumn{6}{c}{C-BART} \\
 		\midrule
-		& $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. & $\mathbb{E}(n_L\mid U_1,U_2)$ & $\mathbb{E}(D\mid U_1,U_2)$ & Acc. \\ 
+		& Mean ($\hat{n}_L$) & SD ($\hat{n}_L$) & Mean ($\hat{D}$) & SD ($\hat{D}$) & Mean Acc. & SD Acc. \\ 
 		\midrule
-		Gaussian & 3.19 & 2.09 & 0.15 & 3.16 & 2.07 & 0.15 \\ 
-		Student-t & 3.11 & 2.02 & 0.15 & 3.11 & 2.02 & 0.15 \\ 
-		Clayton & 3.15 & 2.03 & 0.17 & 3.16 & 2.05 & 0.17 \\ 
-		Gumbel & 3.12 & 2.02 & 0.15 & 3.12 & 2.02 & 0.15 \\ 
-		Frank & 3.03 & 1.98 & 0.13 & 3.04 & 1.99 & 0.13 \\ 
+		Gaussian & 3.149 & 0.110 & 2.059 & 0.095 & 0.161 & 0.011 \\ 
+		Student-t & 3.109 & 0.114 & 2.016 & 0.093 & 0.161 & 0.010 \\ 
+		Clayton & 3.177 & 0.065 & 2.046 & 0.055 & 0.179 & 0.007 \\ 
+		Gumbel & 3.143 & 0.044 & 2.033 & 0.036 & 0.171 & 0.010 \\ 
+		Frank & 3.308 & 0.167 & 2.190 & 0.142 & 0.174 & 0.011 \\
+		\midrule
+		\multicolumn{1}{c|}{} &
+		\multicolumn{6}{c}{A-C-BART} \\
+		\midrule
+		Gaussian & 3.141 & 0.107 & 2.049 & 0.093 & 0.161 & 0.011 \\ 
+		Student-t & 3.084 & 0.150 & 1.995 & 0.134 & 0.160 & 0.011 \\ 
+		Clayton & 3.199 & 0.093 & 2.065 & 0.079 & 0.179 & 0.008 \\ 
+		Gumbel & 3.146 & 0.045 & 2.035 & 0.034 & 0.170 & 0.010 \\ 
+		Frank & 3.251 & 0.174 & 2.141 & 0.150 & 0.172 & 0.010 \\
 	\end{tabular}
-	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We split these big columns in three smaller columns where we present the posterior expectation of number of terminal nodes ($\mathbb{E}(n_L\mid U_1,U_2)$); the posterior expectation of depth ($\mathbb{E}(D\mid U_1,U_2)$); and the acceptance rate in $[0,1]$ scale.}
+	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and standard deviation of the posterior expectation of the number of terminal nodes; the posterior expectation of the depth of the tree; and the acceptance rate in $[0,1]$ scale.}
 	\label{tab:eff:ex1}
 \end{table}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
-	\caption{Trace plots of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with our RJ-MCMC algorithm without any adaption and the right column shows analyses with adaptive RJ-MCMC. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
+	\caption{Trace plots of the number of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
 	\label{fig:trace:nterm:ex1}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
-	\caption{Trace plots of death obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
+	\caption{Trace plots of the depth of the tree obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
 	\label{fig:trace:depth:ex1}
 \end{figure}
 
-We present the trace plots of our log-likelihood in \cref{fig:trace:like:ex1}. We notice that likelihood moves towards the true likelihood value shown by the black dashed line and stabilizes around that region. We see a high autocorrelation but it is not very concerning as all the 20 chains remain close towards the true likelihood value without diverging. Similar effect is also reported by \citet{Linero02012025} regarding the mixing of the likelihood. 
-
-We also present the accuracy of our method in terms prediction in \cref{tab:pred:ex1}. For that we discard first 1000 MCMC samples to calculate root mean squared error, 95\% credible interval length and 95\% credible interval coverage. We notice no significant differences in performance between these two approaches and conclude that they are in agreement.
 
 \begin{table}[ht]
 	\centering
@@ -364,26 +407,29 @@ We also present the accuracy of our method in terms prediction in \cref{tab:pred
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.052 & 0.178 & 0.996 & 0.053 & 0.182 & 0.996 \\ 
-		Student-t & 0.048 & 0.182 & 0.998 & 0.048 & 0.187 & 0.996 \\ 
-		Clayton & 0.066 & 0.171 & 0.998 & 0.065 & 0.169 & 0.996 \\ 
-		Gumbel & 0.050 & 0.156 & 0.998 & 0.051 & 0.155 & 0.996 \\ 
-		Frank & 0.051 & 0.193 & 0.994 & 0.051 & 0.192 & 0.994 \\ 
-		\hline 
+		Gaussian & 0.075 & 0.218 & 0.932 & 0.076 & 0.219 & 0.921 \\ 
+		Student-t & 0.093 & 0.277 & 0.930 & 0.098 & 0.274 & 0.908 \\ 
+		Clayton & 0.067 & 0.192 & 0.925 & 0.067 & 0.192 & 0.923 \\ 
+		Gumbel & 0.069 & 0.217 & 0.959 & 0.070 & 0.216 & 0.936 \\ 
+		Frank & 0.083 & 0.251 & 0.930 & 0.083 & 0.254 & 0.925 
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is for C-BART, whereas the right one is for A-C-BART. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex1}
 \end{table}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 138 (Gaussian copula); 167 (Student-t copula); 168 (Clayton copula); 181 (Gumbel copula); and 144 (Frank copula).}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree.}
 	\label{fig:trace:like:ex1}
 \end{figure}
 
+%  79.78078 110.74562 115.01339 102.35259  86.50401
+
 \subsection{Example with a general function}
-We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the confounding variable. For illustration purpose we use 1 tree and 10 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage like discussed before. We present these results in \cref{tab:pred:ex2}, for single tree we, notice that performance of C-BART and A-C-BART varies without a clear winner. However, similar to our analyses with $\tau_1(x)$, we notice that A-C-BART and C-BART are in good agreements when we fit our model with 10 trees. We also plot these results for 10 trees in \cref{fig:trace:pred:ex2} where we present true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines. 
+We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the conditioning variable. For illustration purpose we use 5 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage similar to our analyses with true tree structure. For posterior analysis we set the proposal variance to be equal to 0.2 for all copula families.
+
+We present these results in \cref{tab:pred:ex2}, we notice that A-C-BART and C-BART are in good agreements in terms of prediction accuracy. We also present the prediction plots corresponding the first replicate of the copula datasets in \cref{fig:trace:pred:ex2}. In the figure, we represent the true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines. 
 
 
 \begin{table}[ht]
@@ -395,55 +441,44 @@ We use the second case ($\tau_2(x)$) to check the prediction accuracy of our pro
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		\multicolumn{1}{c}{} &
-		\multicolumn{6}{c}{Single tree} \\
-		\midrule
-		Gaussian & 0.068 & 0.132 & 0.632 & 0.069 & 0.132 & 0.670 \\ 
-		Student-t & 0.059 & 0.150 & 0.708 & 0.058 & 0.157 & 0.724 \\ 
-		Clayton & 0.068 & 0.126 & 0.658 & 0.068 & 0.127 & 0.672 \\ 
-		Gumbel & 0.060 & 0.131 & 0.674 & 0.060 & 0.135 & 0.644 \\ 
-		Frank & 0.059 & 0.136 & 0.556 & 0.060 & 0.133 & 0.538 \\ 
-		\midrule
-		\multicolumn{1}{c}{} &
-		\multicolumn{6}{c}{10 trees} \\
-		\midrule
-		Gaussian & 0.055 & 0.297 & 1.000 & 0.055 & 0.295 & 1.000 \\ 
-		Student-t & 0.052 & 0.333 & 1.000 & 0.051 & 0.336 & 1.000 \\ 
-		Clayton & 0.040 & 0.264 & 1.000 & 0.040 & 0.262 & 1.000 \\ 
-		Gumbel & 0.037 & 0.289 & 1.000 & 0.037 & 0.288 & 1.000 \\ 
-		Frank & 0.051 & 0.241 & 1.000 & 0.050 & 0.238 & 1.000 \\  
+		Gaussian & 0.074 & 0.318 & 0.961 & 0.070 & 0.321 & 0.968 \\ 
+		Student-t & 0.082 & 0.377 & 0.978 & 0.082 & 0.381 & 0.981 \\ 
+		Clayton & 0.073 & 0.304 & 0.960 & 0.070 & 0.306 & 0.966 \\ 
+		Gumbel & 0.079 & 0.329 & 0.952 & 0.077 & 0.333 & 0.957 \\ 
+		Frank & 0.070 & 0.278 & 0.926 & 0.068 & 0.284 & 0.940 \\  
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results in two general columns: left of which is obtained without any adaptive step where as the right one is obtained after 1000 adaptive iterations. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results in two general columns: left of which is for C-BART and the right one is for A-C-BART. We then create three subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex2}
 \end{table}
-
-% 293.6331 299.5395 335.3049 291.9339 241.1606
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
-	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 10 trees. We run 20 chains in parallel with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}. To obtain the posterior estimates we discard first 1000 MCMC sample.}
+	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 5 trees. We run 4 chains in parallel with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}.}
 	\label{fig:trace:pred:ex2}
 \end{figure}
 
-Additionally, we present the likelihood traceplots in \cref{fig:trace:like:ex2}. We notice that both C-BART and A-C-BART is able to move towards the true likelihood suggesting the efficiency of our method in exploring the parameter space.
+Additionally, we present the likelihood traceplots in \cref{fig:trace:like:ex2}. We notice that both C-BART and A-C-BART is able to move towards the true likelihood region, suggesting the efficiency of our method in exploring the parameter space.
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 20 parallel chains each one with 6000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree which are 192 (Gaussian copula); 216 (Student-t copula); 243 (Clayton copula); 220 (Gumbel copula); and 187 (Frank copula).}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating process.}
 	\label{fig:trace:like:ex2}
 \end{figure}
 
-
+% 99.80067 96.13416 78.41696 77.33286 69.78601
 
 \section{CIA world factbook data}\label{sec:cia}
-Here we present a case studies with real dataset to discuss the applicability of our method. For that we use CIA world factbook data. The data is originally produced by CIA for policymakers in the USA and contains important insights on different countries. We are particularly interested in `life expectancy' and `literacy' of male and female population in different countries that allows us to utilise our method for estimating conditional copulas. 
+Here we present two case studies with real dataset to discuss the applicability of our method. For that, we use the CIA world factbook data. The data is originally produced by CIA for policymakers in the USA and contains important insights on different countries. We are particularly interested in the `life expectancy' and the `literacy' of male and female population in different countries. For conditioning factor we consider the economy of these countries represented by the gross domestic product. 
 
-For illustration, we run 10 parallel chains of 15000 MCMC iterations with 10 trees for both C-BART and A-C-BART. For adaptive proposal we use first 1000 iterations to calculate the proposal variance.
+For illustration purpose, we run 4 parallel chains of 30000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 1000 iterations to calculate the proposal variance.
+
+Lastly, for monitoring goodness-of-fit, we consider two different two-sample tests to understand the goodness-of-fit of the simulated copulas: Cramer test for multivariate data \citep{BARINGHAUS2004190}; and Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution or not. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we perform 100 repeated tests each involving 100 permutations.
 
 \subsection{Life Expectancy}
-Here we analyse the dependence between the female life expectancy and male life expectancy against the GDP in log-scale. We use total 167 observations for our analyses. We see that the female life expectancy lies within $[56.1,89.5]$ with average being 76 years. For male population these numbers are slightly lower; the range being $[52.8, 84]$ and average being 71 years. We present the distribution of these observations against the log GDP in \cref{fig:data:dist:LE} along with the pseudo observations. We notice that the life expectancy is somewhat linearly related against the log-GDP and the Kendall's is equal to 0.81, indicating a strong dependence. 
+Here, we analyse the dependence between the female life expectancy and male life expectancy against the GDP in log-scale. We use total 167 observations for our analyses. We see that the female life expectancy lies within $[56.1,89.5]$ with average being 76 years. For male population these numbers are slightly lower; the range being $[52.8, 84]$ and average being 71 years. We present the distribution of these observations against the log GDP in \cref{fig:data:dist:LE} along with the pseudo observations. We notice that the life expectancy has a very strong tail dependence and the Kendall's is equal to 0.81. 
+ 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"cia_LE_plots.pdf"}
@@ -451,65 +486,76 @@ Here we analyse the dependence between the female life expectancy and male life 
 	\label{fig:data:dist:LE}
 \end{figure}
 
-To model the dependence structure we consider five different families of copula: Gaussian; Student-t; Clayton; Gumbel and Frank. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for all five families of copula. We notice that countries with lower GDP shows a strong dependence between male and female life expectancy with value being very close to 1. As the GDP increases, we notice that the dependence reduces slightly. The lowest value of Kendall's tau is around 0.7 when the scaled log-GDP is about half. However, for countries with extremely high GDP the dependence between male and female life expectancy becomes very high again. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}. 
+We notice that the pseudo observations has an elliptical shape. Therefore, to model the dependence structure we consider Gaussian and Student-t copula families. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for both families of copula. We present the conditional taus in \cref{fig:taus:LE}, where the red (blue) solid line shows expected conditional taus for the Gaussian (Student-t) copula and the dashed lines show the credible interval. We notice that countries with lower GDP shows a mild dependence between male and female life expectancy with value being close to 0.5. As the GDP increases, we notice that the dependence increases rapidly to around 0.9. Later on, for countries with medium log-GDP, the conditional Kendall's tau becomes stable around 0.8. However, for countries with extremely high GDP the dependence between male and female life expectancy becomes very high again. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}.
  
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE}
 \end{figure}
+% 0.81
 
-We present the traceplots of our analyses in \cref{fig:trace:like:real:LE}. We notice an interesting behaviour of (A-)C-BART. We notice that for Gaussian and student-t copulas, some chains remain stuck in a low likelihood region, a phenomena that was also reported by \citet{chipman98BCART} in their paper. However, this also showcase an interesting feature of our adaptive routine. While for C-BART, the chains take longer to reach a high likelihood 
-region, this is not the case for A-C-BART. For A-C-BART, the chains reach a higher likelihood region soon after the initial adaptive steps. This is well visible for Gaussian copula, where the chains form a conical shape as they start exploring the parameter space with C-BART, whereas two distinct parallel traceplots can be noticed for A-C-BART.
+We present the traceplots of our analyses in \cref{fig:trace:like:real:LE}. We notice an interesting behaviour of A-C-BART for the Gaussian copula. We notice that one chain explores a higher likelihood regions for a few iterations, something we did not notice for the Student-t copula. 
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 10 parallel chains each one with 15000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE}
 \end{figure}
 
-Additionally, we present the simulated copulas in \cref{fig:pseudo:LE:woa} (C-BART) and \cref{fig:pseudo:LE:woa} (A-C-BART). From eye-balling the scatter-plots, we can say that both C-BART and A-C-BART in agreement with each other though with A-C-BART the lower and upper tail dependences are captured better than that with C-BART. Unfortunately, there's no efficient ways to measure the goodness of fit in this case. We use two different two-sample tests to understand simulated copulas: Cramer test for multivariate data \cite{BARINGHAUS2004190} and Fasano-Franceschini test \cite{fasano-franceschini} which is a generalised version of Kolmogorov–Smirnov test. These tests are designed check if two sets of samples belong to the same distribution or not. We present the $p$-values of this test in \cref{tab:LE:p-val}. We notice that all the $p$-values are well above 0.05 suggesting that there is no significant evidence that they are from two different distributions.
+Additionally, we present the scatterplots and 3-d histograms of the simulated copulas in \cref{fig:pseudo:LE:woa} (C-BART) and \cref{fig:pseudo:LE:wa} (A-C-BART). From the scatter-plots, we can see that both C-BART and A-C-BART in agreement with each other though with A-C-BART the lower and upper tail dependences are captured better than that with C-BART. Unfortunately, there's no efficient ways to compute a similarity measure. So, we present the results of goodness-of-fit tests in \cref{tab:LE:p-val}. We notice that all the $p$-values are well above 0.05 suggesting that there is no significant evidence that they are from two different distributions. Specifically, for A-C-BART with Student-t copula, the $p$-values are well above 0.95, suggesting that Student-t copula is good choice for analysing the conditional dependence between the life expectancy of female and the life expectancy of male conditional on log-GDP. Moreover, we also present the goodness-of-fit test results for analyses with 10 trees. We notice no significant improvement in the test results. 
+
+We present the figures for our analyses with 10 trees in \cref{app:cia}. We notice that with 10 trees, our model tends to explore higher likelihood regions more frequently and A-C-BART tends to converge earlier in a higher likelihood region. While it is interesting for showcasing the convergence of A-C-BART, it does not improve the goodness-of-fit significantly. Moreover, having more trees in the model also increases the overall variance in the estimation of conditional Kendall's tau, which we can see in \cref{fig:taus:LE10}.
 
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_woa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using C-BART.}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using C-BART with 5 trees.}
 	\label{fig:pseudo:LE:woa}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_wa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using A-C-BART.}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using A-C-BART with 5 trees.}
 	\label{fig:pseudo:LE:wa}
 \end{figure}
 
-\begin{table}
+\begin{table}[ht]
 	\centering
-	\begin{tabular}{l|cc|cc}
+	\begin{tabular}{l|ccc|ccc}
 		\multicolumn{1}{c|}{} &
-		\multicolumn{2}{c|}{C-BART} &
-		\multicolumn{2}{c}{A-C-BART} \\
+		\multicolumn{3}{c|}{Cramer test} &
+		\multicolumn{3}{c}{FF test} \\
 		\midrule
-		& Cramer & FF & Cramer & FF \\ 
+		  & mean & median & sd & mean & median & sd \\ 
 		\midrule
-		Gaussian & 0.77 & 0.87 & 0.93 & 0.90 \\ 
-		Student-t & 0.59 & 0.70 & 0.97 & 0.92 \\ 
-		Clayton & 0.89 & 0.89 & 0.87 & 0.91 \\ 
-		Gumbel & 0.51 & 0.84 & 0.62 & 0.62 \\ 
-		Frank & 0.77 & 0.91 & 0.98 & 0.99 \\ 
+		\multicolumn{7}{c}{5 trees} \\
+		\midrule
+		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.53 & 0.53 & 0.05 \\ 
+		Student-t (C-BART) & 0.82 & 0.82 & 0.04 & 0.64 & 0.64 & 0.05 \\ 
+		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.75 & 0.76 & 0.04 \\ 
+		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.99 & 0.99 & 0.01 \\ 
+		\midrule
+		\multicolumn{7}{c}{10 trees} \\
+		\midrule
+		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.56 & 0.56 & 0.05 \\ 
+		Student-t (C-BART) & 0.83 & 0.82 & 0.04 & 0.74 & 0.74 & 0.04 \\ 
+		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.74 & 0.74 & 0.05 \\ 
+		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.98 & 0.99 & 0.01 \\ 
 	\end{tabular}
-	\caption{Goodness of fit test of our proposed method for life expectancy conditional on log-GDP. We split our results in two general columns: left of which is obtained with C-BART and the right one is obtained A-C-BART with 1000 adaptive iterations. We then create subcolumns under each column to present Cramer test and Fasano-Franceschini test.}
+	\caption{Goodness of fit test of our proposed method for life expectancy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
 	\label{tab:LE:p-val}
 \end{table}
 
 
 
+
 \subsection{Literacy}
-Similar to our analyses with life expectancy, we provide the results for literacy rate of male and female population. For female population the literacy rate varies within $[18.2,100]$ and average literacy rate is 84\% whereas for male population the literacy rate lies in $[35.4,100]$ with average literacy being 89\%. We present the distribution of these observations against the log GDP in \cref{fig:data:dist:LT} along with the observed copula. Unlike life expectancy, the literacy rate has a negative exponential growth against the log-GDP. The Kendall's tau computed from the data is approximately 0.84, indicating a strong dependence. 
+In this section we discuss our analyses with the literacy rate of different countries. We provide the scatterplots and distribution of pseudo observations for literacy rate of male and female population in \cref{fig:data:dist:LT}. For female population, the literacy rate varies within $[18.2,100]$ and the average literacy rate is 84\%, whereas for the male population, the literacy rate lies in $[35.4,100]$ with average literacy being 89\%. Unlike our example with the life expectancy, the literacy rate has no clear trend against the log-GDP. However, Kendall's tau computed from the data is approximately 0.84, indicating a strong dependence between the literacy rate of Male and Female population. 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"cia_LT_plots.pdf"}
@@ -517,55 +563,63 @@ Similar to our analyses with life expectancy, we provide the results for literac
 	\label{fig:data:dist:LT}
 \end{figure}
 
-Similar to our analyses with life expectancy, we notice that there is an overall agreement between the estimated conditional dependence by C-BART and A-C-BART. However, in this case, there are some variations based on the family of copula. We can notice a similarity between Frank and Gumbel family as well as a similarity between Gaussian and Student-t copula. However, Clayton family gives a different value for the estimate Kendall's conditional tau. This can be explained from the fact that we do not see very strong lower tail dependence in \cref{fig:data:dist:LT}. We also present the traceplots of log-likelihood in \cref{fig:trace:like:real:LT}. Like before, we notice that for Gaussian and Student-t copula, some chains remain stuck in a lower likelihood regions and as observed earlier, with A-C-BART our model reaches a higher likelihood region faster.
+Similar to our analyses with life expectancy, we notice that there is an overall agreement between the estimated conditional dependence by C-BART and A-C-BART. However, in this case, the families of copula tend to behave differently. While there is a strong similarity between the Gaussian and Student-t copula, the Gaussian copula exhibits an abrupt drop in the conditional dependence, which we present in \cref{fig:taus:LT}. Other than that, for both families, the literacy rate of the Male and the Female population have an almost constant dependence 
+with respect to the log-GDP.  We also present the traceplots of log-likelihood in \cref{fig:trace:like:real:LT}. We notice that for both families, C-BART and A-C-BART are in synergy and explores the similar likelihood regions. 
 
-Finally, we present the scatterplots of pseudo observation in \cref{fig:pseudo:LT:woa} for C-BART and \cref{fig:pseudo:LT:wa} for A-C-BART. We notice no significant differences between the two approaches. This can also be concluded from \cref{tab:LT:p-val}, where we present the $p$-values obtained from Cramer test and Fasano-Franceschini test.
+We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:pseudo:LT:woa} and \cref{fig:pseudo:LT:wa}; and the result of goodness-of-fit tests in \cref{tab:LT:p-val}. Like before, we notice that there is no significant evidence that the simulated copulas and the observed copulas belong to two different families. Moreover, similar to our analyses with the life expectancy copula, Student-t copula with A-C-BART performs particularly well in terms of goodness-of-fit. We also present our results with 10 trees and see no significant improvement. Moreover, from the likelihood traceplots given by \cref{fig:trace:like:real:LT10}, we notice that our analyses with 5 trees and 10 trees give us almost similar results in exploring different likelihood regions, unlike our case study with the life expectancy.
 
-\begin{table}
+\begin{table}[ht]
 	\centering
-	\centering
-	\begin{tabular}{l|cc|cc}
+	\begin{tabular}{l|ccc|ccc}
 		\multicolumn{1}{c|}{} &
-		\multicolumn{2}{c|}{C-BART} &
-		\multicolumn{2}{c}{A-C-BART} \\
+		\multicolumn{3}{c|}{Cramer test} &
+		\multicolumn{3}{c}{FF test} \\
 		\midrule
-		& Cramer & FF & Cramer & FF \\ 
+		 & mean & median & sd & mean & median & sd \\ 
 		\midrule
-		Gaussian & 0.94 & 0.79 & 0.75 & 0.91 \\ 
-		Student-t & 0.55 & 0.77 & 0.79 & 0.66 \\ 
-		Clayton & 0.78 & 0.49 & 0.65 & 0.80 \\ 
-		Gumbel & 0.62 & 0.47 & 0.33 & 0.31 \\ 
-		Frank & 0.50 & 0.79 & 0.99 & 0.99 \\ 
+		\multicolumn{7}{c}{5 trees} \\
+		\midrule
+		Gaussian (C-BART) & 0.55 & 0.54 & 0.05 & 0.58 & 0.57 & 0.05 \\ 
+		Student-t (C-BART) & 0.78 & 0.77 & 0.04 & 0.66 & 0.66 & 0.04 \\ 
+		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.66 & 0.66 & 0.05 \\ 
+		Student-t (A-C-BART) & 0.98 & 0.98 & 0.01 & 0.95 & 0.95 & 0.02 \\ 
+		\midrule
+		\multicolumn{7}{c}{10 trees} \\
+		\midrule
+		Gaussian (C-BART) & 0.56 & 0.56 & 0.05 & 0.64 & 0.64 & 0.05 \\ 
+		Student-t (C-BART) & 0.77 & 0.77 & 0.04 & 0.58 & 0.58 & 0.05 \\ 
+		Gaussian (A-C-BART) & 0.86 & 0.86 & 0.03 & 0.76 & 0.76 & 0.04 \\ 
+		Student-t (A-C-BART) & 0.98 & 0.98 & 0.01 & 0.96 & 0.96 & 0.02 \\ 
 	\end{tabular}
-	\caption{Goodness of fit test of our proposed method for literacy conditional on log-GDP. We split our results in two general columns: left of which is obtained with C-BART and the right one is obtained A-C-BART with 1000 adaptive iterations. We then create subcolumns under each column to present Cramer test and Fasano-Franceschini test.}
+	\caption{Goodness of fit test of our proposed method for literacy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
 	\label{tab:LT:p-val}
 \end{table}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 10 parallel chains each one with 15000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT}
 \end{figure}
-
+% 0.84
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_woa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using C-BART.}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using C-BART with 5 trees.}
 	\label{fig:pseudo:LT:woa}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_wa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using A-C-BART.}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using A-C-BART with 5 trees.}
 	\label{fig:pseudo:LT:wa}
 \end{figure}
 
@@ -576,9 +630,122 @@ Finally, we present the scatterplots of pseudo observation in \cref{fig:pseudo:L
 
 In this paper, we propose a Bayesian semi-parametric approach for modelling conditional copulas where we use the loss-based BART prior proposed by \citet{serafini2024lossbasedpriortreetopologies} to understand the dependence structure. We propose an adaptive RJ-MCMC routine that can efficiently sample from the posterior to estimate the copula parameters. In this way, we avoid the need of a conjugate prior or a smooth likelihood function. Therefore, even though our proposed method is catered towards copula modelling, it can be easily adapted for other areas where we can use a BART model. Simulation studies suggest that our proposed method is capable of recovering the true parsimonious tree structure as well as approximating a complicated function efficiently. 
 
+Note that, one may also want to use a link function on the conditional Kendall's $\tau$ such that
+\begin{equation*}
+	\theta(x_i) \coloneqq h'(\tau(x_i))\quad\text{and}\quad \tau(x_i) = \sum_{t=1}^m g'(x_i, T_t, M_t).
+\end{equation*}
+This will allow one to estimate the conditional Kendall's $\tau$ directly whilst modelling the copula parameter. However, we refrain from doing so as the domain of $h'$ may vary based on the family of copula. For instance, Gaussian copula can take any value of $\tau$ in $(-1,1)$ where as for Gumbel family $\tau$ can only have non-negative values.
+Similarly, we can also consider a transformed beta prior \citep{gokhale_prior_cor} for $\mu_j$ if we wish to model the copula parameter with a link function on Kendall's $\tau$.
+
+
+
+
 We also present case studies with real dataset involving life expectancy and literacy rate of male and female population of different countries. For conditioning, we consider GDP of each country to see whether there is a dependence between male and female populations regarding aforementioned metrics. We notice that our proposed method gives us some interesting results and empirical `goodness of fit' tests suggest that our method is capable of estimating the dependence structure. Moreover, these case studies show the benefit of adaptation, as we notice that our adaptive routine converges to a high likelihood region faster than the non-adaptive counterpart suggesting that our adaptive RJ-MCMC method can be highly beneficial for modelling real scenarios.
 
 While we get promising results with our method across simulation and real case studies, we still require an objective way to fix the number of trees in our BART based copula models. So, in the future, that would be our main goal in this regard. Additionally, it will be interesting to see the performance of our adaptive RJ-MCMC method for general class of problems involving BART. Moreover, in this article, we only focus on bivariate copulas with a single confounding variable. It will be interesting to extend the approach for multivariate copulas in the presence of multiple confounding variables to monitor our methods applicability. 
+
+\appendix
+
+\section{Synthetic dataset}\label{app:results}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"frank_longer_sim.pdf"}
+	\caption{Trace plots of the likelihood; the number of terminal nodes; and the depth of the tree for the Frank copula dataset using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 7500 MCMC iterations each. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. In this case the proposal variance is equal to $0.2$.}
+	\label{fig:trace:frank}
+\end{figure}
+
+
+\begin{table}
+	\centering
+	\begin{tabular}{l|cccccc}
+		& Mean ($\hat{n}_L$) & SD ($\hat{n}_L$) & Mean ($\hat{D}$) & SD ($\hat{D}$) & Mean Acc. & SD Acc. \\ 
+		\midrule
+		Frank (C-BART) & 2.242 & 0.277 & 1.232 & 0.265 & 0.111 & 0.029 \\
+		Frank (A-C-BART) & 2.592 & 0.343 & 1.569 & 0.329 & 0.117 & 0.024 \\
+	\end{tabular}
+	\caption{Efficiency of our proposed method for Frank copula dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and standard deviation of the posterior expectation of the number of terminal nodes; the posterior expectation of the depth of the tree; and the acceptance rate in $[0,1]$ scale. The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each.}
+	\label{tab:eff:ex1:frank}
+\end{table}
+
+\begin{table}
+	\centering
+	\begin{tabular}{l|ccc|ccc}
+		\multicolumn{1}{c|}{} &
+		\multicolumn{3}{c|}{C-BART} &
+		\multicolumn{3}{c}{A-C-BART} \\
+		\midrule
+		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
+		\midrule
+		Frank & 0.194 & 0.224 & 0.432 & 0.153 & 0.244 & 0.688 
+	\end{tabular}
+	\caption{Prediction accuracy of our proposed method for Frank copula dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is for C-BART, whereas the right one is for A-C-BART. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov). The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each.}
+	\label{tab:pred:ex1:frank}
+\end{table}
+
+\section{CIA world fact data}\label{app:cia}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus_10.pdf"}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\label{fig:taus:LE10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood_10.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\label{fig:trace:like:real:LE10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_woa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using C-BART with 10 trees.}
+	\label{fig:pseudo:LE:woa10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_wa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using A-C-BART with 10 trees.}
+	\label{fig:pseudo:LE:wa10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood_10.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\label{fig:trace:like:real:LT10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus_10.pdf"}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\label{fig:taus:LT10}
+\end{figure}
+% 0.84
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_woa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using C-BART with 5 trees.}
+	\label{fig:pseudo:LT:woa10}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_wa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using A-C-BART with 5 trees.}
+	\label{fig:pseudo:LT:wa10}
+\end{figure}
+
+
+
+%\section{Description of RJ-MCMC}
+
+
 
 \bibliographystyle{plainnat}
 \bibliography{example}

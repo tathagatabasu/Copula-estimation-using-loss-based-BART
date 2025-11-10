@@ -24,7 +24,7 @@ X_obs.norm <- lapply(1:R, function(i)data_norm(X_obs[[i]]))
 tree_tau_func <- function(X_obs){
   tau_true_1 <- rep(0,nrow(X_obs))
   tau_true_1[X_obs<0.33] <- 0.3
-  tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.9
+  tau_true_1[(X_obs>=0.33)&(X_obs<0.66)] <- 0.8
   tau_true_1[(X_obs>=0.66)] <- 0.3
   
   tau_true_1 <- matrix(tau_true_1, ncol = 1)
@@ -347,7 +347,7 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt", ".Rdata"))
+    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"), file = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt_long", ".Rdata"))
     rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree,"_adapt"))
     gc()
   }
@@ -372,7 +372,7 @@ if(T){
     
     cat('done case', i, '\n')
     
-    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree), file = paste0("frank_mcmc_",i,"_tree_",n.tree, ".Rdata"))
+    save(list = paste0("frank_mcmc_",i,"_tree_",n.tree), file = paste0("frank_mcmc_",i,"_tree_",n.tree, "_long.Rdata"))
     rm(list = paste0("frank_mcmc_",i,"_tree_",n.tree))
     gc()
   }

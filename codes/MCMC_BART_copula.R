@@ -135,7 +135,7 @@ MCMC_copula <- function(n.iter,
   # assign("sample.cond.mu.copula", sample.cond.mu.copula_before_burn)
   
   for(idx.iter in 1:n.burn){
-    cat('Iteration: ', idx.iter, '\n')
+    # cat('Iteration: ', idx.iter, '\n')
     
     for(idx.tree in idx.tree.vec){
       
@@ -181,7 +181,7 @@ MCMC_copula <- function(n.iter,
   var_list = lapply(idx.tree.vec, function(x)var_adapt(theta_pred_list[,x,1:n.burn]))
   
   for(idx.iter in (n.burn+1):n.iter){
-    cat('Iteration: ', idx.iter, '\n')
+    # cat('Iteration: ', idx.iter, '\n')
     
     for(idx.tree in idx.tree.vec){
       
@@ -1086,7 +1086,7 @@ BART_summary <- function(model, x, others = T){
     return(list("pred" = pred_list, "nterm" = nterm_list, "depth" = depth_list, "acc" = acc_list))
   } else {
     for (i in seq_len(length(x))) {
-      pred_list[[i]] <- BART_calculate_pred(model[[i]]$trees, x[[i]])
+      pred_list[[i]] <- do.call(rbind, lapply(1:length(model[[i]]$trees), \(idx) BART_calculate_pred(model[[i]]$trees[[idx]], x[[i]])))
       print(i)
     }
     return(list("pred" = pred_list))
