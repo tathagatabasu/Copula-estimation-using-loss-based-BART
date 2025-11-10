@@ -160,7 +160,7 @@ In this section we provide the MCMC algorithm for sampling from the posterior. F
 		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\prod_{t=1}^{m}\pi(T_t)\prod_{t=1}^{m}\left(\prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\right)\prod_{t=1}^{m}\pi(\sigma_{t}).
 	\end{split}
 \end{align}
-So, to sample from the posterior we use a backfitting algorithm proposed by \citet{chipman2010BART} where we sample $(T_k, M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
+So, to sample from the posterior we use a backfitting algorithm proposed by \citet{chipman2010BART} where we sample $(T_k, M_k)$ conditional on the other $m-1$ pairs of $(T_t,M_t)$. To be more precise, let $(T_{-k},M_{-k})\coloneqq (T_{1},M_{1}), \cdots,(T_{k-1},M_{k-1}),(T_{k+1},M_{k+1}),\cdots, (T_{m},M_{m})$. Then in each MCMC iteration, we sample $(T_k, M_k)$ from the following conditional distribution: 
 \begin{equation*}
 	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma^2_{k}, U_1, U_2, X
 \end{equation*}
