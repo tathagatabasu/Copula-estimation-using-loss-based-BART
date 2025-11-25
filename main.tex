@@ -670,9 +670,9 @@ Before describing the detailed proposal for each moves corresponding to the pair
 	\item $\mathcal{PCN}(T_k)=$ set of internal parent-child pairs
 	\item $\pi_{\textsc{rule}}(l\mid c)=$ probability of splitting $l$-th terminal node at cutpoint $c$
 \end{itemize}
-Lastly, let $r_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)$ denote the acceptance ratio of moving from $(T_k,M_k)$ to $(T_k^\ast,M_k^\ast)$, such that
+Lastly, let $AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)$ denote the acceptance ratio of moving from $(T_k,M_k)$ to $(T_k^\ast,M_k^\ast)$, such that
 \begin{equation*}
-	\alpha_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) = \min\left\{1,r_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\right\},
+	\alpha_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) = \min\left\{1,AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\right\},
 \end{equation*}
 where $\textsc{move}\in \left\{\textsc{grow}, \textsc{prune}, \textsc{change}, \textsc{swap}\right\}$. Then the proposals and acceptance ratios are given in the following manners.
 
@@ -698,7 +698,7 @@ Similarly, we get the prior ratio for a \textsc{growth} move. Note that when a t
 \end{equation*}
 Finally, combining with the likelihood we get
 \begin{align*}
-	&r_{\gamma;\textsc{grow}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
+	&AR_{\gamma;\textsc{grow}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
 	&= \frac{
 		\frac{\pi(T_k^\ast,M_k^\ast)}{\#\{\mathcal{PN}(T_k^{\ast})\}} 
 		\prod_{i\in \mathcal{I}_{jr}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^\ast_{jr}\right)\right)
@@ -710,7 +710,7 @@ Finally, combining with the likelihood we get
 \end{align*}
 Since \textsc{prune} is the reverse process of the \textsc{grow} move, we have
 \begin{align*}
-	&r_{\gamma;\textsc{prune}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
+	&AR_{\gamma;\textsc{prune}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
 	&= \frac{
 		\frac{\pi(T^{\ast}_k,M^{\ast}_k)}{\#\{\mathcal{TN}(T^{\ast}_k)\}} 
 		\prod_{i\in \mathcal{I}_{j}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^{\ast}_j\right)\right) 
@@ -726,7 +726,7 @@ Since \textsc{prune} is the reverse process of the \textsc{grow} move, we have
 For the \textsc{change} or the \text{swap} move. The proposals only rely on the internal nodes and the terminal nodes and values remain unchanged. Moreover, for each of these moves $\mathcal{IN}(T_k)$ and $\mathcal{PCN}(T_k)$ remain invariant in nature. That is for a proposed tree $T_k^{\ast}$, $\mathcal{IN}(T_k)=\mathcal{IN}(T_k^{\ast})$ and $\mathcal{PCN}(T_k)=\mathcal{PCN}(T_k^{\ast})$. Therefore, the proposal ratios of these two moves are equal to 1. This gives the following:
 
 \begin{align*}
-	r_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)= \frac{
+	AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)= \frac{
 		\pi(T^{\ast}_k,M^{\ast}_k) 
 		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k^\ast, M_k^\ast)\right)\right)}
 	{\pi(T_k,M_k) 
@@ -745,9 +745,9 @@ Let $\left(T,M\right)$ be a state in the state space $\mathcal{T}\times \mathcal
 Then the following lemma holds
 
 \begin{lemma}\label{lemm:bounded:ratio}
-	Let $\delta>0$, then $\forall$ $(u_{1i},u_{2i})\in [\delta, 1-\delta]^2$,  the acceptance ratios are bounded. That is, there exist values $0\le b_{\gamma, \textsc{move}} \le B_{\gamma, \textsc{move}} \le \infty$ such that
+	Let $\delta>0$, then $\forall$ $(u_{1i},u_{2i})\in [\delta, 1-\delta]^2$,  the acceptance ratios are bounded. That is, there exist values $0\le b_{\gamma, \textsc{move}} <  B_{\gamma, \textsc{move}} \le \infty$ such that
 	\begin{equation*}
-		\frac{1}{B_{\gamma, \textsc{move}}} \le r_{\gamma, \textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) \le \frac{1}{b_{\gamma, \textsc{move}}}.
+		\frac{1}{B_{\gamma, \textsc{move}}} \le AR_{\gamma, \textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) \le \frac{1}{b_{\gamma, \textsc{move}}}.
 	\end{equation*}
 \end{lemma}
 This holds as the copula likelihood ratio becomes bounded in the compact set $[\delta, 1-\delta]^2$ and the adaptive proposal is bounded by construction leading to a bounded proposal ratio.
@@ -792,23 +792,52 @@ We can follow similar arguments for the \textsc{change} move to show that $\left
 
 \subsection{Containment}
 
-Recall the state space defined by $\mathcal{T}\times\mathcal{M}$. Then we can express this space as finite union of subspaces such that $\mathcal{T}\times\mathcal{M} \coloneq \bigcup_{i=1}^n \mathcal{T}_i \times \mathcal{M}_i$, where $\mathcal{T}_i$ is the space of all trees with $i$ terminal nodes and $\mathcal{M}_i$ is the vector space of terminal node values such that $\mathcal{M}_i \subset \mathbb{R}^i$.
+Recall the state space defined by $\mathcal{T}\times\mathcal{M}$. Then we can express this space as finite union of subspaces such that $\mathcal{T}\times\mathcal{M} \coloneq \bigcup_{i=1}^n \mathcal{T}_i \times \mathbb{R}^i$, where $\mathcal{T}_i$ is the space of all trees with $i$ terminal nodes and the vector of terminal nodes are in $\mathbb{R}^i$.
 
 Let $T^{(i)}$ denote a tree with $i$ terminal nodes and $M^{(i)}$ denote the vector of terminal node values. Then for each $i=2,\cdots,n$, we have
 \begin{align*}
-	&\mathcal{K}_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)\\
-	&\ge \alpha_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)d\left(T^{(i-1)},M^{(i-1)}\right)\\
-	&\ge \frac{1}{B_{\gamma;\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\left(T^{(i-1)},M^{(i-1)}\right)\\
-	&\ge \frac{1}{B_{\gamma;\textsc{prune}}}\frac{1}{\left\lfloor\frac{i}{2}\right\rfloor}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\left(T^{(i-1)},M^{(i-1)}\right)\\
-	&\ge \frac{2}{B_{\gamma;\textsc{prune}}}\frac{1}{i}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
+	&\mathcal{K}_{\gamma}\left(T^{(i)},M^{(i)};\left(T^{(i-1)},M^{(i-1)}\right)\right)\\
+	&\ge \alpha_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)d\left(M^{(i-1)}\right)\\
+	&\ge \frac{1}{B_{\gamma;\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
 \end{align*}
 Therefore there exist $\nu>0$ such that for all $i=2,\cdots,n$
-\begin{equation*}
-	\mathcal{K}_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)
-	\ge \nu\frac{1}{i}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
-\end{equation*}
-Let $(T^{(1)},M^{(1)})$ denote the trivial tree. That is tree with only one node. Then for all $i$, we can reach the trivial tree with non-zero probability. Let $\phi$ be a measure defined as $\phi(T^{(i)},M^{(i)}) = \delta_{1}(i)$.
+\begin{equation}\label{eq:reach:trivial}
+	\mathcal{K}_{\gamma}\left(T^{(i)},M^{(i)};d\left(T^{(i-1)},M^{(i-1)}\right)\right)
+	\ge \frac{\nu}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
+\end{equation}
+Let $(T^{(1)},M^{(1)})$ denote the trivial tree. That is tree with only one node. Then for all $i$, we can reach the trivial tree with non-zero probability. Hence, we can define be a measure, $\phi$ such that $\phi\left(d\left(T^{(i)},M^{(i)}\right)\right) = \delta_{1}(i)$, where $\delta(\cdot)$ is Kronecker's delta. This shows that $\mathcal{K}(\cdot;\cdot)$ is $\phi$-irreducible. Now, let $\pi(\cdot\mid y)$ be the target density. Then by construction of the RJ-MCMC algorithm, $\pi(\cdot\mid y)$ is an invariant distribution of $\mathcal{K}(\cdot,\cdot)$. Therefore, $\mathcal{K}(\cdot,\cdot)$ is $\pi$-irreducible. Aperiodicity of the $\mathcal{K}(\cdot,\cdot)$ is also achieved through the construction. For instance, we can propose a pair $\left(T^{(2)},M^{(2)}\right)$ for which $\alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) < 1$. Then the rejection probability $r_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}\right)$ of \textsc{grow} is given by:
+\begin{align*}
+	& r_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}\right)\\
+	&=1-\int \alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right)q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right)\\
+	&=\int\left(1 - \alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right)\right) q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right)\\
+	& > \int q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right) > 0.
+\end{align*}
+Therefore, there exists $1>\nu_0 >0$ such that
+\begin{equation}\label{eq:stay:trivial}
+	\mathcal{K}_{\gamma}\left(T^{(1)},M^{(1)};d\left(T^{(1)},M^{(1)}\right)\right) \ge \nu_0 = \nu_0 \phi\left(d\left(T^{(1)},M^{(1)}\right)\right).
+\end{equation}
 
+Now, to show that the Markov chain is uniformly ergodic we show that $\mathcal{T}\times \mathcal{M}$ is a small set. Then for $k=2,\cdots,n$, we iterate the kernel $n$ times and using Chapman Kolmogorov equation we get
+\begin{align*}
+	& \mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right)\\
+	& = \int_{\mathcal{T}\times\mathcal{M}}\mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T,M\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T,M;d\left(T^{(1)},M^{(1)}\right)\right)\\
+	& \ge \int_{\mathcal{T}_1\times\mathbb{R}}\mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T,M\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T,M;d\left(T^{(1)},M^{(1)}\right)\right)\\
+	& = \mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T^{(1)},M^{(1)};d\left(T^{(1)},M^{(1)}\right)\right).
+\end{align*}
+Therefore, from \cref{eq:reach:trivial} and \cref{eq:stay:trivial}, we get
+\begin{equation*}
+	\mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right) \ge \nu^{k-1} \nu_0^{n+1-k}\phi\left(d\left(T^{(1)},M^{(1)}\right)\right).
+\end{equation*}
+This holds true for $k=1$ as well. Therefore, for any $\left(T^{(k')},M^{(k')}\right)$ in $\mathcal{T}\times\mathcal{M}$
+
+\begin{equation*}
+	\mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(k')},M^{(k')}\right)\right) \ge \vartheta\phi\left(d\left(T^{(k')},M^{(k')}\right)\right),
+\end{equation*}
+where $\vartheta = \min_{1\le k\le n}\left\{\nu^{k-1} \nu_0^{n+1-k}\right\}$. Then following the proposition given by \citet{Tierney1994}, we can find a constant $L_0>0$ such that for all $N$
+\begin{equation}
+	\left\|\mathcal{K}^N_{\gamma}(T,M;\cdot) - \pi(\cdot\mid y)\right\|_{TV} \le L_0 (1-\vartheta)^{\lfloor N/n\rfloor}.
+\end{equation}
+Therefore, $K_{\gamma}(T,M;)$ is geometrically ergodic for all values of $\gamma$ and $(T,M)$. 
 
 \section{Synthetic dataset}\label{app:results}
 
