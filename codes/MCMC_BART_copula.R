@@ -765,8 +765,8 @@ acceptance.prob.list_copula <- function(move_list,
     term_val_prior_new <- 1
     term_val_prior_old <- 1
     
-    prop_dist_old_val <- 1
-    prop_dist_new_val <- 1
+    prop_dist_new_to_old <- 1
+    prop_dist_old_to_new <- 1
     
   } else if(move_list$move == 'change'){
     
@@ -776,8 +776,8 @@ acceptance.prob.list_copula <- function(move_list,
     term_val_prior_new <- 1
     term_val_prior_old <- 1
     
-    prop_dist_old_val <- 1
-    prop_dist_new_val <- 1
+    prop_dist_new_to_old <- 1
+    prop_dist_old_to_new <- 1
     
   } else if(move_list$move == 'grow'){
     
@@ -803,8 +803,8 @@ acceptance.prob.list_copula <- function(move_list,
     term_val_prior_old <- (sum(sapply(term_val_old_val, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
     term_val_prior_new <- (sum(sapply(c(term_val_new_left$val,term_val_new_right$val), function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
     
-    prop_dist_old_val <- sum(dnorm(term_val_old_val, mean = term_val_old$mu, sd = term_val_old$sigma, log = T))
-    prop_dist_new_val <- sum(dnorm(c(term_val_new_left$val,term_val_new_right$val), mean = c(term_val_new_left$mu,term_val_new_right$mu), sd = c(term_val_new_left$sigma,term_val_new_right$sigma), log = T))
+    prop_dist_new_to_old <- sum(dnorm(term_val_old_val, mean = term_val_old$mu, sd = term_val_old$sigma, log = T))
+    prop_dist_old_to_new <- sum(dnorm(c(term_val_new_left$val,term_val_new_right$val), mean = c(term_val_new_left$mu,term_val_new_right$mu), sd = c(term_val_new_left$sigma,term_val_new_right$sigma), log = T))
     
   } else if(move_list$move == 'prune'){
     
@@ -853,8 +853,8 @@ acceptance.prob.list_copula <- function(move_list,
     term_val_prior_old <- (sum(sapply(c(term_val_old_right_val,term_val_old_left_val), function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
     term_val_prior_new <- (sum(sapply(term_val_new$val, function(x)log_prior_fun(x, theta_param_1, theta_param_2))))
     
-    prop_dist_old_val <- sum(dnorm(c(term_val_old_right_val,term_val_old_left_val), mean = c(term_val_old_right$mu,term_val_old_left$mu), sd = c(term_val_old_right$sigma,term_val_old_left$sigma), log = T))
-    prop_dist_new_val <- sum(dnorm(term_val_new$val, mean = term_val_new$mu, sd = term_val_new$sigma, log = T))
+    prop_dist_new_to_old <- sum(dnorm(c(term_val_old_right_val,term_val_old_left_val), mean = c(term_val_old_right$mu,term_val_old_left$mu), sd = c(term_val_old_right$sigma,term_val_old_left$sigma), log = T))
+    prop_dist_old_to_new <- sum(dnorm(term_val_new$val, mean = term_val_new$mu, sd = term_val_new$sigma, log = T))
     
   } else {
     stop('Unknown move')
@@ -862,7 +862,7 @@ acceptance.prob.list_copula <- function(move_list,
   
   prior.ratio <- (prior.new/prior.old) * exp(term_val_prior_new - term_val_prior_old)
   lik.ratio <- exp(log.lik.new - log.lik.old)
-  trans.ratio <- (prob.new.to.old/prob.old.to.new) * exp(prop_dist_old_val-prop_dist_new_val)
+  trans.ratio <- (prob.new.to.old/prob.old.to.new) * exp(prop_dist_new_to_old-prop_dist_old_to_new)
   
   acc.prob <- prior.ratio * lik.ratio * trans.ratio
   

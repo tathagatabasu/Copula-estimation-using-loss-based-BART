@@ -51,3 +51,9 @@ codes/.Rhistory
 codes/.Rhistory
 *.Rdata
 *.zip
+*.bcf
+*.nav
+*.xml
+slide.pdf
+*.snm
+*.toc
