@@ -1,20 +1,7 @@
-library(data.tree)
-library(dplyr)
-library(ggplot2)
-library(ggpubr)
-library(VineCopula)
-library(MASS)   # For multivariate normal functions
-library(coda)   # For MCMC diagnostics
-library(plot3D)
-library(gplots)
-library(xtable)
-require(foreach)
-require(parallel)
-require(doParallel)
-library(calculus)
-library(patchwork)
+# packages
 library(dplyr)
 library(readr)
+library(VineCopula)
 
 set.seed(123)
 
@@ -47,21 +34,22 @@ cia_wf_data$GDP_PPP[index_tril] = 1000000 * cia_wf_data$GDP_PPP[index_tril]
 
 cia_wf_data <- na.omit(cia_wf_data)
 
-U1_LE = ecdf(cia_wf_data$Life_expectancy_F)(cia_wf_data$Life_expectancy_F)
-U2_LE = ecdf(cia_wf_data$Life_expectancy_M)(cia_wf_data$Life_expectancy_M)
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M)
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F)
 
-U1_LT = ecdf(cia_wf_data$Liter_F)(cia_wf_data$Liter_F)
-U2_LT = ecdf(cia_wf_data$Liter_M)(cia_wf_data$Liter_M)
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M)
+plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F)
 
-par(mar = c(5,5,2,1), mfrow = c(1,3))
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M, xlab = "GDP in log scale", ylab = "Life exp (M)")
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F, xlab = "GDP in log scale", ylab = "Life exp (F)")
-plot(U1_LE,U2_LE, xlab = "Life exp (F)", ylab = "Life exp (M)")
+U1_LE = pobs(cia_wf_data$Life_expectancy_F)
+U2_LE = pobs(cia_wf_data$Life_expectancy_M)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M, xlab = "GDP in log scale", ylab = "Literacy (M)")
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F, xlab = "GDP in log scale", ylab = "Literacy (M)")
-plot(U1_LT,U2_LT, xlab = "Literacy (F)", ylab = "Literacy (M)")
+U1_LT = pobs(cia_wf_data$Liter_F)
+U2_LT = pobs(cia_wf_data$Liter_M)
 
+plot(U1_LE,U2_LE)
+plot(cia_wf_data$Life_expectancy_F,cia_wf_data$Life_expectancy_M)
+
+plot(U1_LT,U2_LT)
 plot(cia_wf_data$Liter_F,cia_wf_data$Liter_M)
 
 GDP <- as.data.frame((log(cia_wf_data$GDP_PPP) - min(log(cia_wf_data$GDP_PPP)))/(max(log(cia_wf_data$GDP_PPP)) - min(log(cia_wf_data$GDP_PPP))))
@@ -70,13 +58,13 @@ rownames(GDP) <- 1:nrow(GDP)
 
 n.chain_par <- 4
 n.iter_par <- 30000
-n.born.out.par <- 0
+n.born.out.par <- 1000
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
 moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
-n.tree <- 10
+n.tree <- 5
 
 ################################################################################
 # source files
@@ -90,142 +78,231 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 
 ################################################################################
+load(paste0("gauss_gdp_LE_tree_",n.tree, ".Rdata"))
 
-if(F){
-  
-  load("gauss_gdp_LE_tree_10.Rdata")
-  
-  gauss_list_pred_lb <- lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP))
-  
-  gauss_pred_val = do.call(rbind,gauss_list_pred_lb)
-  
-  gauss_pred_val_vec = as.vector(gauss_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  gauss_like_val <- apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LE, U2_LE))
-  
-  gauss_like_df <-data.frame("nn" = gauss_like_val)
-  gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  gauss_pl_like <- gauss_like_df %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  gauss_pl_like
-  
-  load("t_gdp_LE_tree_10.Rdata")
-  
-  t_list_pred_lb <- lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP))
-  
-  t_pred_val = do.call(rbind,t_list_pred_lb)
-  
-  t_pred_val_vec = as.vector(t_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  t_like_val <- apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LE, U2_LE))
-  
-  t_like_df <-data.frame("nn" = t_like_val)
-  t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  t_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  t_pl_like <- t_like_df %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  t_pl_like
-  
-  
-  load("clayton_gdp_LE_tree_10.Rdata")
-  
-  clayton_list_pred_lb <- lapply(1:length(clayton_GDP_LE$trees), \(idx) BART_calculate_pred(clayton_GDP_LE$trees[[idx]], GDP))
-  
-  clayton_pred_val = do.call(rbind,clayton_list_pred_lb)
-  
-  clayton_pred_val_vec = as.vector(clayton_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  clayton_like_val <- apply(clayton_pred_val, 1, function(x)loglik_clayton(link_clayton(x), U1_LE, U2_LE))
-  
-  clayton_like_df <-data.frame("nn" = clayton_like_val)
-  clayton_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  clayton_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  clayton_pl_like <- clayton_like_df %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  clayton_pl_like
-  
-  load("gumbel_gdp_LE_tree_10.Rdata")
-  
-  gumbel_list_pred_lb <- lapply(1:length(gumbel_GDP_LE$trees), \(idx) BART_calculate_pred(gumbel_GDP_LE$trees[[idx]], GDP))
-  
-  gumbel_pred_val = do.call(rbind,gumbel_list_pred_lb)
-  
-  gumbel_pred_val_vec = as.vector(gumbel_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  gumbel_like_val <- apply(gumbel_pred_val, 1, function(x)loglik_gumbel(link_gumbel(x), U1_LE, U2_LE))
-  
-  gumbel_like_df <-data.frame("nn" = gumbel_like_val)
-  gumbel_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  gumbel_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  gumbel_pl_like <- gumbel_like_df %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  gumbel_pl_like
-  
-  load("frank_gdp_LE_tree_10.Rdata")
-  
-  frank_list_pred_lb <- lapply(1:length(frank_GDP_LE$trees), \(idx) BART_calculate_pred(frank_GDP_LE$trees[[idx]], GDP))
-  
-  frank_pred_val = do.call(rbind,frank_list_pred_lb)
-  
-  frank_pred_val_vec = as.vector(frank_pred_val[(1:(n.chain_par * n.iter_par))[rep((n.born.out.par+1):n.iter_par, n.chain_par) + rep(n.iter_par * (0:(n.chain_par-1)), each = (n.iter_par - n.born.out.par))],])
-  
-  frank_like_val <- apply(frank_pred_val, 1, function(x)loglik_frank(link_frank(x), U1_LE, U2_LE))
-  
-  frank_like_df <-data.frame("nn" = frank_like_val)
-  frank_like_df$idx <- rep(1:n.iter_par, n.chain_par)
-  frank_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
-  
-  frank_pl_like <- frank_like_df %>%
-    ggplot(aes(x = idx, y = nn, color = factor(chain))) +
-    geom_line() +
-    labs(
-      x = "Iteration",
-      y = "Log-likelihood"
-    ) +
-    guides(color = "none") +
-    theme_minimal()
-  
-  frank_pl_like
-  
-  
-}
+gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP)))
+
+gauss_like_df <-data.frame("nn" = apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LE, U2_LE)))
+gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+gauss_pl_like <- gauss_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(gauss_pl_like, file = "plot_gauss_LE.Rdata")
+save(gauss_pred_val, file = "dat_gauss_LE.Rdata")
+
+rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LE)
+
+gc()
+gc()
+
+load(paste0("gauss_gdp_LE_adapt_tree_",n.tree, ".Rdata"))
+
+gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LE_adapt$trees), \(idx) BART_calculate_pred(gauss_GDP_LE_adapt$trees[[idx]], GDP)))
+
+gauss_like_df <-data.frame("nn" = apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LE, U2_LE)))
+gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+gauss_pl_like <- gauss_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(gauss_pl_like, file = "plot_gauss_LE_adapt.Rdata")
+save(gauss_pred_val, file = "dat_gauss_LE_adapt.Rdata")
+
+rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LE_adapt)
+
+gc()
+gc()
+
+load(paste0("gauss_gdp_LT_tree_",n.tree, ".Rdata"))
+
+gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LT$trees), \(idx) BART_calculate_pred(gauss_GDP_LT$trees[[idx]], GDP)))
+
+rm(gauss_GDP_LT)
+gc()
+
+gauss_like_df <-data.frame("nn" = apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LT, U2_LT)))
+gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+gauss_pl_like <- gauss_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(gauss_pl_like, file = "plot_gauss_LT.Rdata")
+save(gauss_pred_val, file = "dat_gauss_LT.Rdata")
+
+rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LT)
+
+gc()
+gc()
+
+load(paste0("gauss_gdp_LT_adapt_tree_",n.tree, ".Rdata"))
+
+gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LT_adapt$trees), \(idx) BART_calculate_pred(gauss_GDP_LT_adapt$trees[[idx]], GDP)))
+
+rm(gauss_GDP_LT_adapt)
+gc()
+
+gauss_like_df <-data.frame("nn" = apply(gauss_pred_val, 1, function(x)loglik_gauss(link_gauss(x), U1_LT, U2_LT)))
+gauss_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+gauss_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+gauss_pl_like <- gauss_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(gauss_pl_like, file = "plot_gauss_LT_adapt.Rdata")
+save(gauss_pred_val, file = "dat_gauss_LT_adapt.Rdata")
+
+rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LT_adapt)
+
+gc()
+gc()
+
+load(paste0("t_gdp_LE_tree_",n.tree, ".Rdata"))
+
+t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP)))
+
+rm(t_GDP_LE)
+gc()
+
+t_like_df <-data.frame("nn" = apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LE, U2_LE)))
+t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+t_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+t_pl_like <- t_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(t_pl_like, file = "plot_t_LE.Rdata")
+save(t_pred_val, file = "dat_t_LE.Rdata")
+
+rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LE)
+
+gc()
+gc()
+
+load(paste0("t_gdp_LE_adapt_tree_",n.tree, ".Rdata"))
+
+t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LE_adapt$trees), \(idx) BART_calculate_pred(t_GDP_LE_adapt$trees[[idx]], GDP)))
+
+rm(t_GDP_LE_adapt)
+gc()
+
+t_like_df <-data.frame("nn" = apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LE, U2_LE)))
+t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+t_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+t_pl_like <- t_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(t_pl_like, file = "plot_t_LE_adapt.Rdata")
+save(t_pred_val, file = "dat_t_LE_adapt.Rdata")
+
+rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LE_adapt)
+
+gc()
+gc()
+
+load(paste0("t_gdp_LT_tree_",n.tree, ".Rdata"))
+
+t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LT$trees), \(idx) BART_calculate_pred(t_GDP_LT$trees[[idx]], GDP)))
+
+rm(t_GDP_LT)
+gc()
+
+t_like_df <-data.frame("nn" = apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LT, U2_LT)))
+t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+t_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+t_pl_like <- t_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(t_pl_like, file = "plot_t_LT.Rdata")
+save(t_pred_val, file = "dat_t_LT.Rdata")
+
+rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LT)
+
+gc()
+gc()
+
+load(paste0("t_gdp_LT_adapt_tree_",n.tree, ".Rdata"))
+
+t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LT_adapt$trees), \(idx) BART_calculate_pred(t_GDP_LT_adapt$trees[[idx]], GDP)))
+
+rm(t_GDP_LT_adapt)
+gc()
+
+t_like_df <-data.frame("nn" = apply(t_pred_val, 1, function(x)loglik_t(link_t(x), U1_LT, U2_LT)))
+t_like_df$idx <- rep(1:n.iter_par, n.chain_par)
+t_like_df$chain <- rep(1:n.chain_par, each = n.iter_par)
+
+t_pl_like <- t_like_df %>%
+  ggplot(aes(x = idx, y = nn, color = factor(chain))) +
+  geom_line() +
+  labs(
+    x = "Iteration",
+    y = "Log-likelihood"
+  ) +
+  guides(color = "none") +
+  theme_minimal()
+
+save(t_pl_like, file = "plot_t_LT_adapt.Rdata")
+save(t_pred_val, file = "dat_t_LT_adapt.Rdata")
+
+rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LT_adapt)
+
+gc()
+gc()
 
 ################################################################################
 
@@ -233,12 +310,25 @@ if(F){
 
 if(F){
   
-  # load("10_trees/dat_gauss_LE.Rdata")
-  # load("10_trees/dat_t_LE.Rdata")
+  if(n.tree == 5){
+    load("real_case/dat_gauss_LE.Rdata")
+    load("real_case/dat_t_LE.Rdata")
+  }
   
-  load("real_case/dat_gauss_LE.Rdata")
-  load("real_case/dat_t_LE.Rdata")
+  if(n.tree == 5){
+    load("real_case/dat_gauss_LE_adapt.Rdata")
+    load("real_case/dat_t_LE_adapt.Rdata")
+  }
   
+  if(n.tree == 10){
+    load("10_trees/dat_gauss_LE.Rdata")
+    load("10_trees/dat_t_LE.Rdata")
+  }
+  
+  if(n.tree == 10){
+    load("10_trees/dat_gauss_LE_adapt.Rdata")
+    load("10_trees/dat_t_LE_adapt.Rdata")
+  }
   
   # data plotting
   pred_cond <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
@@ -247,12 +337,6 @@ if(F){
   pred_cond$t_y = link_t(as.vector(t_pred_val))
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP))
-  
-  # load("10_trees/dat_gauss_LE_adapt.Rdata")
-  # load("10_trees/dat_t_LE_adapt.Rdata")
-  
-  load("real_case/dat_gauss_LE_adapt.Rdata")
-  load("real_case/dat_t_LE_adapt.Rdata")
   
   pred_cond_adapt <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
   pred_cond_adapt$gauss_y = link_gauss(as.vector(gauss_pred_val))
@@ -477,17 +561,13 @@ if(F){
     pl_tau_est + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Scaled GDP") + pl_tau_est_adapt + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Scaled GDP")
 }
 
-################################################################################
-# comparative plotting
-################################################################################
-
 if(F){
   
-  gauss_woa <- get(load("10_trees/plot_gauss_LE.Rdata"))
-  gauss_wa <- get(load("10_trees/plot_gauss_LE_adapt.Rdata"))
+  gauss_woa_10 <- get(load("10_trees/plot_gauss_LE.Rdata"))
+  gauss_wa_10 <- get(load("10_trees/plot_gauss_LE_adapt.Rdata"))
   
-  t_woa <- get(load("10_trees/plot_t_LE.Rdata"))
-  t_wa <- get(load("10_trees/plot_t_LE_adapt.Rdata"))
+  t_woa_10 <- get(load("10_trees/plot_t_LE.Rdata"))
+  t_wa_10 <- get(load("10_trees/plot_t_LE_adapt.Rdata"))
   
   gauss_woa_5 <- get(load("real_case/plot_gauss_LE.Rdata"))
   gauss_wa_5 <- get(load("real_case/plot_gauss_LE_adapt.Rdata"))
@@ -495,13 +575,11 @@ if(F){
   t_woa_5 <- get(load("real_case/plot_t_LE.Rdata"))
   t_wa_5 <- get(load("real_case/plot_t_LE_adapt.Rdata"))
   
-  (gauss_woa + ylim(200,280) + labs(title="Gaussian (without adaption)") + gauss_wa + ylim(200,280) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa + ylim(200,280) + labs(title="Student-t (without adaption)") + t_wa + ylim(200,280) + labs(title="Student-t (with adaption)"))
+  (gauss_woa_10 + ylim(200,280) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,280) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_10 + ylim(200,280) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,280) + labs(title="Student-t (with adaption)"))
   
   (gauss_woa_5 + ylim(200,260) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(200,260) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_5 + ylim(220,260) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(220,260) + labs(title="Student-t (with adaption)")) #/
-  
-  pred_woa$pl_tau_est + labs(title="Without adaption") + xlab("Scaled GDP") + ylim(-0.6,1) + pred_wa$pl_tau_est + labs(title="With adaption") + ylim(-0.6,1) + xlab("Scaled GDP")
   
   # par(mar = c(5,5,5,1), mfrow = c(2,2))
   # acf(mcmc(pred_cond_burn$gauss_y), lag.max = 200, main = "Gaussian (without adaption)")
@@ -510,14 +588,32 @@ if(F){
   # acf(mcmc(pred_cond_adapt_burn$t_y), lag.max = 200, main = "Student-t (with adaption)")
 }
 
+
+################################################################################
+
+################################################################################
+
 if(F){
   
-  load("10_trees/dat_gauss_LT.Rdata")
-  load("10_trees/dat_t_LT.Rdata")
+  if(n.tree == 5){
+    load("real_case/dat_gauss_LT.Rdata")
+    load("real_case/dat_t_LT.Rdata")
+  }
   
-  # load("real_case/dat_gauss_LT.Rdata")
-  # load("real_case/dat_t_LT.Rdata")
+  if(n.tree == 5){
+    load("real_case/dat_gauss_LT_adapt.Rdata")
+    load("real_case/dat_t_LT_adapt.Rdata")
+  }
   
+  if(n.tree == 10){
+    load("10_trees/dat_gauss_LT.Rdata")
+    load("10_trees/dat_t_LT.Rdata")
+  }
+  
+  if(n.tree == 10){
+    load("10_trees/dat_gauss_LT_adapt.Rdata")
+    load("10_trees/dat_t_LT_adapt.Rdata")
+  }
   
   # data plotting
   pred_cond <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
@@ -526,12 +622,6 @@ if(F){
   pred_cond$t_y = link_t(as.vector(t_pred_val))
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP))
-  
-  load("10_trees/dat_gauss_LT_adapt.Rdata")
-  load("10_trees/dat_t_LT_adapt.Rdata")
-  
-  # load("real_case/dat_gauss_LT_adapt.Rdata")
-  # load("real_case/dat_t_LT_adapt.Rdata")
   
   pred_cond_adapt <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
   pred_cond_adapt$gauss_y = link_gauss(as.vector(gauss_pred_val))
@@ -636,9 +726,9 @@ if(F){
   
   par(mar = c(5,5,2,1), mfrow = c(2,3))
   
-  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "Male Literacy", main = "Observed data")
-  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "Male Literacy", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "Male Literacy", main = "Predicted (Student-t)")
+  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
+  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
   
   hist3D(
     x = hist_true$x,
@@ -684,9 +774,10 @@ if(F){
   
   # 8 5
   
-  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "Male Literacy", main = "Observed data")
-  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Literacy", ylab = "Male Literacy", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Literacy", ylab = "Male Literacy", main = "Predicted (Student-t)")
+  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
+  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
+  
   hist3D(
     x = hist_true$x,
     y = hist_true$y,
@@ -757,17 +848,13 @@ if(F){
   
 }
 
-################################################################################
-# comparative plotting
-################################################################################
-
 if(F){
   
-  gauss_woa <- get(load("10_trees/plot_gauss_LT.Rdata"))
-  gauss_wa <- get(load("10_trees/plot_gauss_LT_adapt.Rdata"))
+  gauss_woa_10 <- get(load("10_trees/plot_gauss_LT.Rdata"))
+  gauss_wa_10 <- get(load("10_trees/plot_gauss_LT_adapt.Rdata"))
   
-  t_woa <- get(load("10_trees/plot_t_LT.Rdata"))
-  t_wa <- get(load("10_trees/plot_t_LT_adapt.Rdata"))
+  t_woa_10 <- get(load("10_trees/plot_t_LT.Rdata"))
+  t_wa_10 <- get(load("10_trees/plot_t_LT_adapt.Rdata"))
   
   gauss_woa_5 <- get(load("real_case/plot_gauss_LT.Rdata"))
   gauss_wa_5 <- get(load("real_case/plot_gauss_LT_adapt.Rdata"))
@@ -775,13 +862,11 @@ if(F){
   t_woa_5 <- get(load("real_case/plot_t_LT.Rdata"))
   t_wa_5 <- get(load("real_case/plot_t_LT_adapt.Rdata"))
   
-  (gauss_woa + ylim(310,360) + labs(title="Gaussian (without adaption)") + gauss_wa + ylim(310,360) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa + ylim(300,370) + labs(title="Student-t (without adaption)") + t_wa + ylim(300,370) + labs(title="Student-t (with adaption)"))
+  (gauss_woa_10 + ylim(310,360) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(310,360) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_10 + ylim(300,370) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(300,370) + labs(title="Student-t (with adaption)"))
   
   (gauss_woa_5 + ylim(310,350) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(310,350) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_5 + ylim(320,355) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(320,355) + labs(title="Student-t (with adaption)")) #/
-  
-  pred_woa$pl_tau_est + labs(title="Without adaption") + xlab("Scaled GDP") + ylim(-0.6,1) + pred_wa$pl_tau_est + labs(title="With adaption") + ylim(-0.6,1) + xlab("Scaled GDP")
   
   # par(mar = c(5,5,5,1), mfrow = c(2,2))
   # acf(mcmc(pred_cond_burn$gauss_y), lag.max = 200, main = "Gaussian (without adaption)")
