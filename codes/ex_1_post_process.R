@@ -70,7 +70,7 @@ rownames(GDP_LT) <- 1:nrow(GDP_LT)
 
 n.chain_par <- 5
 n.iter_par <- 25000
-n.born.out.par <- 500
+n.born.out.par <- 0
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
@@ -339,6 +339,7 @@ if(F){
   pred_cond$t_y = link_t(as.vector(t_pred_val))
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP_LE))
+  pred_cond$true_obs = rep(log10(cia_wf_data_LE$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   if(n.tree == 5){
     load("real_case_5_trees/dat_gauss_LE_adapt.Rdata")
@@ -356,16 +357,17 @@ if(F){
   pred_cond_adapt$t_y = link_t(as.vector(t_pred_val))
   pred_cond_adapt$t_tau = BiCopPar2Tau(2, pred_cond_adapt$t_y)
   pred_cond_adapt$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP_LE))
+  pred_cond_adapt$true_obs = rep(log10(cia_wf_data_LE$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond_mod = pred_cond %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
               t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))
   
   pred_cond_mod_adapt = pred_cond_adapt %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
               t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))
   
@@ -407,13 +409,13 @@ if(F){
   
   pred_cond_mod_tau = pred_cond %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
               t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))
   
   pred_cond_mod_tau_adapt = pred_cond_adapt %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
               t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))
   
@@ -424,27 +426,27 @@ if(F){
     filter(idx > 5000)
   
   pl_tau_est <- ggplot(pred_cond_mod_tau) +
-    geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
-    geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_mean, col = "t")) +
-    geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
-    xlab('X') +
-    ylab('estimated tau') +
+    geom_line(aes(true_obs, gauss_tau_mean, col = "gauss")) +
+    geom_line(aes(true_obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_mean, col = "t")) +
+    geom_line(aes(true_obs, t_tau_q975, col = "t"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_q025, col = "t"),linetype="dotted") +
+    xlab('log-GDP') +
+    ylab('Estimated tau') +
     theme_classic()
   
   pl_tau_est
   
   pl_tau_est_adapt <- ggplot(pred_cond_mod_tau_adapt) +
-    geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
-    geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_mean, col = "t")) +
-    geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
-    xlab('X') +
-    ylab('estimated tau') +
+    geom_line(aes(true_obs, gauss_tau_mean, col = "gauss")) +
+    geom_line(aes(true_obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_mean, col = "t")) +
+    geom_line(aes(true_obs, t_tau_q975, col = "t"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_q025, col = "t"),linetype="dotted") +
+    xlab('log-GDP') +
+    ylab('Estimated tau') +
     theme_classic()
   
   pl_tau_est_adapt
@@ -573,7 +575,15 @@ if(F){
     library(xtable)
     xtable(p_val_summ_adapt)
     
-    pl_tau_est + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Scaled GDP") + pl_tau_est_adapt + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Scaled GDP")
+    pl_tau_est + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+    
+    par(mar = c(5,5,2,1), mfrow = c(1,3))
+    plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_M, xlab = "Log GDP", ylab = "M Life Exp")
+    plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_F, xlab = "Log GDP", ylab = "F Life Exp")
+    
+    plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "M Life Exp")
+    
+    
 }
 
 if(F){
@@ -593,8 +603,8 @@ if(F){
   (gauss_woa_10 + ylim(200,280) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,280) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_10 + ylim(200,280) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,280) + labs(title="Student-t (with adaption)"))
   
-  (gauss_woa_5 + ylim(100,260) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(100,260) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_5 + ylim(120,260) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(120,260) + labs(title="Student-t (with adaption)")) #/
+  (gauss_woa_5 + ylim(275,350) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(275,350) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_5 + ylim(275,350) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(275,350) + labs(title="Student-t (with adaption)")) #/
   
   # par(mar = c(5,5,5,1), mfrow = c(2,2))
   # acf(mcmc(pred_cond_burn$gauss_y), lag.max = 200, main = "Gaussian (without adaption)")
@@ -627,6 +637,7 @@ if(F){
   pred_cond$t_y = link_t(as.vector(t_pred_val))
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP_LT))
+  pred_cond$true_obs = rep(log10(cia_wf_data_LT$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   if(n.tree == 5){
     load("real_case_5_trees/dat_gauss_LT_adapt.Rdata")
@@ -644,20 +655,23 @@ if(F){
   pred_cond_adapt$t_y = link_t(as.vector(t_pred_val))
   pred_cond_adapt$t_tau = BiCopPar2Tau(2, pred_cond_adapt$t_y)
   pred_cond_adapt$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP_LT))
+  pred_cond_adapt$true_obs = rep(log10(cia_wf_data_LT$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   pred_cond_mod = pred_cond %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
               t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))
   
   pred_cond_mod_adapt = pred_cond_adapt %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_theta_mean = mean(gauss_y), gauss_theta_q975 = quantile(gauss_y, .975), gauss_theta_q025 = quantile(gauss_y, .025),
               t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))
   
   hist_true <- hist2d(U1_LT, U2_LT, nbins = c(10,10), show = FALSE)
+  
+  set.seed(1e3)
   
   GDP_gauss_pred <- BiCopSim(N = nrow(unique(GDP_LT)), family = 1, par = pred_cond_mod$gauss_theta_mean)
   
@@ -693,44 +707,44 @@ if(F){
   
   pred_cond_mod_tau = pred_cond %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
               t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))
   
   pred_cond_mod_tau_adapt = pred_cond_adapt %>%
     filter(idx > 5000) %>%
-    group_by(obs) %>%
+    group_by(obs, true_obs) %>%
     summarise(gauss_tau_mean = mean(gauss_tau), gauss_tau_q975 = quantile(gauss_tau, .975), gauss_tau_q025 = quantile(gauss_tau, .025),
               t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))
   
   pred_cond_burn = pred_cond %>%
-    filter(idx>5000)
+    filter(idx > 5000)
   
   pred_cond_adapt_burn = pred_cond_adapt %>%
-    filter(idx>5000)
+    filter(idx > 5000)
   
   pl_tau_est <- ggplot(pred_cond_mod_tau) +
-    geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
-    geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_mean, col = "t")) +
-    geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
-    xlab('X') +
-    ylab('estimated tau') +
+    geom_line(aes(true_obs, gauss_tau_mean, col = "gauss")) +
+    geom_line(aes(true_obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_mean, col = "t")) +
+    geom_line(aes(true_obs, t_tau_q975, col = "t"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_q025, col = "t"),linetype="dotted") +
+    xlab('log-GDP') +
+    ylab('Estimated tau') +
     theme_classic()
   
   pl_tau_est
   
   pl_tau_est_adapt <- ggplot(pred_cond_mod_tau_adapt) +
-    geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
-    geom_line(aes(obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_mean, col = "t")) +
-    geom_line(aes(obs, t_tau_q975, col = "t"),linetype="dotted") +
-    geom_line(aes(obs, t_tau_q025, col = "t"),linetype="dotted") +
-    xlab('X') +
-    ylab('estimated tau') +
+    geom_line(aes(true_obs, gauss_tau_mean, col = "gauss")) +
+    geom_line(aes(true_obs, gauss_tau_q975, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, gauss_tau_q025, col = "gauss"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_mean, col = "t")) +
+    geom_line(aes(true_obs, t_tau_q975, col = "t"),linetype="dotted") +
+    geom_line(aes(true_obs, t_tau_q025, col = "t"),linetype="dotted") +
+    xlab('log-GDP') +
+    ylab('Estimated tau') +
     theme_classic()
   
   pl_tau_est_adapt
@@ -741,9 +755,9 @@ if(F){
   
   par(mar = c(5,5,2,1), mfrow = c(2,3))
   
-  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
-  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
-  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
+  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
+  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
+  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
   
   hist3D(
     x = hist_true$x,
@@ -756,7 +770,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
   hist3D(
@@ -770,7 +784,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
   hist3D(
@@ -784,15 +798,14 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
-  # 8 5
+  # 8 5.5
   
-  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
-  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
-  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
-  
+  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
+  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
+  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
   hist3D(
     x = hist_true$x,
     y = hist_true$y,
@@ -804,7 +817,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
   hist3D(
@@ -818,7 +831,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
   hist3D(
@@ -832,7 +845,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
+    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   # helper for test statistics
   
@@ -857,9 +870,17 @@ if(F){
                             c(mean(cram_gauss_adapt), median(cram_gauss_adapt), sd(cram_gauss_adapt), mean(ff_gauss_adapt), median(ff_gauss_adapt), sd(ff_gauss_adapt)),
                             c(mean(cram_t_adapt), median(cram_t_adapt), sd(cram_t_adapt), mean(ff_t_adapt), median(ff_t_adapt), sd(ff_t_adapt)))
   
+  library(xtable)
   xtable(p_val_summ_adapt)
   
-  pl_tau_est + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Scaled GDP") + pl_tau_est_adapt + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Scaled GDP")
+  pl_tau_est + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+  
+  par(mar = c(5,5,2,1), mfrow = c(1,3))
+  plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Life_expectancy_M, xlab = "Log GDP", ylab = "M Life Exp")
+  plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Life_expectancy_F, xlab = "Log GDP", ylab = "F Life Exp")
+  
+  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp")
+  
   
 }
 
