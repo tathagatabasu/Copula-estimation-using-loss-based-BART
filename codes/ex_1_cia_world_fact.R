@@ -3,8 +3,6 @@ library(dplyr)
 library(readr)
 library(VineCopula)
 
-set.seed(123)
-
 # dataset
 cia_wf_data <- read.csv("countries.csv")
 
@@ -12,7 +10,7 @@ cia_wf_data <- cia_wf_data %>% dplyr::select(all_of(c("Country","People.and.Soci
                                                       "People.and.Society..Life.expectancy.at.birth...female",
                                                       "People.and.Society..Literacy...male",
                                                       "People.and.Society..Literacy...female",
-                                                      "Economy..Real.GDP..purchasing.power.parity.")))
+                                                      "Economy..Real.GDP.per.capita")))
 # "Economy..Real.GDP.per.capita")))
 
 colnames(cia_wf_data) <- c("Country",
@@ -20,25 +18,18 @@ colnames(cia_wf_data) <- c("Country",
                            "Life_expectancy_F",
                            "Liter_M",
                            "Liter_F",
-                           "GDP_PPP")
-
-index_bil <- (grepl("billion ", cia_wf_data$GDP_PPP, fixed = TRUE))
-index_tril <- (grepl("trillion ", cia_wf_data$GDP_PPP, fixed = TRUE))
-index_mil <- (grepl("million ", cia_wf_data$GDP_PPP, fixed = TRUE))
+                           "GDP_PC")
 
 cia_wf_data = cia_wf_data %>%
   mutate(across(-c(Country),.fns = parse_number))
 
-cia_wf_data$GDP_PPP[index_bil] = 1000 * cia_wf_data$GDP_PPP[index_bil]
-cia_wf_data$GDP_PPP[index_tril] = 1000000 * cia_wf_data$GDP_PPP[index_tril]
-
 cia_wf_data <- na.omit(cia_wf_data)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_M)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_F)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_M)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_F)
 
 U1_LE = pobs(cia_wf_data$Life_expectancy_F)
 U2_LE = pobs(cia_wf_data$Life_expectancy_M)
@@ -52,13 +43,13 @@ plot(cia_wf_data$Life_expectancy_F,cia_wf_data$Life_expectancy_M)
 plot(U1_LT,U2_LT)
 plot(cia_wf_data$Liter_F,cia_wf_data$Liter_M)
 
-GDP <- as.data.frame((log(cia_wf_data$GDP_PPP) - min(log(cia_wf_data$GDP_PPP)))/(max(log(cia_wf_data$GDP_PPP)) - min(log(cia_wf_data$GDP_PPP))))
+GDP <- as.data.frame((log(cia_wf_data$GDP_PC) - min(log(cia_wf_data$GDP_PC)))/(max(log(cia_wf_data$GDP_PC)) - min(log(cia_wf_data$GDP_PC))))
 GDP <- as.matrix(GDP)
 rownames(GDP) <- 1:nrow(GDP)
 
-n.chain_par <- 4
-n.iter_par <- 30000
-n.born.out.par <- 1000
+n.chain_par <- 5
+n.iter_par <- 25000
+n.born.out.par <- 500
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
@@ -87,7 +78,7 @@ if(T){
                                          starting.tree = NULL,
                                          cont.unif = cont.unif_par,
                                          include.split = incl.split_par,
-                                         prop_mu = 0, prop_sigma = .2,
+                                         prop_mu = 0, prop_sigma = .5,
                                          theta_param_1 = 0, theta_param_2 = 1,
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
@@ -109,7 +100,7 @@ if(T){
                                      starting.tree = NULL,
                                      cont.unif = cont.unif_par,
                                      include.split = incl.split_par,
-                                     prop_mu = 0, prop_sigma = .2,
+                                     prop_mu = 0, prop_sigma = .5,
                                      theta_param_1 = 0, theta_param_2 = 1,
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
@@ -133,7 +124,7 @@ if(T){
                                          starting.tree = NULL,
                                          cont.unif = cont.unif_par,
                                          include.split = incl.split_par,
-                                         prop_mu = 0, prop_sigma = .2,
+                                         prop_mu = 0, prop_sigma = .5,
                                          theta_param_1 = 0, theta_param_2 = 1,
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
@@ -155,7 +146,7 @@ if(T){
                                      starting.tree = NULL,
                                      cont.unif = cont.unif_par,
                                      include.split = incl.split_par,
-                                     prop_mu = 0, prop_sigma = .2,
+                                     prop_mu = 0, prop_sigma = .5,
                                      theta_param_1 = 0, theta_param_2 = 1,
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
@@ -179,7 +170,7 @@ if(T){
                                          starting.tree = NULL,
                                          cont.unif = cont.unif_par,
                                          include.split = incl.split_par,
-                                         prop_mu = 0, prop_sigma = .2,
+                                         prop_mu = 0, prop_sigma = .5,
                                          theta_param_1 = 0, theta_param_2 = 1,
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
@@ -201,7 +192,7 @@ if(T){
                                      starting.tree = NULL,
                                      cont.unif = cont.unif_par,
                                      include.split = incl.split_par,
-                                     prop_mu = 0, prop_sigma = .2,
+                                     prop_mu = 0, prop_sigma = .5,
                                      theta_param_1 = 0, theta_param_2 = 1,
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",
@@ -225,7 +216,7 @@ if(T){
                                          starting.tree = NULL,
                                          cont.unif = cont.unif_par,
                                          include.split = incl.split_par,
-                                         prop_mu = 0, prop_sigma = .2,
+                                         prop_mu = 0, prop_sigma = .5,
                                          theta_param_1 = 0, theta_param_2 = 1,
                                          var_param_1 = 1, var_param_2 = 2,
                                          prior_type = "N",
@@ -247,7 +238,7 @@ if(T){
                                      starting.tree = NULL,
                                      cont.unif = cont.unif_par,
                                      include.split = incl.split_par,
-                                     prop_mu = 0, prop_sigma = .2,
+                                     prop_mu = 0, prop_sigma = .5,
                                      theta_param_1 = 0, theta_param_2 = 1,
                                      var_param_1 = 1, var_param_2 = 2,
                                      prior_type = "N",

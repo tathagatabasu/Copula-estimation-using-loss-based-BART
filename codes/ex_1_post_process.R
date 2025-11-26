@@ -2,8 +2,12 @@
 library(dplyr)
 library(readr)
 library(VineCopula)
+library(ggplot2)
+library(plot3D)
+library(gplots)
+library(patchwork)
 
-set.seed(123)
+set.seed(1e3)
 
 # dataset
 cia_wf_data <- read.csv("countries.csv")
@@ -12,7 +16,7 @@ cia_wf_data <- cia_wf_data %>% dplyr::select(all_of(c("Country","People.and.Soci
                                                       "People.and.Society..Life.expectancy.at.birth...female",
                                                       "People.and.Society..Literacy...male",
                                                       "People.and.Society..Literacy...female",
-                                                      "Economy..Real.GDP..purchasing.power.parity.")))
+                                                      "Economy..Real.GDP.per.capita")))
 # "Economy..Real.GDP.per.capita")))
 
 colnames(cia_wf_data) <- c("Country",
@@ -20,25 +24,18 @@ colnames(cia_wf_data) <- c("Country",
                            "Life_expectancy_F",
                            "Liter_M",
                            "Liter_F",
-                           "GDP_PPP")
-
-index_bil <- (grepl("billion ", cia_wf_data$GDP_PPP, fixed = TRUE))
-index_tril <- (grepl("trillion ", cia_wf_data$GDP_PPP, fixed = TRUE))
-index_mil <- (grepl("million ", cia_wf_data$GDP_PPP, fixed = TRUE))
+                           "GDP_PC")
 
 cia_wf_data = cia_wf_data %>%
   mutate(across(-c(Country),.fns = parse_number))
 
-cia_wf_data$GDP_PPP[index_bil] = 1000 * cia_wf_data$GDP_PPP[index_bil]
-cia_wf_data$GDP_PPP[index_tril] = 1000000 * cia_wf_data$GDP_PPP[index_tril]
-
 cia_wf_data <- na.omit(cia_wf_data)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Life_expectancy_F)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_M)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_F)
 
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_M)
-plot(log(cia_wf_data$GDP_PPP),cia_wf_data$Liter_F)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_M)
+plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_F)
 
 U1_LE = pobs(cia_wf_data$Life_expectancy_F)
 U2_LE = pobs(cia_wf_data$Life_expectancy_M)
@@ -52,13 +49,13 @@ plot(cia_wf_data$Life_expectancy_F,cia_wf_data$Life_expectancy_M)
 plot(U1_LT,U2_LT)
 plot(cia_wf_data$Liter_F,cia_wf_data$Liter_M)
 
-GDP <- as.data.frame((log(cia_wf_data$GDP_PPP) - min(log(cia_wf_data$GDP_PPP)))/(max(log(cia_wf_data$GDP_PPP)) - min(log(cia_wf_data$GDP_PPP))))
+GDP <- as.data.frame((log(cia_wf_data$GDP_PC) - min(log(cia_wf_data$GDP_PC)))/(max(log(cia_wf_data$GDP_PC)) - min(log(cia_wf_data$GDP_PC))))
 GDP <- as.matrix(GDP)
 rownames(GDP) <- 1:nrow(GDP)
 
-n.chain_par <- 4
-n.iter_par <- 30000
-n.born.out.par <- 1000
+n.chain_par <- 5
+n.iter_par <- 25000
+n.born.out.par <- 500
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
@@ -78,7 +75,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 ################################################################################
 
 ################################################################################
-load(paste0("gauss_gdp_LE_tree_",n.tree, ".Rdata"))
+load(paste0("gauss_GDP_LE_tree_",n.tree, ".Rdata"))
 
 gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LE$trees), \(idx) BART_calculate_pred(gauss_GDP_LE$trees[[idx]], GDP)))
 
@@ -104,7 +101,7 @@ rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LE)
 gc()
 gc()
 
-load(paste0("gauss_gdp_LE_adapt_tree_",n.tree, ".Rdata"))
+load(paste0("gauss_GDP_LE_adapt_tree_",n.tree, ".Rdata"))
 
 gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LE_adapt$trees), \(idx) BART_calculate_pred(gauss_GDP_LE_adapt$trees[[idx]], GDP)))
 
@@ -130,7 +127,7 @@ rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LE_adapt)
 gc()
 gc()
 
-load(paste0("gauss_gdp_LT_tree_",n.tree, ".Rdata"))
+load(paste0("gauss_GDP_LT_tree_",n.tree, ".Rdata"))
 
 gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LT$trees), \(idx) BART_calculate_pred(gauss_GDP_LT$trees[[idx]], GDP)))
 
@@ -159,7 +156,7 @@ rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LT)
 gc()
 gc()
 
-load(paste0("gauss_gdp_LT_adapt_tree_",n.tree, ".Rdata"))
+load(paste0("gauss_GDP_LT_adapt_tree_",n.tree, ".Rdata"))
 
 gauss_pred_val <- do.call(rbind,lapply(1:length(gauss_GDP_LT_adapt$trees), \(idx) BART_calculate_pred(gauss_GDP_LT_adapt$trees[[idx]], GDP)))
 
@@ -188,7 +185,7 @@ rm(gauss_pred_val, gauss_like_df, gauss_pl_like, gauss_GDP_LT_adapt)
 gc()
 gc()
 
-load(paste0("t_gdp_LE_tree_",n.tree, ".Rdata"))
+load(paste0("t_GDP_LE_tree_",n.tree, ".Rdata"))
 
 t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LE$trees), \(idx) BART_calculate_pred(t_GDP_LE$trees[[idx]], GDP)))
 
@@ -217,7 +214,7 @@ rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LE)
 gc()
 gc()
 
-load(paste0("t_gdp_LE_adapt_tree_",n.tree, ".Rdata"))
+load(paste0("t_GDP_LE_adapt_tree_",n.tree, ".Rdata"))
 
 t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LE_adapt$trees), \(idx) BART_calculate_pred(t_GDP_LE_adapt$trees[[idx]], GDP)))
 
@@ -246,7 +243,7 @@ rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LE_adapt)
 gc()
 gc()
 
-load(paste0("t_gdp_LT_tree_",n.tree, ".Rdata"))
+load(paste0("t_GDP_LT_tree_",n.tree, ".Rdata"))
 
 t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LT$trees), \(idx) BART_calculate_pred(t_GDP_LT$trees[[idx]], GDP)))
 
@@ -275,7 +272,7 @@ rm(t_pred_val, t_like_df, t_pl_like, t_GDP_LT)
 gc()
 gc()
 
-load(paste0("t_gdp_LT_adapt_tree_",n.tree, ".Rdata"))
+load(paste0("t_GDP_LT_adapt_tree_",n.tree, ".Rdata"))
 
 t_pred_val <- do.call(rbind,lapply(1:length(t_GDP_LT_adapt$trees), \(idx) BART_calculate_pred(t_GDP_LT_adapt$trees[[idx]], GDP)))
 
@@ -311,23 +308,13 @@ gc()
 if(F){
   
   if(n.tree == 5){
-    load("real_case/dat_gauss_LE.Rdata")
-    load("real_case/dat_t_LE.Rdata")
-  }
-  
-  if(n.tree == 5){
-    load("real_case/dat_gauss_LE_adapt.Rdata")
-    load("real_case/dat_t_LE_adapt.Rdata")
+    load("real_case_5_trees/dat_gauss_LE.Rdata")
+    load("real_case_5_trees/dat_t_LE.Rdata")
   }
   
   if(n.tree == 10){
     load("10_trees/dat_gauss_LE.Rdata")
     load("10_trees/dat_t_LE.Rdata")
-  }
-  
-  if(n.tree == 10){
-    load("10_trees/dat_gauss_LE_adapt.Rdata")
-    load("10_trees/dat_t_LE_adapt.Rdata")
   }
   
   # data plotting
@@ -337,6 +324,16 @@ if(F){
   pred_cond$t_y = link_t(as.vector(t_pred_val))
   pred_cond$t_tau = BiCopPar2Tau(2, pred_cond$t_y)
   pred_cond$idx = rep(rep(1:n.iter_par, n.chain_par),nrow(GDP))
+  
+  if(n.tree == 5){
+    load("real_case_5_trees/dat_gauss_LE_adapt.Rdata")
+    load("real_case_5_trees/dat_t_LE_adapt.Rdata")
+  }
+  
+  if(n.tree == 10){
+    load("10_trees/dat_gauss_LE_adapt.Rdata")
+    load("10_trees/dat_t_LE_adapt.Rdata")
+  }
   
   pred_cond_adapt <- data.frame("obs" = rep(GDP, each = (n.chain_par * (n.iter_par - n.born.out.par))))
   pred_cond_adapt$gauss_y = link_gauss(as.vector(gauss_pred_val))
@@ -358,6 +355,8 @@ if(F){
               t_theta_mean = mean(t_y), t_theta_q975 = quantile(t_y, .975), t_theta_q025 = quantile(t_y, .025))
   
   hist_true <- hist2d(U1_LE, U2_LE, nbins = c(10,10), show = FALSE)
+  
+  set.seed(1e3)
   
   GDP_gauss_pred <- BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod$gauss_theta_mean)
   
@@ -404,10 +403,10 @@ if(F){
               t_tau_mean = mean(t_tau), t_tau_q975 = quantile(t_tau, .975), t_tau_q025 = quantile(t_tau, .025))
   
   pred_cond_burn = pred_cond %>%
-    filter(idx>5000)
+    filter(idx > 5000)
   
   pred_cond_adapt_burn = pred_cond_adapt %>%
-    filter(idx>5000)
+    filter(idx > 5000)
   
   pl_tau_est <- ggplot(pred_cond_mod_tau) +
     geom_line(aes(obs, gauss_tau_mean, col = "gauss")) +
@@ -441,9 +440,9 @@ if(F){
   
   par(mar = c(5,5,2,1), mfrow = c(2,3))
   
-  plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LE_adapt,gauss_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LE_adapt,t_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Predicted (Student-t)")
+  plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
+  plot(gauss_pred_U1_LE_adapt,gauss_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
+  plot(t_pred_U1_LE_adapt,t_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
   
   hist3D(
     x = hist_true$x,
@@ -487,11 +486,11 @@ if(F){
     xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
   
-  # 8 5
+  # 8 5.5
   
-  plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LE,gauss_pred_U2_LE, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LE,t_pred_U2_LE, xlab = "F Life Exp", ylab = "Male Life Exp", main = "Predicted (Student-t)")
+  plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
+  plot(gauss_pred_U1_LE,gauss_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
+  plot(t_pred_U1_LE,t_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
   hist3D(
     x = hist_true$x,
     y = hist_true$y,
@@ -537,28 +536,29 @@ if(F){
     
     library(cramer)
     
-    cram_gauss <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE), replicates = 100, sim = "permutation")$p.value})
-    cram_t <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE), replicates = 100)$p.value})
+    cram_gauss <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod$gauss_theta_mean), replicates = 1000, sim = "permutation")$p.value})
+    cram_t <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod$t_theta_mean, par2 = 3), replicates = 1000)$p.value})
     
-    cram_gauss_adapt <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE_adapt, gauss_pred_U2_LE_adapt), replicates = 100, sim = "permutation")$p.value})
-    cram_t_adapt <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE_adapt, t_pred_U2_LE_adapt), replicates = 100)$p.value})
+    cram_gauss_adapt <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod_adapt$gauss_theta_mean), replicates = 1000, sim = "permutation")$p.value})
+    cram_t_adapt <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod_adapt$t_theta_mean, par2 = 3), replicates = 1000)$p.value})
     
     library(fasano.franceschini.test)
     
-    ff_gauss <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE, gauss_pred_U2_LE), nPermute = 100, verbose = F)$p.value})
-    ff_t <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE, t_pred_U2_LE), nPermute = 100, verbose = F)$p.value})
+    ff_gauss <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod$gauss_theta_mean), nPermute = 1000, verbose = F)$p.value})
+    ff_t <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod$t_theta_mean, par2 = 3), nPermute = 1000, verbose = F)$p.value})
     
-    ff_gauss_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(gauss_pred_U1_LE_adapt, gauss_pred_U2_LE_adapt), nPermute = 100, verbose = F)$p.value})
-    ff_t_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), cbind(t_pred_U1_LE_adapt, t_pred_U2_LE_adapt), nPermute = 100, verbose = F)$p.value})
+    ff_gauss_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod_adapt$gauss_theta_mean), nPermute = 1000, verbose = F)$p.value})
+    ff_t_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod_adapt$t_theta_mean, par2 = 3), nPermute = 1000, verbose = F)$p.value})
     
     p_val_summ_adapt <- rbind(c(mean(cram_gauss), median(cram_gauss), sd(cram_gauss), mean(ff_gauss), median(ff_gauss), sd(ff_gauss)),
                               c(mean(cram_t), median(cram_t), sd(cram_t), mean(ff_t), median(ff_t), sd(ff_t)),
                               c(mean(cram_gauss_adapt), median(cram_gauss_adapt), sd(cram_gauss_adapt), mean(ff_gauss_adapt), median(ff_gauss_adapt), sd(ff_gauss_adapt)),
                               c(mean(cram_t_adapt), median(cram_t_adapt), sd(cram_t_adapt), mean(ff_t_adapt), median(ff_t_adapt), sd(ff_t_adapt)))
     
+    library(xtable)
     xtable(p_val_summ_adapt)
     
-    pl_tau_est + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Scaled GDP") + pl_tau_est_adapt + ylim(-0.25,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Scaled GDP")
+    pl_tau_est + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Scaled GDP") + pl_tau_est_adapt + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Scaled GDP")
 }
 
 if(F){
@@ -569,17 +569,17 @@ if(F){
   t_woa_10 <- get(load("10_trees/plot_t_LE.Rdata"))
   t_wa_10 <- get(load("10_trees/plot_t_LE_adapt.Rdata"))
   
-  gauss_woa_5 <- get(load("real_case/plot_gauss_LE.Rdata"))
-  gauss_wa_5 <- get(load("real_case/plot_gauss_LE_adapt.Rdata"))
+  gauss_woa_5 <- get(load("real_case_5_trees/plot_gauss_LE.Rdata"))
+  gauss_wa_5 <- get(load("real_case_5_trees/plot_gauss_LE_adapt.Rdata"))
   
-  t_woa_5 <- get(load("real_case/plot_t_LE.Rdata"))
-  t_wa_5 <- get(load("real_case/plot_t_LE_adapt.Rdata"))
+  t_woa_5 <- get(load("real_case_5_trees/plot_t_LE.Rdata"))
+  t_wa_5 <- get(load("real_case_5_trees/plot_t_LE_adapt.Rdata"))
   
   (gauss_woa_10 + ylim(200,280) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,280) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_10 + ylim(200,280) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,280) + labs(title="Student-t (with adaption)"))
   
-  (gauss_woa_5 + ylim(200,260) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(200,260) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_5 + ylim(220,260) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(220,260) + labs(title="Student-t (with adaption)")) #/
+  (gauss_woa_5 + ylim(100,260) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(100,260) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_5 + ylim(120,260) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(120,260) + labs(title="Student-t (with adaption)")) #/
   
   # par(mar = c(5,5,5,1), mfrow = c(2,2))
   # acf(mcmc(pred_cond_burn$gauss_y), lag.max = 200, main = "Gaussian (without adaption)")
@@ -596,13 +596,13 @@ if(F){
 if(F){
   
   if(n.tree == 5){
-    load("real_case/dat_gauss_LT.Rdata")
-    load("real_case/dat_t_LT.Rdata")
+    load("real_case_5_trees/dat_gauss_LT.Rdata")
+    load("real_case_5_trees/dat_t_LT.Rdata")
   }
   
   if(n.tree == 5){
-    load("real_case/dat_gauss_LT_adapt.Rdata")
-    load("real_case/dat_t_LT_adapt.Rdata")
+    load("real_case_5_trees/dat_gauss_LT_adapt.Rdata")
+    load("real_case_5_trees/dat_t_LT_adapt.Rdata")
   }
   
   if(n.tree == 10){
@@ -823,19 +823,19 @@ if(F){
   
   library(cramer)
   
-  cram_gauss <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT), replicates = 100, sim = "permutation")$p.value})
-  cram_t <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT), replicates = 100)$p.value})
+  cram_gauss <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod$gauss_theta_mean), replicates = 1000, sim = "permutation")$p.value})
+  cram_t <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod$t_theta_mean, par2 = 3), replicates = 1000)$p.value})
   
-  cram_gauss_adapt <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT_adapt, gauss_pred_U2_LT_adapt), replicates = 100, sim = "permutation")$p.value})
-  cram_t_adapt <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT_adapt, t_pred_U2_LT_adapt), replicates = 100)$p.value})
+  cram_gauss_adapt <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod_adapt$gauss_theta_mean), replicates = 1000, sim = "permutation")$p.value})
+  cram_t_adapt <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod_adapt$t_theta_mean, par2 = 3), replicates = 1000)$p.value})
   
   library(fasano.franceschini.test)
   
-  ff_gauss <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT, gauss_pred_U2_LT), nPermute = 100, verbose = F)$p.value})
-  ff_t <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT, t_pred_U2_LT), nPermute = 100, verbose = F)$p.value})
+  ff_gauss <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod$gauss_theta_mean), nPermute = 1000, verbose = F)$p.value})
+  ff_t <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod$t_theta_mean, par2 = 3), nPermute = 1000, verbose = F)$p.value})
   
-  ff_gauss_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(gauss_pred_U1_LT_adapt, gauss_pred_U2_LT_adapt), nPermute = 100, verbose = F)$p.value})
-  ff_t_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), cbind(t_pred_U1_LT_adapt, t_pred_U2_LT_adapt), nPermute = 100, verbose = F)$p.value})
+  ff_gauss_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 1, par = pred_cond_mod_adapt$gauss_theta_mean), nPermute = 1000, verbose = F)$p.value})
+  ff_t_adapt <- sapply(1:100, function(i){set.seed(i); fasano.franceschini.test(cbind(U1_LT,U2_LT), BiCopSim(N = nrow(unique(GDP)), family = 2, par = pred_cond_mod_adapt$t_theta_mean, par2 = 3), nPermute = 1000, verbose = F)$p.value})
   
   p_val_summ_adapt <- rbind(c(mean(cram_gauss), median(cram_gauss), sd(cram_gauss), mean(ff_gauss), median(ff_gauss), sd(ff_gauss)),
                             c(mean(cram_t), median(cram_t), sd(cram_t), mean(ff_t), median(ff_t), sd(ff_t)),
@@ -856,11 +856,11 @@ if(F){
   t_woa_10 <- get(load("10_trees/plot_t_LT.Rdata"))
   t_wa_10 <- get(load("10_trees/plot_t_LT_adapt.Rdata"))
   
-  gauss_woa_5 <- get(load("real_case/plot_gauss_LT.Rdata"))
-  gauss_wa_5 <- get(load("real_case/plot_gauss_LT_adapt.Rdata"))
+  gauss_woa_5 <- get(load("real_case_5_trees/plot_gauss_LT.Rdata"))
+  gauss_wa_5 <- get(load("real_case_5_trees/plot_gauss_LT_adapt.Rdata"))
   
-  t_woa_5 <- get(load("real_case/plot_t_LT.Rdata"))
-  t_wa_5 <- get(load("real_case/plot_t_LT_adapt.Rdata"))
+  t_woa_5 <- get(load("real_case_5_trees/plot_t_LT.Rdata"))
+  t_wa_5 <- get(load("real_case_5_trees/plot_t_LT_adapt.Rdata"))
   
   (gauss_woa_10 + ylim(310,360) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(310,360) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_10 + ylim(300,370) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(300,370) + labs(title="Student-t (with adaption)"))
