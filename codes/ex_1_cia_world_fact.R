@@ -6,46 +6,61 @@ library(VineCopula)
 # dataset
 cia_wf_data <- read.csv("countries.csv")
 
-cia_wf_data <- cia_wf_data %>% dplyr::select(all_of(c("Country","People.and.Society..Life.expectancy.at.birth...male",
-                                                      "People.and.Society..Life.expectancy.at.birth...female",
-                                                      "People.and.Society..Literacy...male",
-                                                      "People.and.Society..Literacy...female",
-                                                      "Economy..Real.GDP.per.capita")))
-# "Economy..Real.GDP.per.capita")))
+cia_wf_data_LE <- cia_wf_data %>% dplyr::select(all_of(c("Country",
+                                                         "People.and.Society..Life.expectancy.at.birth...male",
+                                                         "People.and.Society..Life.expectancy.at.birth...female",
+                                                         "Economy..Real.GDP.per.capita")))
 
-colnames(cia_wf_data) <- c("Country",
-                           "Life_expectancy_M",
-                           "Life_expectancy_F",
-                           "Liter_M",
-                           "Liter_F",
-                           "GDP_PC")
+colnames(cia_wf_data_LE) <- c("Country",
+                              "Life_expectancy_M",
+                              "Life_expectancy_F",
+                              "GDP_PC")
 
-cia_wf_data = cia_wf_data %>%
+cia_wf_data_LE = cia_wf_data_LE %>%
   mutate(across(-c(Country),.fns = parse_number))
 
-cia_wf_data <- na.omit(cia_wf_data)
+cia_wf_data_LE <- na.omit(cia_wf_data_LE)
 
-plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_M)
-plot(log(cia_wf_data$GDP_PC),cia_wf_data$Life_expectancy_F)
+U1_LE = pobs(cia_wf_data_LE$Life_expectancy_F)
+U2_LE = pobs(cia_wf_data_LE$Life_expectancy_M)
 
-plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_M)
-plot(log(cia_wf_data$GDP_PC),cia_wf_data$Liter_F)
-
-U1_LE = pobs(cia_wf_data$Life_expectancy_F)
-U2_LE = pobs(cia_wf_data$Life_expectancy_M)
-
-U1_LT = pobs(cia_wf_data$Liter_F)
-U2_LT = pobs(cia_wf_data$Liter_M)
+plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_M)
+plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_F)
 
 plot(U1_LE,U2_LE)
-plot(cia_wf_data$Life_expectancy_F,cia_wf_data$Life_expectancy_M)
+plot(cia_wf_data_LE$Life_expectancy_F,cia_wf_data_LE$Life_expectancy_M)
+
+GDP_LE <- as.data.frame((log10(cia_wf_data_LE$GDP_PC) - min(log10(cia_wf_data_LE$GDP_PC)))/(max(log10(cia_wf_data_LE$GDP_PC)) - min(log10(cia_wf_data_LE$GDP_PC))))
+GDP_LE <- as.matrix(GDP_LE)
+rownames(GDP_LE) <- 1:nrow(GDP_LE)
+
+cia_wf_data_LT <- cia_wf_data %>% dplyr::select(all_of(c("Country",
+                                                         "People.and.Society..Literacy...male",
+                                                         "People.and.Society..Literacy...female",
+                                                         "Economy..Real.GDP.per.capita")))
+
+colnames(cia_wf_data_LT) <- c("Country",
+                              "Liter_M",
+                              "Liter_F",
+                              "GDP_PC")
+
+cia_wf_data_LT = cia_wf_data_LT %>%
+  mutate(across(-c(Country),.fns = parse_number))
+
+cia_wf_data_LT <- na.omit(cia_wf_data_LT)
+
+U1_LT = pobs(cia_wf_data_LT$Liter_F)
+U2_LT = pobs(cia_wf_data_LT$Liter_M)
+
+plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Liter_M)
+plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Liter_F)
 
 plot(U1_LT,U2_LT)
-plot(cia_wf_data$Liter_F,cia_wf_data$Liter_M)
+plot(cia_wf_data_LT$Liter_F,cia_wf_data_LT$Liter_M)
 
-GDP <- as.data.frame((log(cia_wf_data$GDP_PC) - min(log(cia_wf_data$GDP_PC)))/(max(log(cia_wf_data$GDP_PC)) - min(log(cia_wf_data$GDP_PC))))
-GDP <- as.matrix(GDP)
-rownames(GDP) <- 1:nrow(GDP)
+GDP_LT <- as.data.frame((log10(cia_wf_data_LT$GDP_PC) - min(log10(cia_wf_data_LT$GDP_PC)))/(max(log10(cia_wf_data_LT$GDP_PC)) - min(log10(cia_wf_data_LT$GDP_PC))))
+GDP_LT <- as.matrix(GDP_LT)
+rownames(GDP_LT) <- 1:nrow(GDP_LT)
 
 n.chain_par <- 5
 n.iter_par <- 25000
@@ -70,7 +85,7 @@ lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)
 if(T){
   gauss_GDP_LE_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                         X = GDP,
+                                         X = GDP_LE,
                                          U1 = U1_LE,
                                          U2 = U2_LE,
                                          prior_list = lb.prior.def, 
@@ -92,7 +107,7 @@ if(T){
   
   t_GDP_LE_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                     X = GDP,
+                                     X = GDP_LE,
                                      U1 = U1_LE,
                                      U2 = U2_LE,
                                      prior_list = lb.prior.def, 
@@ -116,7 +131,7 @@ if(T){
 if(T){
   gauss_GDP_LT_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                         X = GDP,
+                                         X = GDP_LT,
                                          U1 = U1_LT,
                                          U2 = U2_LT,
                                          prior_list = lb.prior.def, 
@@ -138,7 +153,7 @@ if(T){
   
   t_GDP_LT_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                     X = GDP,
+                                     X = GDP_LT,
                                      U1 = U1_LT,
                                      U2 = U2_LT,
                                      prior_list = lb.prior.def, 
@@ -162,7 +177,7 @@ if(T){
 if(T){
   gauss_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                         X = GDP,
+                                         X = GDP_LE,
                                          U1 = U1_LE,
                                          U2 = U2_LE,
                                          prior_list = lb.prior.def, 
@@ -184,7 +199,7 @@ if(T){
   
   t_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                     X = GDP,
+                                     X = GDP_LE,
                                      U1 = U1_LE,
                                      U2 = U2_LE,
                                      prior_list = lb.prior.def, 
@@ -208,7 +223,7 @@ if(T){
 if(T){
   gauss_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                         X = GDP,
+                                         X = GDP_LT,
                                          U1 = U1_LT,
                                          U2 = U2_LT,
                                          prior_list = lb.prior.def, 
@@ -230,7 +245,7 @@ if(T){
   
   t_GDP_LT <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                      n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
-                                     X = GDP,
+                                     X = GDP_LT,
                                      U1 = U1_LT,
                                      U2 = U2_LT,
                                      prior_list = lb.prior.def, 
