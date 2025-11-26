@@ -52,7 +52,7 @@
 	\begin{document}
 
 \begin{abstract}
-We present a novel semi-parametric Bayesian approach for modelling conditional copulas to understand the dependence structure between two random variables when it is influenced by an external factor. We use a Bayesian Additive Regression Trees (BART) model along with recently proposed loss-based priors, which recovers the true parsimonious tree structures and reduces overfitting — a common issue in classical BART models. We introduce a novel adaptive Reversible Jump Markov Chain Monte Carlo (RJ-MCMC) type algorithm that automatically tunes the proposal variance, giving us a greater flexibility in analysing models with non-trivial or non-smooth likelihood funtion. We test the efficiency of our model using simulated datasets. We show that our method can efficiently recover the true tree structure and approximate a complex conditional copula parameter, as well as the efficiency of our adaptive routine in exploring the true likelihood region under sub-optimal proposal variance. Lastly, we exhibit the applicability of our method using a real dataset involving the effect of gross domestic product on the dependence between the life expectancy and literacy rates of the male and female population of different countries.
+We present a novel semi-parametric Bayesian approach for modelling conditional copulas to understand the dependence structure between two random variables when it is influenced by an external factor. We use a Bayesian Additive Regression Trees (BART) model along with recently proposed loss-based priors, which recovers the true parsimonious tree structures and reduces overfitting — a common issue in classical BART models. We introduce a novel adaptive Reversible Jump Markov Chain Monte Carlo (RJ-MCMC) type algorithm that automatically tunes the proposal variance, giving us greater flexibility in analysing models with non-trivial or non-smooth likelihood function. We assess the efficiency of our approach using simulated datasets. We show that our method can efficiently recover the true tree structure and approximate a complex conditional copula parameter, and that our adaptive routine is efficient in exploring the true likelihood region under sub-optimal proposal variance. Lastly, we demonstrate the applicability of our method using a real data set involving the effect of gross domestic product on the dependence between the life expectancies and literacy rates of the male and female populations of different countries.
 \end{abstract}
 
 \keywords{Conditional Copula; BART; Objective Bayes; Semi-parametric estimation}
@@ -60,45 +60,58 @@ We present a novel semi-parametric Bayesian approach for modelling conditional c
 \maketitle
 
 \section{Introduction}
-In multivariate analysis, we often observe that random variables exhibit a dependence in their behaviour and the study of such dependence is extremely important due to its implications in real-life modelling. However, analysing such dependence structures can be very cumbersome as we often require non-trivial multivariate distributions which makes this problem extremely challenging. Sklar's theorem\citep{sklar:1959} simplified such tasks, which states that a multivariate distribution can be modelled using it's marginals and a copula, that is, a joint cumulative distribution function on the unit hypercube. Following this, several other theoretical advancements \citep{kimeldori1975uniform,ruschendorf1976,schweizer1981,Genest01091993,Genest1993mult} in the field, made copula inference popular in the context of statistical modelling leading to its prominence in applied statistical literature involving  survival analysis \citep 	{clayton1978model,oakes1989bivariate,zheng1995estimates,shih1995inferences,braekers2005copula}; risk management \citep{fama1993common,BURGERT2006289,engle1990asset}; engineering applications \citep{salvadori2007use,aghakouchak2010copula}; genetics \citep{li2006quantitative} etc. While copula modelling remained popular in multivariate analyses, a major computational improvement can be credited to \citet{bedford_vine_2002}, where they introduced a nested graphical model for copula construction and coined it as `Vine Copula'. Later, based on their work \citet{czado_pair_cop_2010} introduced pair wise copula for multivariate modelling which improved the computational aspect further.  We refer readers to \citet{GENEST2024105278}'s review on copula modelling in remembrance of Abe Sklar for a detailed literature review.
+In multivariate analysis, we often observe that random variables exhibit a dependence in their behaviour, and the study of such dependence is extremely important due to its implications in modelling. However, analysing such dependence structures can be very cumbersome as we often require complex multivariate distributions, which makes this problem extremely challenging. Sklar's theorem\citep{sklar:1959} simplified such tasks, stating that a multivariate distribution can be modelled using it's marginals and a copula, that is, a joint cumulative distribution function on the unit hypercube. Several other theoretical advancements \citep{kimeldori1975uniform,ruschendorf1976,schweizer1981,Genest01091993,Genest1993mult} in the field have made copula inference popular in the context of statistical modelling, leading to its prominence in applied statistical literature involving  survival analysis \citep 	{clayton1978model,oakes1989bivariate,zheng1995estimates,shih1995inferences,braekers2005copula}; risk management \citep{fama1993common,BURGERT2006289,engle1990asset}; engineering applications \citep{salvadori2007use,aghakouchak2010copula}; genetics \citep{li2006quantitative}, amongst others. While copula modelling has remained popular in multivariate analyses, a major computational improvement can be credited to \citet{bedford_vine_2002}, where they introduced a nested graphical model for copula construction and coined it as a `Vine Copula'. Later, based on their work \citet{czado_pair_cop_2010} introduced pair copula construction for multivariate modelling which improved the computational aspects further.  We refer readers to \citet{GENEST2024105278}'s review on copula modelling in remembrance of Abe Sklar for a detailed literature review.
 
-In many situations, the dependence between random variables can have an external influence, in such cases it is useful to adjust for external covariates in copulas. To tackle this issue, \citet{patton2006} formalised the conditional version of Sklar's theorem for its applicability in financial time series modelling. Initial works on conditional copulas were mostly for estimating time varying dependence structures using likelihood based approaches for autoregressive models \citep{patton2006,JONDEAU2006827,BARTRAM20071461}. Later \citet{acar2010} proposed a non-parametric approach for estimating conditional copulas for general problems. Several other likelihood-based non-parametric \citep{GIJBELS20111919,Gijbels2012mult_cop} and semi-parametric \citep{ABEGAZ201243} approaches have been proposed in this regard. \citet{valle_cond_cop} proposed a Dirichlet mixture models for estimating conditional copulas and \citet{GRAZIAN2022107417} proposed an approximate Bayesian approach for the same. Recently, \citet{BonacinaLopezThomas+2025} proposed a ``Classification and Regression Tree'' (CART) based \citep{brei_CART} algorithm for modelling conditional copulas and investigated the consistency of the CART algorithm in conditional copula estimation.
+In many situations, the dependence between random variables can have an external influence, and in such cases, it is useful to adjust for external covariates in copulas. To tackle this issue, \citet{patton2006} formalised the conditional version of Sklar's theorem for application in financial time series modelling. Initial works on conditional copulas were mostly concerned with estimating time varying dependence structures using likelihood based approaches for autoregressive models \citep{patton2006,JONDEAU2006827,BARTRAM20071461}. Later \citet{acar2010} proposed a non-parametric approach for estimating conditional copulas for general problems. Several other likelihood-based non-parametric \citep{GIJBELS20111919,Gijbels2012mult_cop} and semi-parametric \citep{ABEGAZ201243} approaches have been proposed in this regard. \citet{valle_cond_cop} proposed Dirichlet mixture models for estimating conditional copulas and \citet{GRAZIAN2022107417} proposed an approximate Bayesian approach. Recently, \citet{BonacinaLopezThomas+2025} proposed a ``Classification and Regression Tree'' (CART) based algorithm \citep{brei_CART} to model conditional copulas and investigated the consistency of the CART algorithm in conditional copula estimation.
 
-The introduction of the CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative of CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier Bayesian CART models \citep{chipman98BCART,denison98BCART} where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression \citep{Murray03042021}; survival analysis \citep{Sparapani_BART}; gamma regression \citep{Linero_BART_gamma}; generalised BART \citep{Linero02012025}. While the original tree prior proposed by \citet{chipman98BCART} is most commonly used in BART literatures, it is not very straightforward to incorporate prior information on the number of terminal nodes. On the other hand the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives are proposed \citep{Wu_CART,rockova_BART,Linero_BART_VS} to tackle this issue but choice of hyperparameters remains subjective. In order to reduce such subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression trees using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree, which considers both the loss in information and complexity of the tree, making it appealing for BART models.
+The introduction of the CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative to CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier Bayesian CART models \citep{chipman98BCART,denison98BCART}, where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression \citep{Murray03042021}; survival analysis \citep{Sparapani_BART}; gamma regression \citep{Linero_BART_gamma} and generalised BART \citep{Linero02012025}. Although the original tree prior proposed by \citet{chipman98BCART} is most commonly used in the BART literature, it is not very straightforward to incorporate prior information on the number of terminal nodes into this prior and the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives have been proposed \citep{Wu_CART,rockova_BART,Linero_BART_VS} to tackle this issue, but the choice of hyperparameters remains subjective. In order to reduce this subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression trees using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree, which considers both the loss in information and complexity of the tree, making it appealing for BART models.
 
-In this article, we exploit the loss-based BART prior developed by \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straight forward likelihood function to chose a conjugate prior. Therefore, we opt for a trans-dimensional MCMC algorithm that can sample a new tree of a different dimension as well as sample new terminal node values. Similar method, proposed by \citet{Linero02012025} uses a Laplace approximation based approach for sampling terminal node values. Unfortunately, Laplace approximation is not viable for conditional copula modelling as the first and second order derivatives of the likelihood may not be numerically stable. To overcome this issue, we propose an efficient reversible jump MCMC (RJ-MCMC) type algorithm \citep{green_RJMCMC} to sample from the posterior. However, we notice that choosing the parameters of the proposal distribution is rather difficult task for the sum of trees models and mixing can be extremely slow in some cases. This motivates us to introduce an adaptive formulation for the choice of proposal distribution which efficiently updates the variance of a Gaussian proposal using previously accumulated MCMC samples. Initial analyses shows that our adaptive approach also converges faster to higher likelihood regions. We illustrate our method using different copula models to show the efficiency of our approach in identifying the true tree structure, as well as estimating the true conditional dependence. Furthermore, due to its simple and explicable implementation, it can easily be adapted for other modelling problems using BART. 
+In this article, we exploit the loss-based BART prior developed by \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straightforward likelihood function to choose a conjugate prior. Therefore, we opt for a trans-dimensional Markov chain Monte Carlo (MCMC) algorithm that can sample a new tree of a different dimension, as well as sample new terminal node values. A similar method, proposed by \citet{Linero02012025} uses a Laplace approximation based approach for sampling terminal node values. Unfortunately, Laplace approximation is not viable for conditional copula modelling as the first and second order derivatives of the likelihood may not be numerically stable near the boundaries. To overcome this issue, we propose an efficient reversible jump MCMC (RJ-MCMC) type algorithm \citep{green_RJMCMC} to sample from the posterior. However, we notice that choosing the parameters of the proposal distribution is a rather difficult task for the sum of trees models and mixing can be extremely slow in some cases. This motivates us to introduce an adaptive RJ-MCMC routine, where we update the variance of a Gaussian proposal using previously accumulated MCMC samples. We also prove that our adaptive RJ-MCMC routine is ergodic. Initial analyses show that our adaptive RJ-MCMC algorithm converges faster to a higher likelihood regions than the non-adaptive counterpart. We illustrate our method using different simulated conditional copulas to show the efficiency of our approach in identifying the true tree structure, as well as estimating the true conditional dependence. Furthermore, due to the simple and explicable implementation of our adaptive RJ-MCMC algorithm, it can easily be adapted for other modelling problems using BART. 
 
-The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees, followed by our semi-parametric estimation approach for conditional copulas in \cref{sec:cond:cop}. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior, along with its adaptive variant. After that, we illustrate our method using two synthetic datasets in \cref{sec:sim} to show its efficiency and accuracy; followed by case studies using CIA world fact dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and conclude it in \cref{sec:conc}.
+The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees, followed by our semi-parametric estimation approach for conditional copulas in \cref{sec:cond:cop}. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior, along with its adaptive variant. After that, we illustrate our method using two synthetic datasets in \cref{sec:sim} to show its efficiency and accuracy; followed by case studies using the CIA world fact dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and give conclusions in \cref{sec:conc}.
 
 \section{Preliminaries}\label{sec:prelim}
 
-In this section, we present a formal description of conditional copulas followed by the BART models and the loss-based prior for BART proposed by \citet{serafini2024lossbasedpriortreetopologies}, which we will incorporate for modelling.
+In this section, we present a formal description of conditional copulas followed by the BART models and the loss-based prior for BART proposed by \citet{serafini2024lossbasedpriortreetopologies}, which we will incorporate in our modelling in later sections.
 
 \subsection{Conditional copula}
-Let $Y_1$ and $Y_2$ denote two random variables such that they have continuous marginal cumulative distribution functions $F_1(y_1)$ and $F_2(y_2)$. Then according to \citet{sklar:1959}, we can use a copula $C$ with parameter $\theta$ to model the dependence between $Y_1$ and $Y_2$ so that
+A statistics, $C:[0,1]^d\to [0,1]$ is a $d$-dimensional copula if $C$ is a joint cumulative distribution function with uniform marginals. That is, for two uniform random variables $U_1$ and $U_2$ the copula is given by:
+\begin{equation*}
+    C(u_1,u_2) = P(U_1\le u_1, U_2\le u_2).
+\end{equation*}
+For parametric families of copula, we denote it by $C(u_1,u_2\mid \theta$), where $\theta$ represents the parameter. Let $Y_1$ and $Y_2$ denote two random variables such that they have continuous marginal cumulative distribution functions (CDFs) $F_1(y_1)$ and $F_2(y_2)$. Then according to \citet{sklar:1959}, we can use a copula $C(\cdot\mid\theta)$ to model the dependence between $Y_1$ and $Y_2$ so that
 \begin{equation*}
 	H(y_1,y_2) = C\left(F_{1}(y_1),F_{2}(y_2)\mid \theta\right)
 \end{equation*}
-where $H(y_1,y_2)$ is the joint cumulative distribution function of $Y_1$ and $Y_2$.  
+where $H(y_1,y_2)$ is the joint CDF of $Y_1$ and $Y_2$. Moreover, since $F_i$'s are continuous marginal CDFs, we can get a random vector $(U_1,U_2)=(F_1(Y_1),F_2(Y_2))$ such that the marginals follow a uniform distribution. Now, let $u_i = F_{ix}(y_i)$ be the pseudo observations and $F_{ix}^{-1}(u_i)$s be the conditional quantile functions for $i=1,2$. Then
+\begin{equation*}
+	C\left(u_1,u_2\mid \theta\right) = H\left(F_{1}^{-1}(u_1),F_{2}^{-1}(u_2)\right).
+\end{equation*}
+We also use this formulation to compute Kendall's $\tau$ in the following way \citep{nelsen2006}:
+\begin{equation*}
+    \tau = 4\int \int C(u_1,u_2\mid \theta)dC(u_1,u_2 \mid \theta) - 1.
+\end{equation*}
 
-In many practical situations, the dependence between $Y_1$ and $Y_2$ can be influenced by an external variable $X$. To tackle such issues, \citet{patton2006} suggested a conditional version of \citet{sklar:1959}'s theorem. Let, $H_x(y_1,y_2)$ denote joint cumulative distribution of $Y_1$ and $Y_2$ and $F_{ix}(y_i)$ is the marginal of $Y_i$ conditional on $X$ for $i=1,2$. Then we can write the following
+In many practical situations, the dependence between $Y_1$ and $Y_2$ can be influenced by an external variable $X$. To tackle such issues, \citet{patton2006} suggested a conditional version of \citet{sklar:1959}'s theorem. Let, $H_x(y_1,y_2)$ denote joint cumulative distribution of $Y_1$ and $Y_2$ conditional on $X$ and $F_{ix}(y_i)$ is the marginal CDF of $Y_i$ conditional on $X$ for $i=1,2$. Then we can write the following
 \begin{equation*}
 	H_x(y_1,y_2) = C\left(F_{1x}(y_1),F_{2x}(y_2)\mid \theta(x)\right)
 \end{equation*}
-where $\theta(x)$ is the copula parameter conditional on $x$. Alternatively, let $u_i = F_{ix}(y_i)$ be the pseudo observations and $F_{ix}^{-1}(u_i)$s be the conditional quantile functions
-for $i=1,2$. Then alternate formulation holds as well:
-\begin{equation*}
-	C\left(u_1,u_2\mid \theta(x)\right) = H_x\left(F_{1x}^{-1}(u_1),F_{2x}^{-1}(u_2)\right).
-\end{equation*}
-For a more detailed introduction to the concept check \citet{patton2006,acar2010,GIJBELS20111919} etc.
+where $\theta(x)$ is the copula parameter as a function of $x$. Then the following holds true:
+\begin{align*}
+    C\left(u_1,u_2\mid \theta(x)\right) = H\left(F_{1x}^{-1}(u_1),F_{2x}^{-1}(u_2)\right),
+\end{align*}
+\begin{align*}
+    \tau(x) = 4\int \int C(u_1,u_2\mid \theta(x)dC(u_1,u_2 \mid \theta(x) - 1,
+\end{align*}
+where $F_{ix}$ is the conditional version of $F_{i}$ for $i=1,2$ and $\tau(x)$ is the conditional version of Kendall's $\tau$. For a more detailed introduction to the concepts, see \citet{patton2006,acar2010,GIJBELS20111919} etc.
 
 \subsection{Loss-based BART}
 
-Before defining the loss-based prior for BART, we first discuss regression tree models. Let $T$ denote a regression tree with a set of internal nodes depicting decision rules and a set of terminal nodes that assigns functional values corresponding to decision rules. We denote this set of terminal node values by $M =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T)}\}$ where $n_L(T)$ is the number of terminal nodes of the tree $T$. Then we can predict an output $Z\coloneqq(Z_1,\cdots,Z_n)$ in the following way:
+Before defining the loss-based prior for BART, we first discuss regression tree models. Let $T$ denote a regression tree \citep{chipman98BCART} with a set of internal nodes depicting decision rules and a set of terminal nodes that assigns functional values corresponding to decision rules. We denote this set of terminal node values by $M =$ $\{\mu_1$,$\mu_2$, \dots, $\mu_{n_L(T)}\}$ where $n_L(T)$ is the number of terminal nodes of the tree $T$. Then we can model output $Z\coloneqq(Z_1,\cdots,Z_n)$ via:
 \begin{equation*}
 	Z_i = g(x_i, T, M) + \epsilon_i; \qquad \epsilon_i\sim \mathcal{N}(0,\sigma^2)
 \end{equation*} 
-where $g$ is a function that assigns a terminal node value to $x_i$ for $i=1,\cdots,n$ and $\epsilon_i$ is the associated noise that follows a normal distribution with variance $\sigma^2$. This is a single tree model developed by \citet{chipman98BCART}, this is extended to a sum of trees model by \citet{chipman2010BART} in the following way:
+where $g$ is a function that assigns a terminal node value to $x_i$ for $i=1,\cdots,n$ and $\epsilon_i$ is the associated noise with variance $\sigma^2$. This is a single tree model developed by \citet{chipman98BCART}, which is extended to a sum of trees model by \citet{chipman2010BART} as:
 \begin{equation}\label{eq:BART}
 	Z_i = \sum_{t=1}^m g(x_i, T_t, M_t) + \epsilon_i; \qquad \epsilon_i\sim \mathcal{N}(0,\sigma^2)
 \end{equation}
@@ -106,17 +119,16 @@ where $T_t$ denotes the $t$-th tree; $M_t$ denotes the $t$-th vector of terminal
 
 This representation allows us to approximate a function with piecewise constant values on a partitioned domain. These partitions are constructed by assigning a splitting rule $x_{\cdot j}\le \kappa$ for $1\le j \le p$ on each internal node, where the value $\kappa$ is either chosen from one of the observed values $x_{ij}$ or chosen uniformly within a range of values $(\underline{x}_{\cdot j},\overline{x}_{\cdot j})$.
 
-The most popular choice for a tree prior was introduced by \citet{chipman98BCART}, which later was used by \citet{chipman2010BART} for sum of regression trees models. Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed an alternate prior for the tree topology. They consider a loss-based approach, which allows us to design objective priors \citep{villa_loss-prior}. They suggested that the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. Further, they showed that the loss in complexity can be defined as $\omega n_L(T_t) - \zeta \Delta(T_t)$, where $\omega\ge 0$ and $\zeta\in\mathbb{R}$ are prior parameters; $\Delta(T_t)$ is the difference between the right terminal nodes and the left terminal nodes of $t$-th given tree; $n_L(T_t)$ is number of terminal nodes of the $t$-th tree. This leads to the following hierarchical prior
+The most popular choice for a tree prior was introduced by \citet{chipman98BCART}, which was later used by \citet{chipman2010BART} for sum of regression trees models. Recently, \citet{serafini2024lossbasedpriortreetopologies} proposed an alternative prior for the tree topology. They consider a loss-based approach, which allows us to specify objective priors \citep{villa_loss-prior}. They suggested that the associated loss function for misspecification of a tree has two components: loss in information and loss in complexity. Further, they showed that the loss in complexity can be defined as $\omega n_L(T_t) - \zeta \Delta(T_t)$, where $\omega\ge 0$ and $\zeta\in\mathbb{R}$ are prior parameters; $\Delta(T_t)$ is the difference between the number of right terminal nodes and left terminal nodes of $t$-th given tree and $n_L(T_t)$ is the number of terminal nodes of the $t$-th tree. This leads to the following hierarchical prior
 
 \begin{align}\label{eq:L-BART}
 	\begin{split}
-		T_t, M_t &\sim \pi(T_t)\pi(M_t\mid T_t)\\
-		T_t &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
+		\pi(T_t, M_t) &= \pi(T_t)\pi(M_t\mid T_t)\\
+		\pi(T_t) &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
 		\pi(M_t\mid T_t) & = \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t).
 	\end{split}
 \end{align}
-where $\pi$ denotes the prior density.
-
+where $\pi$ denotes the density function.
 
 \section{Conditional Copula Modelling}\label{sec:cond:cop}
 
@@ -125,29 +137,29 @@ Our main goal in this paper is to model the dependence structure of a conditiona
 \begin{equation*}
 	\theta(x_i) \coloneqq h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right);\qquad 1\le i\le n.
 \end{equation*}
-Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula density function. Then employing the loss-based prior for tree introduced in \cref{eq:L-BART}, we can define the following hierarchical model 
+Now, let $c\left(u_1,u_2\mid \theta(x)\right)$ denote the conditional copula density function. Then employing the loss-based prior for trees introduced in \cref{eq:L-BART}, we can define the following hierarchical model 
 \begin{align}\label{eq:bayes:hier}
 	\begin{split}
-		u_{1i},u_{2i} \mid \theta(x_i) & \sim c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\\
-		T_t &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
-		\pi(M_t\mid T_t) &\propto \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t); \qquad t = 1,2,\cdots m.
+		\pi\left(u_{1i},u_{2i} \mid \theta(x_i)\right) & = c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\\
+		\pi(T_t) &\propto \exp\left(\omega n_L(T_t) - \zeta \Delta(T_t)\right)\\
+		\pi(M_t\mid T_t) &= \prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t); \qquad t = 1,2,\cdots m.
 	\end{split}
 \end{align}
 
-\subsection{Choice of link functions} The choice of link function to relate the tree structure with the conditional copula parameter is dependent on the family of copula. Use of a link function is not unusual in the context of conditional copula modelling. \citet{ABEGAZ201243,valle_cond_cop} used such functions for calibrating the conditional copula parameter. This way the sum of trees remains flexible and it can take any value in $\mathbb{R}$. Therefore, we consider link functions that can map from $\mathbb{R}$ to the range of $\theta$ of a specific copula family that we provide in \cref{tab:cop:link} for 5 different families.
+\subsection{Choice of link functions} The choice of link function to relate the tree structure with the conditional copula parameter is dependent on the family of the copula. Use of a link function is not unusual in the context of conditional copula modelling. \citet{ABEGAZ201243,valle_cond_cop} used link functions for calibrating the conditional copula parameter. In our case, we wish to keep the sum of trees model flexible so that it can take any value in $\mathbb{R}$. Therefore, we consider link functions that can map from $\mathbb{R}$ to the range of $\theta$ from a specific copula family, that we provide in \cref{tab:cop:link} for 5 different copula families.
 
 \subsection{Choice of priors on $\mu_j$}
-Earlier adaptions of BART models \citep{chipman2010BART,Sparapani_BART,Murray03042021} suggested a conjugate prior for the terminal node values $\mu_j$, this allows us to compute the marginal likelihood easily. In our case, we simply consider the default $\mathcal{N}(0,\sigma_{t}^2)$ on $\mu_j$ as suggested by \citet{chipman2010BART,Linero02012025} where $\sigma_{t}^2$ is variance specific to the $t$-th tree. For $\sigma_{t}^2$ we use a flat inverse-gamma hyperprior.
+Earlier adaptions of BART models \citep{chipman2010BART,Sparapani_BART,Murray03042021} suggested a conjugate prior for the terminal node values $\mu_j$, as this allows us to compute the marginal likelihood easily. In our case, this is not possible so we consider we consider a default $\mathcal{N}(0,\sigma_{t}^2)$ on $\mu_j$ as suggested by \citet{chipman2010BART,Linero02012025} where $\sigma_{t}^2$ is a variance specific to the $t$-th tree. For $\sigma_{t}^2$ we use a flat inverse-gamma hyperprior.
 
-\subsection{Choice of $m$} The choice of the total number of trees remains an open problem. \citet{chipman2010BART} considered a default of 500 trees whereas, \citet{Linero02012025} suggested 200 trees for analysis. In our case, we follow a similar approach to that of \citet{serafini2024lossbasedpriortreetopologies}. We start with 5 trees and increase it by 5 to monitor the change in performance for case studies. 
+\subsection{Choice of $m$} The choice of the total number of trees remains an open problem. \citet{chipman2010BART} considered a default of 500 trees, whereas \citet{Linero02012025} suggested 200 trees for analysis. In our case, we follow a similar approach to that of \citet{serafini2024lossbasedpriortreetopologies}. We start with 5 trees and increase it by 5 at a time to monitor the change in performance for case studies. 
 
 \section{RJ-MCMC for Parameter Estimation}\label{sec:rjmcmc}
 
-In this section we provide the MCMC algorithm for sampling from the posterior. In general, for BART models with a conjugate prior, a Metropolis Hastings type algorithm is used. In our case, we need to sample terminal node values along side a new tree structure in each MCMC iteration. So we will employ a reversible jump MCMC type algorithm first proposed by \citet{green_RJMCMC}. Since, RJ-MCMC type algorithms are known for its slow mixing properties, we propose an adaptive alternative that improves the mixing speed, without needing to spend much time on selecting the optimal parameter values of the proposal distribution.
+In this section, we provide the MCMC algorithm for sampling from the posterior. In general, for BART models with a conjugate prior, a Metropolis Hastings type algorithm is used. In our case, we need to sample terminal node values alongside a new tree structure in each MCMC iteration. So we will employ a reversible jump MCMC type algorithm first proposed by \citet{green_RJMCMC}. Since, RJ-MCMC type algorithms are known for their slow mixing properties, we propose an adaptive alternative that improves the mixing speed, without needing to spend significant time on selecting the optimal parameter values of the proposal distribution.
 
 \subsection{Backfitting algorithm}
 
-The major building block of sum of tree models is the backfitting algorithm. We modify this backfitting algorithm to meet our needs, which we will discuss below. First, let $(U_1,U_2)$ denote the pseudo observations $\{(u_{1i},u_{2i}):1\le i \le n\}$ and $X$ denote the covariates. Then the posterior obtained from the hierarchical model described in \cref{eq:bayes:hier} is proportional to the following:
+The major building block of the sum of tree models is the backfitting algorithm. We modify this backfitting algorithm to meet our needs, which we will discuss below. First, let $(U_1,U_2)$ denote the random variable associated with the pseudo observations $\{(u_{1i},u_{2i}):1\le i \le n\}$ and $X$ denote the covariates. Then the posterior obtained from the hierarchical model described in \cref{eq:bayes:hier} is proportional to the following:
 \begin{align*}
 	\begin{split}
 		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\sum_{t=1}^m g(x_i, T_t, M_t)\right)\right)\prod_{t=1}^{m}\pi(T_t)\prod_{t=1}^{m}\left(\prod_{j=1}^{n_L(T_t)}\pi(\mu_j\mid T_t)\right)\prod_{t=1}^{m}\pi(\sigma_{t}).
@@ -161,7 +173,7 @@ then in each MCMC iteration, we sample $(T_k, M_k)$ from the following condition
 \begin{equation*}
 	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma^2_{k}, U_1, U_2, X
 \end{equation*}
-followed by a sample of the variance term $\sigma_{k}$ from the following conditional distribution
+followed by sampling the variance term $\sigma_{k}$ from the following conditional distribution
 \begin{equation*}
 	\sigma^2_{k} \mid (T_k,M_k),U_1,U_2,X.
 \end{equation*}
@@ -169,7 +181,7 @@ So, in order to implement the backfitting algorithm, we define
 \begin{equation*}
 	R_{ik} = \sum_{t\not=k}g(x_i, T_t, M_t)\quad\text{and}\quad R_{\cdot k}\coloneqq(R_{1k},R_{2k},\cdots,R_{nk}).
 \end{equation*}
-Here $R_{ik}$ is similar to the notion of the residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead we will add these $R_{ik}$s with the terminal node values of the $k$-th regression tree, which give us the following conditional posterior
+Here $R_{ik}$ is similar to the notion of the residual discussed in \citet{chipman2010BART, serafini2024lossbasedpriortreetopologies}. However, unlike their problems of interest we are not fitting directly against the outcome data. Instead, we will add these $R_{ik}$s to the terminal node values of the $k$-th regression tree, which gives us the following conditional posterior
 \begin{align}\label{eq:post:res}
 	\begin{split}
 		\pi(T_k,M_k \mid R_{\cdot k}, \sigma^2_{k}, U_1,U_2, X) &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
@@ -183,28 +195,37 @@ Unfortunately, we do not have the conjugacy property in our case, and we use a r
 
 \subsection{Proposal for RJ-MCMC}
 
-Reversible jump MCMC is a common strategy for trans-dimensional cases where we need to grow or reduce the dimension of our model. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. For that, we consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at the $(\eta+1)$-th iteration given by:
+Reversible jump MCMC is a common strategy for trans-dimensional cases where we need to grow or reduce the dimension of our model. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. We consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at the $(\eta+1)$-th iteration given by:
 \begin{align}\label{eq:prop}
 	q\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right) = q\left(T_k^{\eta};T_k^\ast\right) q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right).
 \end{align}
 Here, $q\left(T_k^{\eta};T_k^\ast\right)$ denotes the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps given by:
 \begin{itemize}
 	\item \textsc{grow}: Randomly choose a terminal node and split it into two terminal nodes
-	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn into a terminal node
+	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn it into a terminal node
 	\item \textsc{change}: Randomly choose an internal node and assign a new splitting rule
-	\item \textsc{swap}: Randomly choose a parent-child pair of internal node and swap their splitting rules
+	\item \textsc{swap}: Randomly choose a parent-child pair of internal nodes and swap their splitting rules
 \end{itemize}
-For a detailed discussion on the splitting rule, we suggest the readers to look into \citet{chipman98BCART,serafini2024lossbasedpriortreetopologies}. 
+For a detailed discussion on the splitting rule, we suggest  \citet{chipman98BCART,serafini2024lossbasedpriortreetopologies}. 
 
-The generation of new terminal node values rely on the proposed tree structure that we represent with $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$. Clearly, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
+The generation of new terminal node values relies on the proposed tree structure that we represent with $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$. Clearly, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
 \begin{itemize}
-	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_l$ and$j_r$ so,
+	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_l$ and $j_r$ so,
 	$q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$ = $\pi_{prop}(\mu_{j_l})\times\pi_{prop}(\mu_{j_r})$
-	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned then $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$ = $\pi_{prop}(\mu_j)$
+	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned, then $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$ = $\pi_{prop}(\mu_j)$
 \end{itemize}
 where $\pi_{prop}$ denotes the proposal density function.
 
-For the choice of proposal we consider a normal distribution with mean being the average of terminal node values at the $\eta$-th iteration and variance $\sigma_{\text{prop}}$. We notice that fixing $\sigma_{\text{prop}}$ is rather difficult. While monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a longer iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated from the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the co-variance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on the partition of the predictor space, which we discuss below. First, we let our RJ-MCMC run for $\eta_0$ iterations without any adaption. We collect the values at observations with respect to each tree and each iteration defined by:
+\begin{definition}[Values at observation]
+    Let $(T,M)$ be the regression tree along with the vector of terminal nodes. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. 
+    \begin{equation*}
+        V_i = g(x_i, T,M).
+    \end{equation*}
+\end{definition}
+
+For the choice of proposal we consider a normal distribution with mean being the terminal node values at the $\eta$-th iteration and variance $\sigma^2_{\text{prop}}$. We notice that choosing $\sigma^2_{\text{prop}}$ is rather difficult. Monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a large number of iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated by the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the covariance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case, we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on a partition of the predictor space, which we discuss below. 
+
+First, let our RJ-MCMC run for $\eta_0$ iterations without any adaption. We collect the values at observations with respect to each tree and each iteration defined by:
 \begin{equation*}
 	V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0.
 \end{equation*}
@@ -537,10 +558,10 @@ We present the figures for our analyses with 10 trees in \cref{app:cia}. We noti
 		\midrule
 		\multicolumn{7}{c}{5 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.53 & 0.53 & 0.05 \\ 
-		Student-t (C-BART) & 0.82 & 0.82 & 0.04 & 0.64 & 0.64 & 0.05 \\ 
-		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.75 & 0.76 & 0.04 \\ 
-		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.99 & 0.99 & 0.01 \\ 
+		Gaussian (C-BART) & 0.69 & 0.77 & 0.28 & 0.72 & 0.85 & 0.28 \\ 
+		Student-t (C-BART) & 0.69 & 0.78 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
+		Gaussian (A-C-BART) & 0.69 & 0.77 & 0.28 & 0.72 & 0.85 & 0.28 \\ 
+		Student-t (A-C-BART) & 0.69 & 0.77 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
@@ -797,8 +818,9 @@ Recall the state space defined by $\mathcal{T}\times\mathcal{M}$. Then we can ex
 Let $T^{(i)}$ denote a tree with $i$ terminal nodes and $M^{(i)}$ denote the vector of terminal node values. Then for each $i=2,\cdots,n$, we have
 \begin{align*}
 	&\mathcal{K}_{\gamma}\left(T^{(i)},M^{(i)};\left(T^{(i-1)},M^{(i-1)}\right)\right)\\
-	&\ge \alpha_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)d\left(M^{(i-1)}\right)\\
-	&\ge \frac{1}{B_{\gamma;\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
+	&\ge p_{\textsc{p}}\mathcal{K}_{\gamma,\textsc{prune}}\left(T^{(i)},M^{(i)};\left(T^{(i-1)},M^{(i-1)}\right)\right)\\
+	&\ge p_{\textsc{p}}\alpha_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)d\left(M^{(i-1)}\right)\\
+	&\ge \frac{p_{\textsc{p}}}{B_{\gamma;\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
 \end{align*}
 Therefore there exist $\nu>0$ such that for all $i=2,\cdots,n$
 \begin{equation}\label{eq:reach:trivial}
