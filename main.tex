@@ -155,7 +155,7 @@ Earlier adaptions of BART models \citep{chipman2010BART,Sparapani_BART,Murray030
 
 \section{RJ-MCMC for Parameter Estimation}\label{sec:rjmcmc}
 
-In this section, we provide the MCMC algorithm for sampling from the posterior. In general, for BART models with a conjugate prior, a Metropolis Hastings type algorithm is used. In our case, we need to sample terminal node values alongside a new tree structure in each MCMC iteration. So we will employ a reversible jump MCMC type algorithm first proposed by \citet{green_RJMCMC}. Since, RJ-MCMC type algorithms are known for their slow mixing properties, we propose an adaptive alternative that improves the mixing speed, without needing to spend significant time on selecting the optimal parameter values of the proposal distribution.
+In this section, we provide the MCMC algorithm for sampling from the posterior. In general, for BART models with a conjugate prior, a Metropolis Hastings (MH) type algorithm is used. In our case, we need to sample terminal node values alongside a new tree structure in each MCMC iteration. So we will employ a reversible jump MCMC type algorithm first proposed by \citet{green_RJMCMC}. Since, RJ-MCMC type algorithms are known for their slow mixing properties, we propose an adaptive alternative that improves the mixing speed, without needing to spend significant time on selecting the optimal parameter values of the proposal distribution.
 
 \subsection{Backfitting algorithm}
 
@@ -216,20 +216,19 @@ The generation of new terminal node values relies on the proposed tree structure
 \end{itemize}
 where $\pi_{prop}$ denotes the proposal density function.
 
-\begin{definition}[Values at observation]
-    Let $(T,M)$ be the regression tree along with the vector of terminal nodes. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. 
+For the choice of proposal we consider a normal distribution with mean being the terminal node values at the $\eta$-th iteration and variance $\sigma^2_{\text{prop}}$. We notice that choosing $\sigma^2_{\text{prop}}$ is rather difficult. Monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a large number of iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated by the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the covariance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case, we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on a partition of the predictor space. First, we define the following:
+\begin{definition}[Value at observation]
+    Let $(T,M)$ be the regression tree along with the vector of terminal node values. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. 
     \begin{equation*}
         V_i = g(x_i, T,M).
     \end{equation*}
 \end{definition}
 
-For the choice of proposal we consider a normal distribution with mean being the terminal node values at the $\eta$-th iteration and variance $\sigma^2_{\text{prop}}$. We notice that choosing $\sigma^2_{\text{prop}}$ is rather difficult. Monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a large number of iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated by the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the covariance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case, we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on a partition of the predictor space, which we discuss below. 
-
-First, let our RJ-MCMC run for $\eta_0$ iterations without any adaption. We collect the values at observations with respect to each tree and each iteration defined by:
+To perform our adaptive RJ-MCMC routine, we let our RJ-MCMC sampler run for $\eta_0$ iterations without any adaption. We collect the values at observations with respect to each tree and each iteration defined by:
 \begin{equation*}
 	V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0.
 \end{equation*}
-Now, let $V_{.k}^{\eta}\coloneq (V_{1k}^{\eta}, \cdots, V_{nk}^{\eta})$ denote the vector of values at observation for the $k$-th tree at $\eta$-th iteration. We will use these vectors of samples to compute the covariance matrix for all $\eta>\eta_0$.
+Now, let $V_{.k}^{\eta}\coloneq (V_{1k}^{\eta}, \cdots, V_{nk}^{\eta})$ denote the vector of values at observation for the $k$-th tree at $\eta$-th iteration. We will use these vectors to compute the covariance matrix for all $\eta>\eta_0$ such that:
 \begin{equation*}
 	C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0,
 \end{equation*}
@@ -240,7 +239,9 @@ Let $\mathbf{\Omega}^{k}\coloneqq \left\{\Omega_j^{k}\right\}_{j=1}^{n_L(T_k)}$ 
 	\sigma_{\text{prop};j}^2 \coloneqq \frac{2.4^2}{\left(\#\left\{\mathcal{I}_{j}^{k}\right\}\right)^3}
 	\sum_{c\in\mathcal{I}_{j}^{k}}\sum_{d\in\mathcal{I}_{j}^{k}}\left[C_k^{\eta}\right]_{cd},
 \end{equation}
-where $\#(.)$ denotes the cardinality of a set. Lastly, we update $C_k^{\eta+1}$ using the iterative formula discussed by \citet{haario_AMH} given by:
+where $\#(.)$ denotes the cardinality of a set. The scaling factor of $2.4$ is also used by \citet{haario_AMH} based on the optimal acceptance rate of Metropolis Hastings algorithms.
+
+Lastly, we update $C_k^{\eta+1}$ using the iterative formula discussed by \citet{haario_AMH} given by:
 \begin{equation}\label{eq:iter:var}
 	C_k^{\eta+1} \coloneqq \frac{\eta-1}{\eta} C_k^{\eta} + \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot k}^{\eta-1}\right)\left(\overline{V}_{\cdot k}^{\eta-1}\right)^T - (\eta+1)\left(\overline{V}_{\cdot k}^{\eta}\right)\left(\overline{V}_{\cdot k}^{\eta}\right)^T + \left({V}_{\cdot k}^{\eta}\right)\left({V}_{\cdot k}^{\eta}\right)^T + \epsilon\mathbf{I}_n\right).
 \end{equation}
@@ -275,19 +276,18 @@ The formulation in \cref{eq:var:adapt} ensures that the proposal variance repres
 	\end{algorithmic}
 \end{algorithm}
 
-Once we have the proposals for both trees and the terminal node values, we define the acceptance probability in the following way:
+Once we have the proposals for both trees and the terminal node values, we define the acceptance probability:
 \begin{equation}\label{eq:acc:prob}
 	\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)
 	= \min\left\{1,\frac{\mathcal{L}(U_1,U_2\mid T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^\ast, M_k^\ast;T_k^{\eta},M_k^{\eta}\right)}
-	{\mathcal{L}(U_1,U_2\mid T_k^{\eta},M_k^{\eta})\pi(T_k^{\eta},M_k^{\eta}) q\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)}\right\}.
+	{\mathcal{L}(U_1,U_2\mid T_k^{\eta},M_k^{\eta})\pi(T_k^{\eta},M_k^{\eta}) q\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)}\right\},
 \end{equation}
 where 
 \begin{equation*}
 	\mathcal{L}(U_1,U_2\mid T_k, M_{k})\coloneqq \prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right).
 \end{equation*}
 
-
-Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values of $M_k^{\eta+1}$ using an MH step followed by a Metropolis within Gibbs to update $\sigma_{k}^2$ conditional on $(T_k,M_k)$. We summarise one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
+Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values of $M_k^{\eta+1}$ using an MH step followed by a Metropolis within Gibbs step to update $\sigma_{k}^{2;(\eta+1)}$ conditional on $(T_k^{\eta+1},M_k^{\eta+1})$. We summarise one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
 
 \begin{algorithm}[h]
 	\caption{One iteration of RJ-MCMC for copula BART}\label{alg:MCMC}
@@ -602,10 +602,10 @@ We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:
 		\midrule
 		\multicolumn{7}{c}{5 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.55 & 0.54 & 0.05 & 0.58 & 0.57 & 0.05 \\ 
-		Student-t (C-BART) & 0.78 & 0.77 & 0.04 & 0.66 & 0.66 & 0.04 \\ 
-		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.66 & 0.66 & 0.05 \\ 
-		Student-t (A-C-BART) & 0.98 & 0.98 & 0.01 & 0.95 & 0.95 & 0.02 \\ 
+		Gaussian (C-BART) & 0.69 & 0.77 & 0.27 & 0.71 & 0.77 & 0.25 \\ 
+		Student-t (C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.24 \\ 
+		Gaussian (A-C-BART) & 0.69 & 0.78 & 0.27 & 0.71 & 0.77 & 0.25 \\ 
+		Student-t (A-C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.25 \\ 
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
@@ -759,7 +759,7 @@ Now, we show that our adaptive RJ-MCMC routine is ergodic. For that we first sho
 \subsection{Diminishing Adaptation}
 
 Let $\left(T,M\right)$ be a state in the state space $\mathcal{T}\times \mathcal{M}$. Let $\Gamma^{\eta} \coloneqq \left(\Gamma_{1}^{\eta}, \cdots\Gamma^{\eta}_{n_L(T)}\right)$ be the adaption at the $\eta$-th iteration. Such that
-\begin{equation*}\label{eq:var:adapt}
+\begin{equation*}
 	\Gamma^{\eta}_{j} \coloneqq \frac{2.4^2}{\left(\#\left\{\mathcal{I}_{j}\right\}\right)^3}
 	\sum_{c\in\mathcal{I}_{j}}\sum_{d\in\mathcal{I}_{j}}\left[C^{\eta}\right]_{cd}.
 \end{equation*}
