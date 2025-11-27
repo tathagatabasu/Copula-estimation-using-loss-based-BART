@@ -218,7 +218,7 @@ where $\pi_{prop}$ denotes the proposal density function.
 
 For the choice of proposal we consider a normal distribution with mean being the terminal node values at the $\eta$-th iteration and variance $\sigma^2_{\text{prop}}$. We notice that choosing $\sigma^2_{\text{prop}}$ is rather difficult. Monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a large number of iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated by the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the covariance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case, we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on a partition of the predictor space. First, we define the following:
 \begin{definition}[Value at observation]
-    Let $(T,M)$ be the regression tree along with the vector of terminal node values. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. 
+    Let $(T,M)$ be the regression tree along with the vector of terminal node values. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. That is,
     \begin{equation*}
         V_i = g(x_i, T,M).
     \end{equation*}
@@ -230,7 +230,7 @@ To perform our adaptive RJ-MCMC routine, we let our RJ-MCMC sampler run for $\et
 \end{equation*}
 Now, let $V_{.k}^{\eta}\coloneq (V_{1k}^{\eta}, \cdots, V_{nk}^{\eta})$ denote the vector of values at observation for the $k$-th tree at $\eta$-th iteration. We will use these vectors to compute the covariance matrix for all $\eta>\eta_0$ such that:
 \begin{equation*}
-	C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0,
+	C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0,
 \end{equation*}
 where $\mathbf{I}_n$ is the identity matrix of order $n$. This additional term $\epsilon\mathbf{I}_n$ ensures that the matrix is positive definite. Once we have this covariance matrix for the $t$-th tree, we can use this to calculate the proposal variance at a new terminal node value.
 
@@ -243,7 +243,12 @@ where $\#(.)$ denotes the cardinality of a set. The scaling factor of $2.4$ is a
 
 Lastly, we update $C_k^{\eta+1}$ using the iterative formula discussed by \citet{haario_AMH} given by:
 \begin{equation}\label{eq:iter:var}
-	C_k^{\eta+1} \coloneqq \frac{\eta-1}{\eta} C_k^{\eta} + \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot k}^{\eta-1}\right)\left(\overline{V}_{\cdot k}^{\eta-1}\right)^T - (\eta+1)\left(\overline{V}_{\cdot k}^{\eta}\right)\left(\overline{V}_{\cdot k}^{\eta}\right)^T + \left({V}_{\cdot k}^{\eta}\right)\left({V}_{\cdot k}^{\eta}\right)^T + \epsilon\mathbf{I}_n\right).
+	C_k^{\eta+1} \coloneqq 
+	\frac{\eta-1}{\eta} C_k^{\eta} 
+	+ \frac{1}{\eta}\left(\eta 
+	\left(\overline{V}_{\cdot k}^{\eta}\right)\left(\overline{V}_{\cdot k}^{\eta}\right)^T 
+	- (\eta+1)\left(\overline{V}_{\cdot k}^{\eta+1}\right)\left(\overline{V}_{\cdot k}^{\eta+1}\right)^T 
+	+ \left({V}_{\cdot k}^{\eta+1}\right)\left({V}_{\cdot k}^{\eta+1}\right)^T + \epsilon\mathbf{I}_n\right).
 \end{equation}
 The formulation in \cref{eq:var:adapt} ensures that the proposal variance represents the variance of the mean value at observations at each terminal node, which is equivalent to using a marginal likelihood in traditional BART models. We summarise this algorithm in \cref{alg:ada:prop}.
 
@@ -261,7 +266,7 @@ The formulation in \cref{eq:var:adapt} ensures that the proposal variance repres
 		
 		\State Calculate sample covariance matrix :
 		\begin{equation*}
-			C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0.
+			C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0.
 		\end{equation*}
 		
 		\State Calculate the proposal variance of the $j$-th terminal node value:
@@ -315,13 +320,15 @@ Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values
 	\end{algorithmic}
 \end{algorithm}
 
+\subsection{Convergence of the adaptive RJ-MCMC algorithm}
+
 \section{Simulation Studies}\label{sec:sim}
 
-In this section, we present our analyses with two simulated datasets with a known data generating process. The first dataset is constructed to understand the efficiency of our method in recovering the true model. To be more precise, we use the first dataset to check whether we can avoid overfitting and if our method is able to determine the true tree structure, present in the data generation process. The second dataset is simulated using a more complicated function to check the efficiency of our method in estimating the dependence structure for general functions.
+In this section, we present our analyses using synthetic datasets simulated from two known data-generating processes, each replicated 100 times to evaluate the empirical performance of our approach. The first data-generating process is designed to assess the efficiency of our method in recovering the true model. To be precise, we examine whether the method can avoid overfitting and accurately identify the true tree structure underlying the data. The second data-generating process involves a more complex function and is used to evaluate the efficiency of our method in estimating the dependence structure for general functional relationships.
 
-For both, we investigate the performance of the proposed method for five different copula families: Gaussian, Students-t, Clayton, Gumbel and Frank. As we discussed in \cref{sec:cond:cop}, to model the conditional copula parameter, we consider different link functions which we summarise in \cref{tab:cop:link}. This way, we ensure that the terminal node values can take any value in $\mathbb{R}$ and the link function maps it to the range of the conditional copula parameter. Similar approach was taken by \citet{ABEGAZ201243,valle_cond_cop} for calibrating the conditional copula parameter.
+For both data-generating processes, we investigate the performance of the proposed method for five different copula families: Gaussian, Students-t, Clayton, Gumbel and Frank. As we discussed in \cref{sec:cond:cop}, to model the conditional copula parameter, we consider different link functions, which we summarise in \cref{tab:cop:link}. This way, we ensure that the terminal node values can take any value in $\mathbb{R}$ and the link function maps the sum of trees model to the range of the conditional copula parameter. A similar approach was taken by \citet{ABEGAZ201243,valle_cond_cop} for calibrating the conditional copula parameter.
 
-\begin{table}[H]
+\begin{table}[h]
 	\centering
 	\begin{tabular}{l|c|c}
 		Family & Support & Link function\\
@@ -348,13 +355,13 @@ and
 \begin{equation}\label{eq:sin:tau}
 	\tau_2(x_i) = 0.2\sin(2\pi x_i) + 0.5.
 \end{equation}
-We use these $\tau_j(x_i)$'s ($j=1,2; 1\le i\le 200$) to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. Additionally, we get 100 replicates of each copula dataset to monitor the posterior coverage of our proposed method.
+We use these $\tau_j(x_i)$'s ($j=1,2; 1\le i\le 200$) to simulate copula data using the relevant functions from \texttt{VineCopula} package in \texttt{R}. As mentioned earlier, we sample 100 replicates of each copula dataset to monitor the posterior coverage of our proposed method.
 
-For modelling of the dependence structure, we consider the default loss-based prior ($\omega = 1.62$ and $\zeta = 0.62$) as suggested by \citet{serafini2024lossbasedpriortreetopologies}. For the hyperior prior on $\sigma_t^2$, we consider InvGamma(1,2). We then run 3000 MCMC iterations with 4 chains for all 100 replicates of each dataset. We employ both types of our proposed RJ-MCMC algorithm; with and without adaption. For the adaptive version of the algorithm, we use the first 500 iterations for adaption. For convenience, from now on, we will use C-BART for our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version. For posterior estimates, we discard the first 1500 iterations as burnin phase.
+For modelling the dependence structure, we consider the default loss-based prior ($\omega = 1.62$ and $\zeta = 0.62$) as suggested by \citet{serafini2024lossbasedpriortreetopologies}. For the hyperprior on $\sigma_t^2$, we consider InvGamma(1,2). We run 3000 MCMC iterations with 4 chains for all 100 replicates of each dataset. We employ both variants of our proposed RJ-MCMC algorithm; with and without adaption. For the adaptive version of the algorithm, we use the first 500 iterations for adaption. For convenience, from now on, we will use C-BART to denote our RJ-MCMC algorithm without adaption and A-C-BART for the adaptive version. For posterior estimates, we discard the first 1500 iterations.
 
-One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure, we consider the posterior expectations averaged over 100 replicates. Additionally, we are interested in the predictive performance of our approach and we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
+One specific goal of our analyses is to understand the efficiency of our method in capturing the true structure. We consider the posterior expectations averaged over 100 replicates. Additionally, we are interested in the predictive performance of our approach and we consider RMSE, 95\% credible interval length and 95\% credible interval coverage. 
 
-Let, $n_R, n_C, n$ denote the number of replicates, number of chains and number of observations respectively; and $\overline{\theta}_{ijk}, {\theta}^{(2.5)}_{ijk}, {\theta}^{(97.5)}_{ijk}$ denote the posterior mean, 2.5th quantile and 97.5th quantile of the conditional copula parameter at the $i$-th observation in the $j$-th MCMC chain of the $k$-th replicate. Most importantly, let $\theta_i$ denote the true value of the conditional copula parameter at the $i$-th observation. Then RMSE, 95\% credible interval length (CI-length) and 95\% credible interval coverage (CI-cov) is defined as follows
+Let, $n_R, n_C, n$ denote the number of replicates, number of chains and number of observations respectively; and $\overline{\theta}_{ijk}, {\theta}^{(2.5)}_{ijk}, {\theta}^{(97.5)}_{ijk}$ denote the posterior mean, 2.5th posterior quantile and 97.5th posterior quantile of the conditional copula parameter at the $i$-th observation in the $j$-th MCMC chain of the $k$-th replicate. Let $\theta_i$ denote the true value of the conditional copula parameter at the $i$-th observation. Then RMSE, 95\% average credible interval length (CI-length) and 95\% credible interval coverage (CI-cov) are defined as follows
 
 \begin{equation*}
 	\text{RMSE} = \frac{1}{n_R}\sum_{k=1}^{n_R}\left(\frac{1}{n_C}\frac{1}{n}\sum_{j=1}^{n_C}\sum_{i=1}^{n}\left(\theta_i - \overline{\theta}_{ijk}\right)^2\right),
@@ -371,13 +378,15 @@ where $\mathbb{I}(.)$ is the indicator function.
 
 \subsection{Example with true tree structure} 
 
-We use the first case ($\tau_1(x)$) to monitor the efficiency of our proposed approach in capturing the tree structure. So, for the analysis we consider only 1 tree. This way, we check how close our posterior estimates are to the true number of terminal nodes ($=3$) and true depth ($=2$). For the Gaussian, Student-t, Clayton and Gumbel copula datasets, we set our initial proposal variance to be equal to $0.2$, whereas for the Frank copula datasets, we set our proposal variance to be equal to $1$. The main reason behind this is the type of link function we chose for these datasets. Since for the frank copula datasets the link function is identity therefore it takes much longer iterations to reach the true likelihood region. For sanity, we also perform a complete analyses with proposal variance being equal to 0.2, which we provide in the \cref{app:results}.
+We use the first case ($\tau_1(x)$) to investigate the efficiency of our proposed approach in capturing the tree structure. For this initial analysis, we consider a single tree. This way, we can check how close our posterior estimates are to the true number of terminal nodes ($=3$) and true depth ($=2$). For the Gaussian, Student-t, Clayton and Gumbel copulas, we set our initial proposal variance to be equal to $0.2$, whereas for the Frank copula, we set our proposal variance to be equal to $1$. The main reason behind this is the type of link function we chose for these copulas. Since for the frank copula, the link function is the identity, the algorithm takes many more iterations to reach the true likelihood region. We also perform a complete analyses with proposal variance equal to 0.2, which we provide in \cref{app:results}.
 
-To check the efficiency of our approach in recovering the true model, we look into the following quantities into posterior expectations of the number of terminal nodes and depth averaged over 100 replicates along with their respective standard deviations over 100 replicates. We denote these quantities by `Mean ($\hat{n}_L$)', `SD ($\hat{n}_L$)', `Mean ($\hat{D}$)' and `SD ($\hat{D}$)'.
+To assess the efficiency of our approach in recovering the true model, we consider the following quantities: the posterior expectations of the number of terminal nodes and depth averaged over the 100 replicates, along with their respective standard deviations over 100 replicates. We denote these quantities by `Mean ($\hat{n}_L$)', `SD ($\hat{n}_L$)', `Mean ($\hat{D}$)' and `SD ($\hat{D}$)'.
 
-We present the efficiency  \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true value. The slight deviation can be attributed to the tree exploration steps where the model tends grow leaves in tree MCMC steps. We also present the traceplots of the number of terminal nodes in \cref{fig:trace:nterm:ex1} and the depth in \cref{fig:trace:depth:ex1} for the first replicate corresponding to each copula dataset. We notice that the tree exploration stabilises after about 1000 iterations with our proposed approaches. We present the likelihood plot after discarding 1500 burn in samples in \cref{fig:trace:like:ex1}. We see that our method is able to converge towards the true likelihood region for all the cases, shown by the black dashed line. We also present the averaged acceptance rate over 100 replicates along with the standard deviation. We notice that the acceptance rate lies within $[0.16, 0.18]$, which is a reasonable range for a transdimensional MCMC algorithm. A similar effect is also reported by \citet{Linero02012025} regarding the mixing of the likelihood. 
+We present the results in \cref{tab:eff:ex1}. We notice that for both C-BART and A-C-BART our posterior estimates of the number of terminal nodes and depths are close to their true values. The slight deviation can be attributed to the tree exploration steps where the model tends to grow leaves in tree MCMC steps. We also present the averaged acceptance rate over 100 replicates along with the standard deviation. We notice that the acceptance rate lies within $[0.16, 0.18]$, which is a reasonable range for a transdimensional MCMC algorithm. A similar effect is reported by \citet{Linero02012025} regarding the mixing of the likelihood. Additionally, we present the prediction accuracy and posterior coverage in \cref{tab:pred:ex1}. We notice that C-BART and A-C-BART are in agreement, though C-BART tends to perform better in terms of posterior coverage.
 
-Recall, that for the Frank copula family, we fixed the initial proposal variance to be equal to 1, while the proposal variance for all the other families is equal to 0.2. We also perform an additional analysis, fixing the proposal variance as 0.2 for the Frank copula family. This particular case, gives us an insight on the benefit of the adaptive version of our algorithm. We notice that only one out of 4 chains converge to true likelihood region for C-BART after 7500 iterations, whereas all 4 chains converge to the true likelihood region for A-C-BART. We present the traceplots of the number of terminal nodes, depth and likelihood in \cref{fig:trace:frank}. We also notice that the posterior estimates for the number of terminal nodes and depth of the tree is closer to the true value for A-C-BART and the credible interval coverage is significantly better than C-BART. We present these tables in \cref{app:results}
+Recall, that for the Frank copula family, we fixed the initial proposal variance to be equal to 1, while the proposal variance for all other families was fixed at 0.2. We perform an additional analysis, fixing the proposal variance at 0.2 for the Frank copula. This case, gives us an insight into the benefit of the adaptive version of our algorithm. We notice that the posterior estimates for the number of terminal nodes and depth of the tree are closer to the true value for A-C-BART and the credible interval coverage is significantly better than C-BART. 
+
+Additional traceplots and tables are provided in the \cref{app:results} for illustration purposes.
 
 \begin{table}[ht]
 	\centering
@@ -406,21 +415,6 @@ Recall, that for the Frank copula family, we fixed the initial proposal variance
 	\label{tab:eff:ex1}
 \end{table}
 
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
-	\caption{Trace plots of the number of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
-	\label{fig:trace:nterm:ex1}
-\end{figure}
-
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
-	\caption{Trace plots of the depth of the tree obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
-	\label{fig:trace:depth:ex1}
-\end{figure}
-
-
 \begin{table}[ht]
 	\centering
 	\begin{tabular}{l|ccc|ccc}
@@ -440,19 +434,10 @@ Recall, that for the Frank copula family, we fixed the initial proposal variance
 	\label{tab:pred:ex1}
 \end{table}
 
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree.}
-	\label{fig:trace:like:ex1}
-\end{figure}
+\subsection{Example with a more general function}
+We use the second case ($\tau_2(x)$) to assess the prediction accuracy of our proposed approach in estimating the dependence structure, which in this case is highly non-linear with respect to the conditioning variable. For illustration purposes, we use 5 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, average CI length and CI coverage. For posterior analysis we set the proposal variance to be equal to 0.2 for all copula families including Frank.
 
-%  79.78078 110.74562 115.01339 102.35259  86.50401
-
-\subsection{Example with a general function}
-We use the second case ($\tau_2(x)$) to check the prediction accuracy of our proposed approach in estimating the dependence structure that is highly non-linear with respect to the conditioning variable. For illustration purpose we use 5 trees to model the conditional copula. To illustrate the prediction accuracy, we used RMSE, CI length and CI coverage similar to our analyses with true tree structure. For posterior analysis we set the proposal variance to be equal to 0.2 for all copula families.
-
-We present these results in \cref{tab:pred:ex2}, we notice that A-C-BART and C-BART are in good agreements in terms of prediction accuracy. We also present the prediction plots corresponding the first replicate of the copula datasets in \cref{fig:trace:pred:ex2}. In the figure, we represent the true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with black line and credible interval with green lines. 
+We present these results in \cref{tab:pred:ex2}. We notice that A-C-BART and C-BART are in good agreements in terms of prediction accuracy. However, unlike our results for the first case, we notice that A-C-BART indeed performs better in terms of prediction as well as posterior coverage. This happens as A-C-BART can effectively have proposal variances of different scales for different trees, which is not the case for C-BART. As a result, A-C-BART is more efficient, when we have multiple trees.
 
 
 \begin{table}[ht]
@@ -474,28 +459,10 @@ We present these results in \cref{tab:pred:ex2}, we notice that A-C-BART and C-B
 	\label{tab:pred:ex2}
 \end{table}
 
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
-	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 5 trees. We run 4 chains in parallel with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}.}
-	\label{fig:trace:pred:ex2}
-\end{figure}
-
-Additionally, we present the likelihood traceplots in \cref{fig:trace:like:ex2}. We notice that both C-BART and A-C-BART is able to move towards the true likelihood region, suggesting the efficiency of our method in exploring the parameter space.
-
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating process.}
-	\label{fig:trace:like:ex2}
-\end{figure}
-
-% 99.80067 96.13416 78.41696 77.33286 69.78601
-
 \section{CIA world factbook data}\label{sec:cia}
 Here we present two case studies with real dataset to discuss the applicability of our method. For that, we use the CIA world factbook data. The data is originally produced by CIA for policymakers in the USA and contains important insights on different countries. We are particularly interested in the `life expectancy' and the `literacy' of male and female population in different countries. For conditioning factor we consider the economy of these countries represented by the gross domestic product. 
 
-For illustration purpose, we run 4 parallel chains of 30000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 1000 iterations to calculate the proposal variance.
+For illustration purpose, we run 4 parallel chains of 25000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 1000 iterations to calculate the proposal variance.
 
 Lastly, for monitoring goodness-of-fit, we consider two different two-sample tests to understand the goodness-of-fit of the simulated copulas: Cramer test for multivariate data \citep{BARINGHAUS2004190}; and Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution or not. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we perform 100 repeated tests each involving 100 permutations.
 
@@ -514,7 +481,7 @@ We notice that the pseudo observations has an elliptical shape. Therefore, to mo
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE}
 \end{figure}
 % 0.81
@@ -524,7 +491,7 @@ We present the traceplots of our analyses in \cref{fig:trace:like:real:LE}. We n
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE}
 \end{figure}
 
@@ -565,10 +532,10 @@ We present the figures for our analyses with 10 trees in \cref{app:cia}. We noti
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.56 & 0.56 & 0.05 \\ 
-		Student-t (C-BART) & 0.83 & 0.82 & 0.04 & 0.74 & 0.74 & 0.04 \\ 
-		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.74 & 0.74 & 0.05 \\ 
-		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.98 & 0.99 & 0.01 \\ 
+		Gaussian (C-BART) & 0.69 & 0.77 & 0.28 & 0.71 & 0.85 & 0.28 \\ 
+		Student-t (C-BART) & 0.69 & 0.79 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
+		Gaussian (A-C-BART) & 0.69 & 0.77 & 0.28 & 0.71 & 0.81 & 0.28 \\ 
+		Student-t (A-C-BART) & 0.69 & 0.79 & 0.27 & 0.74 & 0.84 & 0.27 \\ 
 	\end{tabular}
 	\caption{Goodness of fit test of our proposed method for life expectancy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
 	\label{tab:LE:p-val}
@@ -609,10 +576,10 @@ We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.56 & 0.56 & 0.05 & 0.64 & 0.64 & 0.05 \\ 
-		Student-t (C-BART) & 0.77 & 0.77 & 0.04 & 0.58 & 0.58 & 0.05 \\ 
-		Gaussian (A-C-BART) & 0.86 & 0.86 & 0.03 & 0.76 & 0.76 & 0.04 \\ 
-		Student-t (A-C-BART) & 0.98 & 0.98 & 0.01 & 0.96 & 0.96 & 0.02 \\ 
+		Gaussian (C-BART) & 0.69 & 0.78 & 0.27 & 0.72 & 0.79 & 0.25 \\ 
+		Student-t (C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.25 \\ 
+		Gaussian (A-C-BART) & 0.69 & 0.78 & 0.27 & 0.72 & 0.79 & 0.25 \\ 
+		Student-t (A-C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.80 & 0.25 \\ 
 	\end{tabular}
 	\caption{Goodness of fit test of our proposed method for literacy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
 	\label{tab:LT:p-val}
@@ -621,14 +588,14 @@ We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT}
 \end{figure}
 % 0.84
@@ -780,7 +747,9 @@ This holds as the copula likelihood ratio becomes bounded in the compact set $[\
 \begin{proof}
 	Recall the iterative variance formula given by \cref{eq:iter:var}. We define the increment by:
 	\begin{equation*}
-		\Delta C^{\eta + 1} \coloneqq \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot }^{\eta-1}\right)\left(\overline{V}_{\cdot }^{\eta-1}\right)^T - (\eta+1)\left(\overline{V}_{\cdot }^{\eta}\right)\left(\overline{V}_{\cdot }^{\eta}\right)^T + \left({V}_{\cdot }^{\eta}\right)\left({V}_{\cdot }^{\eta}\right)^T + \epsilon\mathbf{I}_n\right)
+		\Delta C^{\eta + 1} \coloneqq \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot }^{\eta}\right)\left(\overline{V}_{\cdot }^{\eta}\right)^T 
+		- (\eta+1)\left(\overline{V}_{\cdot }^{\eta+1}\right)\left(\overline{V}_{\cdot }^{\eta+1}\right)^T 
+		+ \left({V}_{\cdot }^{\eta+1}\right)\left({V}_{\cdot }^{\eta+1}\right)^T + \epsilon\mathbf{I}_n\right)
 	\end{equation*}
 	and let, $ n_j = \#\left\{\mathcal{I}_{j}\right\}$ denote the number of observations contained in the $j$-th partition. Then
 	\begin{align*}
@@ -863,7 +832,32 @@ Therefore, $K_{\gamma}(T,M;)$ is geometrically ergodic for all values of $\gamma
 
 \section{Synthetic dataset}\label{app:results}
 
-Additional results and figure relevant to our analyses with Frank copula family with sub optimal proposal variance.
+\subsection{Tree structure datasets}
+We present the traceplots of the number of terminal nodes in \cref{fig:trace:nterm:ex1} and the depth in \cref{fig:trace:depth:ex1} for the first replicate corresponding to each copula. We notice that the tree exploration stabilises after about 1000 iterations with our proposed approaches. We also present the likelihood plot after discarding 1500 burn in samples in \cref{fig:trace:like:ex1}. We see that our method is able to converge towards the true likelihood region for all cases, shown by the black dashed line. 
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
+	\caption{Trace plots of the number of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
+	\label{fig:trace:nterm:ex1}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
+	\caption{Trace plots of the depth of the tree obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
+	\label{fig:trace:depth:ex1}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree.}
+	\label{fig:trace:like:ex1}
+\end{figure}
+
+We present the traceplots of the number of terminal nodes, depth and likelihood for the Frank copula in \cref{fig:trace:frank} when the proposal variance is 0.2. We notice that for the first dataset, only one out of 4 chains converge to true likelihood region for C-BART after 7500 iterations, whereas all 4 chains converge to the true likelihood region for A-C-BART. We also present the efficiency of our methods in finding the true tree structure in \cref{tab:eff:ex1:frank} and prediction accuracy in \cref{tab:pred:ex1:frank}.
 
 \begin{figure}[H]
 	\centering
@@ -900,19 +894,43 @@ Additional results and figure relevant to our analyses with Frank copula family 
 	\label{tab:pred:ex1:frank}
 \end{table}
 
+\subsection{Dataset with a general function}
+
+We present the prediction plots corresponding to the first replicate of the copula datasets in \cref{fig:trace:pred:ex2}. In the figure, we represent the true values of Kendall's conditional tau with red points; posterior estimates of Kendall's tau with a black line and credible intervals with green lines. 
+
+Additionally, we present the likelihood traceplots in \cref{fig:trace:like:ex2}. We notice that both C-BART and A-C-BART are able to move towards the true likelihood region, suggesting the efficiency of our method in exploring the parameter space.
+
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
+	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 5 trees. We run 4 chains in parallel with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}.}
+	\label{fig:trace:pred:ex2}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
+	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating process.}
+	\label{fig:trace:like:ex2}
+\end{figure}
+
+
+
 \section{CIA world fact data}\label{app:cia}
 Additional figures related to our analyses with 10 trees.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE10}
 \end{figure}
 
@@ -933,14 +951,14 @@ Additional figures related to our analyses with 10 trees.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT10}
 \end{figure}
 % 0.84

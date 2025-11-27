@@ -76,7 +76,7 @@ incl.split_par <- TRUE
 cont.unif_par <- TRUE
 moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
-n.tree <- 5
+n.tree <- 10
 
 ################################################################################
 # source files
@@ -458,8 +458,8 @@ if(F){
   par(mar = c(5,5,2,1), mfrow = c(2,3))
   
   plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LE_adapt,gauss_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LE_adapt,t_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
+  plot(gauss_pred_U1_LE_adapt,gauss_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LE_adapt,t_pred_U2_LE_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Simulated (Student-t)")
   
   hist3D(
     x = hist_true$x,
@@ -506,8 +506,8 @@ if(F){
   # 8 5.5
   
   plot(U1_LE,U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LE,gauss_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LE,t_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
+  plot(gauss_pred_U1_LE,gauss_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LE,t_pred_U2_LE, xlab = "F Life Exp", ylab = "M Life Exp", main = "Simulated (Student-t)")
   hist3D(
     x = hist_true$x,
     y = hist_true$y,
@@ -575,7 +575,7 @@ if(F){
     library(xtable)
     xtable(p_val_summ_adapt)
     
-    pl_tau_est + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+    pl_tau_est + ylim(0.0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
     
     par(mar = c(5,5,2,1), mfrow = c(1,3))
     plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_M, xlab = "Log GDP", ylab = "M Life Exp")
@@ -600,8 +600,8 @@ if(F){
   t_woa_5 <- get(load("real_case_5_trees/plot_t_LE.Rdata"))
   t_wa_5 <- get(load("real_case_5_trees/plot_t_LE_adapt.Rdata"))
   
-  (gauss_woa_10 + ylim(200,280) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,280) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_10 + ylim(200,280) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,280) + labs(title="Student-t (with adaption)"))
+  (gauss_woa_10 + ylim(280,380) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(280,380) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_10 + ylim(280,380) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(280,380) + labs(title="Student-t (with adaption)"))
   
   (gauss_woa_5 + ylim(275,350) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(275,350) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_5 + ylim(275,350) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(275,350) + labs(title="Student-t (with adaption)")) #/
@@ -755,9 +755,9 @@ if(F){
   
   par(mar = c(5,5,2,1), mfrow = c(2,3))
   
-  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
+  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
+  plot(gauss_pred_U1_LT_adapt,gauss_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LT_adapt,t_pred_U2_LT_adapt, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
   
   hist3D(
     x = hist_true$x,
@@ -770,7 +770,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   
   hist3D(
@@ -784,7 +784,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   
   hist3D(
@@ -798,14 +798,15 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   
   # 8 5.5
   
-  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Observed data")
-  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Gaussian)")
-  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Life Exp", ylab = "M Life Exp", main = "Predicted (Student-t)")
+  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Observed data")
+  plot(gauss_pred_U1_LT,gauss_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Gaussian)")
+  plot(t_pred_U1_LT,t_pred_U2_LT, xlab = "F Literacy", ylab = "M Literacy", main = "Simulated (Student-t)")
+  
   hist3D(
     x = hist_true$x,
     y = hist_true$y,
@@ -817,7 +818,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   
   hist3D(
@@ -831,7 +832,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   
   hist3D(
@@ -845,7 +846,7 @@ if(F){
     theta = -45, scale = FALSE, expand = 0.05, bty = "g", phi = 30,    # shading gives 3D effect
     lighting = TRUE,
     ltheta = 120, ticktype = "simple",
-    xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
+    xlab = "F Literacy", ylab = "M Literacy", zlab = ""
   )
   # helper for test statistics
   
@@ -873,13 +874,13 @@ if(F){
   library(xtable)
   xtable(p_val_summ_adapt)
   
-  pl_tau_est + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.5,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+  pl_tau_est + ylim(0.4,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.4,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
   
   par(mar = c(5,5,2,1), mfrow = c(1,3))
-  plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Life_expectancy_M, xlab = "Log GDP", ylab = "M Life Exp")
-  plot(log10(cia_wf_data_LT$GDP_PC),cia_wf_data_LT$Life_expectancy_F, xlab = "Log GDP", ylab = "F Life Exp")
+  plot(log10(cia_wf_data_LT$GDP_PC), cia_wf_data_LT$Liter_M, xlab = "Log GDP", ylab = "M Literacy")
+  plot(log10(cia_wf_data_LT$GDP_PC), cia_wf_data_LT$Liter_F, xlab = "Log GDP", ylab = "F Literacy")
   
-  plot(U1_LT,U2_LT, xlab = "F Life Exp", ylab = "M Life Exp")
+  plot(U1_LT,U2_LT, xlab = "F Literacy", ylab = "M Literacy")
   
   
 }
@@ -898,11 +899,11 @@ if(F){
   t_woa_5 <- get(load("real_case_5_trees/plot_t_LT.Rdata"))
   t_wa_5 <- get(load("real_case_5_trees/plot_t_LT_adapt.Rdata"))
   
-  (gauss_woa_10 + ylim(310,360) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(310,360) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_10 + ylim(300,370) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(300,370) + labs(title="Student-t (with adaption)"))
+  (gauss_woa_10 + ylim(110,360) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(110,360) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_10 + ylim(100,370) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(100,370) + labs(title="Student-t (with adaption)"))
   
-  (gauss_woa_5 + ylim(310,350) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(310,350) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_5 + ylim(320,355) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(320,355) + labs(title="Student-t (with adaption)")) #/
+  (gauss_woa_5 + ylim(200,300) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(200,300) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_5 + ylim(200,300) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(200,300) + labs(title="Student-t (with adaption)")) #/
   
   # par(mar = c(5,5,5,1), mfrow = c(2,2))
   # acf(mcmc(pred_cond_burn$gauss_y), lag.max = 200, main = "Gaussian (without adaption)")
