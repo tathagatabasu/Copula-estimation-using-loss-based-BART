@@ -411,7 +411,7 @@ Additional traceplots and tables are provided in the \cref{app:results} for illu
 		Gumbel & 3.146 & 0.045 & 2.035 & 0.034 & 0.170 & 0.010 \\ 
 		Frank & 3.251 & 0.174 & 2.141 & 0.150 & 0.172 & 0.010 \\
 	\end{tabular}
-	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and standard deviation of the posterior expectation of the number of terminal nodes; the posterior expectation of the depth of the tree; and the acceptance rate in $[0,1]$ scale.}
+	\caption{Performance of our proposed methods for simulated datasets using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and standard deviation of the posterior expectation of the number of terminal nodes; the posterior expectation of the depth of the tree; and the acceptance rate.}
 	\label{tab:eff:ex1}
 \end{table}
 
@@ -430,7 +430,7 @@ Additional traceplots and tables are provided in the \cref{app:results} for illu
 		Gumbel & 0.069 & 0.217 & 0.959 & 0.070 & 0.216 & 0.936 \\ 
 		Frank & 0.083 & 0.251 & 0.930 & 0.083 & 0.254 & 0.925 
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is for C-BART, whereas the right one is for A-C-BART. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\caption{Prediction accuracy of our proposed methods for simulated datasets using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results into two general columns: left for C-BART, right for A-C-BART. We create subcolumns under each column to present root mean squared error (RMSE); average 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex1}
 \end{table}
 
@@ -439,6 +439,7 @@ We use the second case ($\tau_2(x)$) to assess the prediction accuracy of our pr
 
 We present these results in \cref{tab:pred:ex2}. We notice that A-C-BART and C-BART are in good agreements in terms of prediction accuracy. However, unlike our results for the first case, we notice that A-C-BART indeed performs better in terms of prediction as well as posterior coverage. This happens as A-C-BART can effectively have proposal variances of different scales for different trees, which is not the case for C-BART. As a result, A-C-BART is more efficient, when we have multiple trees.
 
+Additional figures relvant to our analysis is provided in \cref{app:results}.
 
 \begin{table}[ht]
 	\centering
@@ -455,62 +456,65 @@ We present these results in \cref{tab:pred:ex2}. We notice that A-C-BART and C-B
 		Gumbel & 0.079 & 0.329 & 0.952 & 0.077 & 0.333 & 0.957 \\ 
 		Frank & 0.070 & 0.278 & 0.926 & 0.068 & 0.284 & 0.940 \\  
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results in two general columns: left of which is for C-BART and the right one is for A-C-BART. We then create three subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
+	\caption{Prediction accuracy of our proposed method for simulated datasets using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). We split our results into two general columns: left for C-BART, right for A-C-BART. We create subcolumns under each column to present root mean squared error (RMSE); average 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov).}
 	\label{tab:pred:ex2}
 \end{table}
 
 \section{CIA world factbook data}\label{sec:cia}
-Here we present two case studies with real dataset to discuss the applicability of our method. For that, we use the CIA world factbook data. The data is originally produced by CIA for policymakers in the USA and contains important insights on different countries. We are particularly interested in the `life expectancy' and the `literacy' of male and female population in different countries. For conditioning factor we consider the economy of these countries represented by the gross domestic product. 
+We present two case studies with real dataset to discuss the applicability of our method. We use the CIA world factbook data. The data is originally produced by the CIA for policymakers in the USA and contains important insights on different countries. We are particularly interested in the `life expectancy' and the `literacy' rates of male and female populations in different countries. As a conditioning factor, we consider the economy of these countries represented by the per capita gross domestic product. 
 
-For illustration purpose, we run 4 parallel chains of 25000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 1000 iterations to calculate the proposal variance.
+To fit the copula, we first get the pseudo observations by converting the original data into their ranks and scale them to ensure the values lie between 0 and 1. That is, for $n$ observations of a  pair $(y_{1i}, y_{2i})$; $1\le i\le n$, we define the pseudo observations in the following way:
+\begin{equation}
+    u_{ij} = \frac{r_{ij}}{n+1}\quad 1\le i \le n;\ j = 1,2
+\end{equation}
+where $r_{ij}$ is the rank of $y_{ij}$ among $(y_{1j}, y_{2j},\cdots, y_{nj})$ for $j=1,2$.
 
-Lastly, for monitoring goodness-of-fit, we consider two different two-sample tests to understand the goodness-of-fit of the simulated copulas: Cramer test for multivariate data \citep{BARINGHAUS2004190}; and Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution or not. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we perform 100 repeated tests each involving 100 permutations.
+For illustration purposes we run 5 parallel chains of 25000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 500 iterations to calculate the proposal variance. For monitoring goodness-of-fit we consider two different two-sample tests to understand the goodness-of-fit of the simulated values from the fitted copulas: the Cramer test for multivariate data \citep{BARINGHAUS2004190}; and the Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we simulate 100 replicates of copulas using estimated parameter and perform these tests with 1000 permutations.
 
 \subsection{Life Expectancy}
-Here, we analyse the dependence between the female life expectancy and male life expectancy against the GDP in log-scale. We use total 167 observations for our analyses. We see that the female life expectancy lies within $[56.1,89.5]$ with average being 76 years. For male population these numbers are slightly lower; the range being $[52.8, 84]$ and average being 71 years. We present the distribution of these observations against the log GDP in \cref{fig:data:dist:LE} along with the pseudo observations. We notice that the life expectancy has a very strong tail dependence and the Kendall's is equal to 0.81. 
+We analyse the dependence between the female life expectancy and male life expectancy conditioned on the per capita GDP in log-scale. We use a total 221 observations of countries/territories for our analyses, out of which only 180 countries/territories have unique per capita GDP. We present the empirical distributions of these observations against the log GDP in \cref{fig:data:dist:LE} along with the pseudo observations of female and male life expectancies. We see that the female life expectancy lies within $[56.1,93.7]$ with the average being 77 years. For the male population, these numbers are slightly lower; the range being $[52.8, 86]$ and the average being 72 years. We notice that the life expectancy has a very strong tail dependence and the Kendall's tau is approximately equal to 0.83. 
  
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"cia_LE_plots.pdf"}
-	\caption{Scatterplot of male life expectancy against log-GDP (left); scatterplot of female life expectancy against log-GDP (middle); and pseudo observations with respect to log-GDP (right).}
+	\caption{Scatterplot of male life expectancy against log-GDP (left); female life expectancy against log-GDP (middle); and pseudo observations of female and male life expectancies (right).}
 	\label{fig:data:dist:LE}
 \end{figure}
 
-We notice that the pseudo observations has an elliptical shape. Therefore, to model the dependence structure we consider Gaussian and Student-t copula families. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for both families of copula. We present the conditional taus in \cref{fig:taus:LE}, where the red (blue) solid line shows expected conditional taus for the Gaussian (Student-t) copula and the dashed lines show the credible interval. We notice that countries with lower GDP shows a mild dependence between male and female life expectancy with value being close to 0.5. As the GDP increases, we notice that the dependence increases rapidly to around 0.9. Later on, for countries with medium log-GDP, the conditional Kendall's tau becomes stable around 0.8. However, for countries with extremely high GDP the dependence between male and female life expectancy becomes very high again. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}.
+We notice that the pseudo observations have an elliptical shape. Therefore, to model the dependence structure we consider Gaussian and Student-t copula families. We present the conditional taus in \cref{fig:taus:LE}, where the red (blue) solid line shows expected conditional taus for the Gaussian (Student-t) copula and the dashed lines show the credible interval. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for both families of copula except for one specific point, where the conditional Kendall's tau for Gaussian copula family gives us a very low value. We notice that countries with lower per capita GDP shows a very strong dependence between male and female life expectancies with the value being close to 0.9. As the per capita GDP increases, we notice that the dependence starts decreasing. For countries with extremely high per capita GDP, the dependence between male and female life expectancy stabilises near 0.8. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}, where the shape of the empirical distributions of male and female life expectancies show strong resemblance for lower values of per capita GDP.
  
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on per capita log-GDP. For modelling, we use 5 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE}
 \end{figure}
 % 0.81
 
-We present the traceplots of our analyses in \cref{fig:trace:like:real:LE}. We notice an interesting behaviour of A-C-BART for the Gaussian copula. We notice that one chain explores a higher likelihood regions for a few iterations, something we did not notice for the Student-t copula. 
+We present the traceplots of the log-likelihood in \cref{fig:trace:like:real:LE}. We notice that the likelihood stabilises in the same region for both C-BART and A-C-BART for the  Gaussian copula family. However, that is not the case for Student-t copula. We see that both C-BART and A-C-BART starts exploring higher likelihood regions for some chains. This is not completely unexpected as some of the countries have same per capita GDPs and that can lead to multimodality whilst estimating the conditional copula parameter.
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE}
 \end{figure}
 
-Additionally, we present the scatterplots and 3-d histograms of the simulated copulas in \cref{fig:pseudo:LE:woa} (C-BART) and \cref{fig:pseudo:LE:wa} (A-C-BART). From the scatter-plots, we can see that both C-BART and A-C-BART in agreement with each other though with A-C-BART the lower and upper tail dependences are captured better than that with C-BART. Unfortunately, there's no efficient ways to compute a similarity measure. So, we present the results of goodness-of-fit tests in \cref{tab:LE:p-val}. We notice that all the $p$-values are well above 0.05 suggesting that there is no significant evidence that they are from two different distributions. Specifically, for A-C-BART with Student-t copula, the $p$-values are well above 0.95, suggesting that Student-t copula is good choice for analysing the conditional dependence between the life expectancy of female and the life expectancy of male conditional on log-GDP. Moreover, we also present the goodness-of-fit test results for analyses with 10 trees. We notice no significant improvement in the test results. 
+Additionally, we present the scatterplots and 3-d histograms of the simulated values from the fitted copulas in \cref{fig:pseudo:LE:woa} (C-BART) and \cref{fig:pseudo:LE:wa} (A-C-BART). From the scatter-plots, we can see that both C-BART and A-C-BART are in agreement. We present the results of goodness-of-fit tests in \cref{tab:LE:p-val}. We notice that the mean and median of $p$-values are well above 0.05 suggesting that there is no significant evidence that they are from two different distributions. Specifically, for the Student-t copula, the mean $p$-values are slightly higher when compared using the Fasano-Franceschini test. This suggets that Student-t copula is indeed a better choice for analysing the conditional dependence as the life expectancy of male and female populations exhibit a strong tail dependence. Moreover, we also present the goodness-of-fit test results for analyses with 10 trees. We notice no significant improvement in the goodness-of-fit test results. 
 
-We present the figures for our analyses with 10 trees in \cref{app:cia}. We notice that with 10 trees, our model tends to explore higher likelihood regions more frequently and A-C-BART tends to converge earlier in a higher likelihood region. While it is interesting for showcasing the convergence of A-C-BART, it does not improve the goodness-of-fit significantly. Moreover, having more trees in the model also increases the overall variance in the estimation of conditional Kendall's tau, which we can see in \cref{fig:taus:LE10}.
-
+We have provided additional figures for our analyses with 10 trees in \cref{app:cia}. We notice that with 10 trees, our model tends to explore higher likelihood regions more frequently. However, it does not improve the goodness-of-fit. While it will be interesting to see whether the goodness-of-fit will improve after running more iterations of the MCMC chain, we refrain from doing so as we notice that the shape of the conditional Kendall's tau remains same. Albeit with more uncertainty accumulated, which we can see in \cref{fig:taus:LE10}.
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_woa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using C-BART with 5 trees.}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for life expectancy of male and female populations using C-BART with 5 trees.}
 	\label{fig:pseudo:LE:woa}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_wa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using A-C-BART with 5 trees.}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for life expectancy of male and female populations using A-C-BART with 5 trees.}
 	\label{fig:pseudo:LE:wa}
 \end{figure}
 
@@ -537,26 +541,23 @@ We present the figures for our analyses with 10 trees in \cref{app:cia}. We noti
 		Gaussian (A-C-BART) & 0.69 & 0.77 & 0.28 & 0.71 & 0.81 & 0.28 \\ 
 		Student-t (A-C-BART) & 0.69 & 0.79 & 0.27 & 0.74 & 0.84 & 0.27 \\ 
 	\end{tabular}
-	\caption{Goodness of fit test of our proposed method for life expectancy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
+	\caption{Goodness of fit tests of our proposed method for life expectancy conditional on log-GDP. We split our results into two general columns: left for the Cramer test and right for the Fasano-Franceschini test (FF test). We create subcolumns under each column to present the mean, the median and the standard deviation of the $p$-values obtained from 100 repetitions.}
 	\label{tab:LE:p-val}
 \end{table}
 
-
-
-
 \subsection{Literacy}
-In this section we discuss our analyses with the literacy rate of different countries. We provide the scatterplots and distribution of pseudo observations for literacy rate of male and female population in \cref{fig:data:dist:LT}. For female population, the literacy rate varies within $[18.2,100]$ and the average literacy rate is 84\%, whereas for the male population, the literacy rate lies in $[35.4,100]$ with average literacy being 89\%. Unlike our example with the life expectancy, the literacy rate has no clear trend against the log-GDP. However, Kendall's tau computed from the data is approximately 0.84, indicating a strong dependence between the literacy rate of Male and Female population. 
+In this section, we discuss our analyses with the literacy rate of different countries. Unfortunately, the literacy rate is under-reported in the CIA world factbook dataset. We only have 167 observations with reported literacy rates and within this only 133 countries/territories have unique per capit GDP. We provide the scatterplots and distribution of pseudo observations for literacy rates of the male and female populations in \cref{fig:data:dist:LT}. For the female population, the literacy rate varies within $[18.2,100]$ and the average literacy rate is 84\%, whereas for the male population, the literacy rate lies in $[35.4,100]$ with the average literacy being 89\%. Unlike our example with the life expectancy data, the literacy rate does not have a linear trend against the log-GDP. However, Kendall's tau computed from the data is approximately 0.84, indicating a strong dependence between the literacy rates of the male and female populations. 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"cia_LT_plots.pdf"}
-	\caption{Scatterplot of male literacy against log-GDP (left); scatterplot of female literacy against log-GDP (middle); and pseudo observations with respect to log-GDP (right).}
+	\caption{Scatterplot of male literacy against log-GDP (left); scatterplot of female literacy against log-GDP (middle); and pseudo observations of female and male literacy rate (right).}
 	\label{fig:data:dist:LT}
 \end{figure}
 
-Similar to our analyses with life expectancy, we notice that there is an overall agreement between the estimated conditional dependence by C-BART and A-C-BART. However, in this case, the families of copula tend to behave differently. While there is a strong similarity between the Gaussian and Student-t copula, the Gaussian copula exhibits an abrupt drop in the conditional dependence, which we present in \cref{fig:taus:LT}. Other than that, for both families, the literacy rate of the Male and the Female population have an almost constant dependence 
-with respect to the log-GDP.  We also present the traceplots of log-likelihood in \cref{fig:trace:like:real:LT}. We notice that for both families, C-BART and A-C-BART are in synergy and explores the similar likelihood regions. 
+Similar to our analyses with life expectancy, we notice that there is an overall agreement between the estimated conditional dependence using C-BART and A-C-BART. We notice that there is a strong similarity between the Gaussian and Student-t copula. We also see that the Gaussian copula exhibits an abrupt drop in the conditional dependence, which we present in \cref{fig:taus:LT}. Other than that, for both families, the literacy rates of the male and female populations have an almost constant dependence 
+with respect to the log-GDP.  We also present the traceplots of the log-likelihood in \cref{fig:trace:like:real:LT}. Unlike, our analyses with life expectancies, we notice that C-BART and A-C-BART tend to behave differently. For our analysis with the Gaussian copula, we notice that different chains remain at different likelihood regions. However, this is not the case for A-C-BART, where all the chains stabilises in the same likelihood region very quickly and one chain starts exploring a higher likelihood region. For our analysis with Student-t copula, the results are also very interesting. In this case, one of the chains of C-BART explores a higher likelihood region but exhibits a very high autocorrelation, whereas for A-C-BART all the chains remain stable in the same region. 
 
-We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:pseudo:LT:woa} and \cref{fig:pseudo:LT:wa}; and the result of goodness-of-fit tests in \cref{tab:LT:p-val}. Like before, we notice that there is no significant evidence that the simulated copulas and the observed copulas belong to two different families. Moreover, similar to our analyses with the life expectancy copula, Student-t copula with A-C-BART performs particularly well in terms of goodness-of-fit. We also present our results with 10 trees and see no significant improvement. Moreover, from the likelihood traceplots given by \cref{fig:trace:like:real:LT10}, we notice that our analyses with 5 trees and 10 trees give us almost similar results in exploring different likelihood regions, unlike our case study with the life expectancy.
+We present the scatterplots and 3-d histograms of simulated values from the fitted copulas in \cref{fig:pseudo:LT:woa} and \cref{fig:pseudo:LT:wa}; and the results of goodness-of-fit tests in \cref{tab:LT:p-val}. Like before, we notice that there is no significant evidence that the simulated values from the fitted copulas and the pseudo observations generated from literacy rate data belong to two different families. Unlike our analyses with the life expectancy data, there is no clear winner. Additionally, we present our results with 10 trees and see no significant improvement.
 
 \begin{table}[ht]
 	\centering
@@ -581,35 +582,35 @@ We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:
 		Gaussian (A-C-BART) & 0.69 & 0.78 & 0.27 & 0.72 & 0.79 & 0.25 \\ 
 		Student-t (A-C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.80 & 0.25 \\ 
 	\end{tabular}
-	\caption{Goodness of fit test of our proposed method for literacy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). We then create subcolumns under each column to present mean, median $p$-values calculated from 100 repetitions along with the standard deviation.}
+	\caption{Goodness of fit tests of our proposed method for literacy conditional on log-GDP. We split our results into two general columns: left for the Cramer test and right for the Fasano-Franceschini test (FF test). We create subcolumns under each column to present the mean, the median and the standard deviation of the $p$-values obtained from 100 repetitions.}
 	\label{tab:LT:p-val}
 \end{table}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 5 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT}
 \end{figure}
 % 0.84
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_woa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using C-BART with 5 trees.}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for literacy of male and female population using C-BART with 5 trees.}
 	\label{fig:pseudo:LT:woa}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_wa.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using A-C-BART with 5 trees.}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for literacy of male and female population using A-C-BART with 5 trees.}
 	\label{fig:pseudo:LT:wa}
 \end{figure}
 
@@ -618,13 +619,13 @@ We present the scatterplots and 3-d histograms of simulated copula in \cref{fig:
 
 \section{Conclusion}\label{sec:conc}
 
-In this paper, we propose a Bayesian semi-parametric approach for modelling conditional copulas where we use the loss-based BART prior proposed by \citet{serafini2024lossbasedpriortreetopologies} to estimate the conditional copula parameter. To sample from the posterior, we propose a novel adaptive RJ-MCMC routine that can efficiently update the proposal variance of the terminal node values avoiding any manual tuning. In this way, we achieve a more general sampling algorithm for BART based models where we do not require a conjugate prior for posterior inference or a smooth likelihood function for applying other approximation based algorithm. Even though our proposed method is catered towards copula modelling, the lack of restrictions in our model, makes it desirable for other areas of modelling where we can employ BART. Moreover, in our framework, we use a link function to estimate the conditional copula parameter. However, in some cases, one might be interested in estimating the conditional Kendall's tau directly. Due to the flexible nature of our model, one can easily adapt our model to meet such needs by changing the link functions on the sum of trees model accompanied by a transformed beta prior \citep{gokhale_prior_cor} for the terminal node values.
+In this paper, we propose a Bayesian semi-parametric approach for modelling conditional copulas where we use the loss-based BART prior proposed by \citet{serafini2024lossbasedpriortreetopologies} to estimate the conditional copula parameter. To sample from the posterior, we propose a novel adaptive RJ-MCMC routine that can efficiently update the proposal variance of the terminal node values avoiding any manual tuning. In this way, we achieve a more general sampling algorithm for BART based models where we do not require a conjugate prior for posterior inference or a smooth likelihood function for applying other approximation based algorithms. Even though our proposed method is developed for copula modelling, the lack of restrictions in our model, makes it desirable for other areas of modelling where we can employ BART. In our framework, we use a link function to estimate the conditional copula parameter. However, in some cases, one might be interested in estimating the conditional Kendall's tau directly. Due to the flexible nature of our model, one can easily adapt our model to meet such needs by changing the link functions on the sum of trees model accompanied by a transformed beta prior \citep{gokhale_prior_cor} for the terminal node values.
 
-We perform extensive simulation studies to show the efficiency of our methods in recovering the true tree structure present within the data as well as its ability to approximate a complicated function efficiently. We notice that specifically for complicated functions, where we require multiple trees, the adaptive routine performs better in reducing the prediction error, suggesting applicability. Besides that, we also illustrate our models adaptive capability using a case, where our adaptive RJ-MCMC routine converges towards the true likelihood region even with a sub optimal choice for proposal variance suggesting its usefulness in statistical analysis of real datasets where assigning proposal variance can be difficult. 
+We perform extensive simulation studies to show the efficiency of our methods in recovering the true tree structure present within the data as well as their ability to approximate a complicated function efficiently. We notice that, specifically for complicated functions, where we require multiple trees, the adaptive routine performs better in reducing the prediction error, suggesting applicability. We also illustrate our method's adaptive capability using a case where our adaptive RJ-MCMC routine converges towards the true likelihood region even with a sub optimal choice for proposal variance, suggesting its usefulness in statistical analysis of real datasets where assigning proposal variance can be difficult. 
 
-We also present case studies with real dataset involving life expectancy and literacy rate of male and female population of different countries. For conditioning, we consider GDP of each country to see whether there is a dependence between male and female populations regarding aforementioned metrics. We notice that our proposed method gives us some interesting results and empirical `goodness of fit' tests suggest that our method is capable of estimating the dependence structure correctly. Moreover, some of these case studies also show the benefit of adaptation, as we notice that our adaptive routine converges to a high likelihood region faster than the non-adaptive counterpart.
+We also present case studies with real dataset involving life expectancy and literacy rate of male and female populations of different countries. For conditioning, we consider per capita GDP of each country to see whether there is a dependence between male and female populations. We notice that our proposed method gives us some interesting results and empirical `goodness of fit' tests suggest that our method is capable of estimating the dependence structure correctly. Moreover, some of these case studies show the benefit of adaptation, as we notice that our adaptive routine tends to be more stable than the non-adaptive counterpart.
 
-While we get promising results with our method across simulation and real case studies, we still require an objective way to fix the number of trees in our BART based copula models. Currently, in our work we use the goodness-of-fit to see the improvement in models with respect to increasing number of trees. This is gives us an empirical idea whether to use more trees or not. However, this makes our analyses computationally expensive as we need to fit multiple models to decide on the number of trees. Therefore, in the future, our main goal will be to find a clever model selection routine to fix the number of trees. Moreover, in this article, we only focus on bivariate copulas with a single confounding variable. It will be an immediate objective to extend the approach for multivariate copulas in the presence of multiple confounding variables to monitor our methods efficiency. Last but not the least, as we stated earlier, our sampling routine requires very few restrictions on the type of data we are using, therefore, it will be interesting to see the performance of our proposed method for general class of problems involving BART, where other methods may fail. 
+While we get promising results with our method across simulation and real case studies, we still require an objective way to fix the number of trees in our BART based copula models. Currently, in our work we use the goodness-of-fit to see the improvement in models with respect to increasing number of trees. This gives us an empirical idea whether to use more trees or not. However, this makes our analyses computationally expensive as we need to fit multiple models to decide on the number of trees. Therefore, in the future, our main goal will be to find an efficient model selection routine to fix the number of trees. Moreover, in this article, we focus on bivariate copulas with a single conditioning variable. It will be an immediate objective to extend the approach to multivariate copulas in the presence of multiple conditioning variables to generalise the approach. Last but not the least, as we stated earlier, our sampling routine requires very few restrictions on the type of data we are using, therefore, it will be interesting to see the performance of our proposed method for more general classes of problems involving BART, where other methods may struggle. 
 
 \appendix
 
@@ -835,25 +836,24 @@ Therefore, $K_{\gamma}(T,M;)$ is geometrically ergodic for all values of $\gamma
 \subsection{Tree structure datasets}
 We present the traceplots of the number of terminal nodes in \cref{fig:trace:nterm:ex1} and the depth in \cref{fig:trace:depth:ex1} for the first replicate corresponding to each copula. We notice that the tree exploration stabilises after about 1000 iterations with our proposed approaches. We also present the likelihood plot after discarding 1500 burn in samples in \cref{fig:trace:like:ex1}. We see that our method is able to converge towards the true likelihood region for all cases, shown by the black dashed line. 
 
-
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_nterm.pdf"}
-	\caption{Trace plots of the number of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
+	\includegraphics[width = 0.8\linewidth]{"case_1_nterm.pdf"}
+	\caption{Trace plots of the number of terminal nodes obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}), for the first replicate. The plots are obtained by running 4 parallel chains, each one with 3000 MCMC iterations. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the number of terminal nodes (3) of the data-generating tree.}
 	\label{fig:trace:nterm:ex1}
 \end{figure}
 
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_depth.pdf"}
-	\caption{Trace plots of the depth of the tree obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}) for the first replicate. The plots are obtained by running 4 parallel chains each one with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
+	\includegraphics[width = 0.8\linewidth]{"case_1_depth.pdf"}
+	\caption{Trace plots of the depth of the tree obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}), for the first replicate. The plots are obtained by running 4 parallel chains, each one with 3000 MCMC iterations. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the depth (2) of the data-generating tree.}
 	\label{fig:trace:depth:ex1}
 \end{figure}
 
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_1_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating tree.}
+	\includegraphics[width = 0.8\linewidth]{"case_1_likelihood.pdf"}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with synthetic datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}), for the first replicate. The plots are obtained by running 4 parallel chains, each one with 3000 MCMC iterations. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the true log-likelihood of the data-generating tree.}
 	\label{fig:trace:like:ex1}
 \end{figure}
 
@@ -861,11 +861,10 @@ We present the traceplots of the number of terminal nodes, depth and likelihood 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"frank_longer_sim.pdf"}
-	\caption{Trace plots of the likelihood; the number of terminal nodes; and the depth of the tree for the Frank copula dataset using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 7500 MCMC iterations each. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. In this case the proposal variance is equal to $0.2$.}
+	\includegraphics[width = 0.85\linewidth]{"frank_longer_sim.pdf"}
+	\caption{Trace plots of the likelihood; the number of terminal nodes; and the depth of the tree for the first replicate of the Frank copula datasets generated using tree based Kendall's tau (\cref{eq:tree:tau}). The plots are obtained by running 4 parallel chains with 7500 MCMC iterations each and proposal variance fixed at $0.2$. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:frank}
 \end{figure}
-
 
 \begin{table}[H]
 	\centering
@@ -875,7 +874,7 @@ We present the traceplots of the number of terminal nodes, depth and likelihood 
 		Frank (C-BART) & 2.242 & 0.277 & 1.232 & 0.265 & 0.111 & 0.029 \\
 		Frank (A-C-BART) & 2.592 & 0.343 & 1.569 & 0.329 & 0.117 & 0.024 \\
 	\end{tabular}
-	\caption{Efficiency of our proposed method for Frank copula dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and standard deviation of the posterior expectation of the number of terminal nodes; the posterior expectation of the depth of the tree; and the acceptance rate in $[0,1]$ scale. The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each. In this case the proposal variance is equal to $0.2$.}
+	\caption{Performance of our proposed method for Frank copula dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We present the average and the standard deviation of the posterior expectation of the number of terminal nodes and the depth of the tree along with the acceptance rate. The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each and proposal variance fixed at $0.2$.}
 	\label{tab:eff:ex1:frank}
 \end{table}
 
@@ -890,7 +889,7 @@ We present the traceplots of the number of terminal nodes, depth and likelihood 
 		\midrule
 		Frank & 0.194 & 0.224 & 0.432 & 0.153 & 0.244 & 0.688 
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for Frank copula dataset using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left of which is for C-BART, whereas the right one is for A-C-BART. We then create subcolumns under each column to present root mean squared error (RMSE); 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov). The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each. In this case the proposal variance is equal to $0.2$.}
+	\caption{Prediction accuracy of our proposed method for the first replicate of the Frank copula datasets using a tree based conditional Kendall's tau (\cref{eq:tree:tau}). We split our results in two general columns: left for C-BART, right for A-C-BART. We create subcolumns under each column to present root mean squared error (RMSE); average 95\% credible interval length (CI-length); and 95\% credible interval coverage (CI-cov). The quantities are obtained by running 4 parallel chains with 7500 MCMC iterations each and proposal variance fixed at $0.2$.}
 	\label{tab:pred:ex1:frank}
 \end{table}
 
@@ -900,79 +899,76 @@ We present the prediction plots corresponding to the first replicate of the copu
 
 Additionally, we present the likelihood traceplots in \cref{fig:trace:like:ex2}. We notice that both C-BART and A-C-BART are able to move towards the true likelihood region, suggesting the efficiency of our method in exploring the parameter space.
 
-
-
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_2_pred.pdf"}
-	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). We fit the model using 5 trees. We run 4 chains in parallel with 3000 MCMC iterations. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The green line denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}.}
+	\includegraphics[width = 0.8\linewidth]{"case_2_pred.pdf"}
+	\caption{Comparison of BART fit obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}), for the first replicate. The plots are obtained by running 4 parallel chains, each one with 3000 MCMC iterations. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. The green lines denote the 95\% credible interval; the black line denotes the posterior estimate of Kendall's tau; and the red points show the true values of conditional Kendall's tau defined in \cref{eq:sin:tau}.}
 	\label{fig:trace:pred:ex2}
 \end{figure}
 
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"case_2_likelihood.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}). The plots are obtained by running 4 parallel chains with 3000 MCMC iterations each. The left columns denote analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the log-likelihood of the data-generating process.}
+	\includegraphics[width = 0.8\linewidth]{"case_2_likelihood.pdf"}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with synthetic datasets generated using a non-linear Kendall's tau (\cref{eq:sin:tau}), for the first replicate. The plots are obtained by running 4 parallel chains, each one with 3000 MCMC iterations. The left column shows analyses with C-BART and the right column shows analyses with A-C-BART. The horizontal dashed black line represents the true log-likelihood of the data-generating tree.}
 	\label{fig:trace:like:ex2}
 \end{figure}
 
-
-
 \section{CIA world fact data}\label{app:cia}
+
 Additional figures related to our analyses with 10 trees.
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_taus_10.pdf"}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on log-GDP. For modelling, we use 10 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_likelihood_10.pdf"}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_woa_10.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using C-BART with 10 trees.}
+	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_woa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for life expectancy of male and female population using C-BART with 10 trees.}
 	\label{fig:pseudo:LE:woa10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_wa_10.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for life expectancy of male and female population using A-C-BART with 10 trees.}
+	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_wa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for life expectancy of male and female population using A-C-BART with 10 trees.}
 	\label{fig:pseudo:LE:wa10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of log-likelihood obtained from our analyses with literacy of male and female population. The plots are obtained by running 4 parallel chains each one with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_likelihood_10.pdf"}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on scaled log-GDP. For modelling, we use 10 trees and run 4 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_taus_10.pdf"}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 10 trees and run 5 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT10}
 \end{figure}
 % 0.84
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_woa_10.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using C-BART with 5 trees.}
+	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_woa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for literacy of male and female population using C-BART with 10 trees.}
 	\label{fig:pseudo:LT:woa10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_wa_10.pdf"}
-	\caption{Scatter plots of pseudo observations and predicted copulas obtained for literacy of male and female population using A-C-BART with 5 trees.}
+	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_wa_10.pdf"}
+	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for literacy of male and female population using A-C-BART with 10 trees.}
 	\label{fig:pseudo:LT:wa10}
 \end{figure}
 
