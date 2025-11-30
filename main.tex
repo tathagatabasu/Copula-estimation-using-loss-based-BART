@@ -853,11 +853,11 @@ This way, we ensure that variance in each iterative steps does not change rapidl
 	
 	Since $q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})$ is a product of Gaussian probabilities with bounded variances and the adaption $\Gamma^{\eta+1}$ converges to $\Gamma^{\eta}$ by \cref{lemm:stable:var}, we can show that $\left\|q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Similarly, from \cref{lemm:bounded:ratio}, we know that the acceptance ratio is uniformly bounded and  $\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})$ is trivially dominated by 1. Hence exploiting pointwise convergence of $\Gamma^{\eta}$ and continuity of $\alpha_{\Gamma^{\eta+1}}(s;s^{\ast})$, we can show that $\left\|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-\alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Hence $\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{g}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{g}}(s;\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$.
 	
-	With a similar argument for the \textsc{change} move, we have $\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{c}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{c}}(s;\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$. For \textsc{change} and \textsc{swap} moves, no adaption takes place. Therefore, we can show that the diminishing adaption holds for our proposed adaptive RJ-MCMC algorithm.
+	With a similar argument for the \textsc{prune} move, we have $\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{p}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{p}}(s;\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$. For \textsc{change} and \textsc{swap} moves, no adaption takes place. Therefore, we can show that the diminishing adaption holds for our proposed adaptive RJ-MCMC algorithm.
 	
 	To show the containment condition, we follow a similar approach to that of \citet{andrieu_RJ_MCMC}. Recall the state space denoted by $\mathcal{S}\coloneqq\mathcal{T}\times\mathcal{M}$. Then we can express this space as finite union of subspaces such that $\mathcal{S} \coloneq \bigcup_{i=1}^n \mathcal{S}_i$, where $\mathcal{S}_i = \mathcal{T}_i \times \mathcal{M}_i$ is the space of all trees with $i$ terminal nodes and the corresponding vector of terminal nodes of length $i$ and $\mathcal{M}_i\subseteq\mathbb{R}^i$.
 	
-	Let $s^{(i)} \coloneqq\left(T^{(i)}, M^{(i)}\right)$ denote a pair of tree with $i$ terminal nodes and corresponding of terminal node values. Then for each $i=2,\cdots,n$, we have
+	Let $s^{(i)} \coloneqq\left(T^{(i)}, M^{(i)}\right)$ denote a pair of tree with $i$ terminal nodes and corresponding vector of terminal node values. Then for each $i=2,\cdots,n$, we have
 	\begin{align*}
 		\mathcal{K}_{\gamma}\left(s^{(i)};d\left(s^{(i-1)}\right)\right)
 		&\ge p_{\textsc{p}}\mathcal{K}_{\gamma,\textsc{prune}}\left(s^{(i)};d\left(s^{(i-1)}\right)\right)\\
@@ -878,7 +878,7 @@ This way, we ensure that variance in each iterative steps does not change rapidl
 	
 	Now, the target density is given by $\pi(\cdot\mid u_1,u_2)$. Then by construction of the RJ-MCMC algorithm, $\pi(\cdot\mid u_1,u_2)$ is an invariant distribution of $\mathcal{K}_{\gamma}(\cdot;\cdot)$. Therefore, $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is $\pi$-irreducible. 
 	
-	Aperiodicity of the $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is also achieved through the construction. For instance, we can propose $s^{(2)}$ for which $\alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) < 1$, independent of $\gamma$. Then the rejection probability $r_{\gamma;\textsc{grow}}\left(s^{(1)}\right)$ of \textsc{grow} is given by:
+	Aperiodicity of the $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is also achieved through construction. For instance, we can propose $s^{(2)}$ for which $\alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) < 1$, independent of $\gamma$. Then the rejection probability $r_{\gamma;\textsc{grow}}\left(s^{(1)}\right)$ is given by:
 	\begin{align*}
 		r_{\gamma;\textsc{grow}}\left(s^{(1)}\right)
 		&=1-\int \alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right)q_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) d\left(s^{(2)}\right)\\
