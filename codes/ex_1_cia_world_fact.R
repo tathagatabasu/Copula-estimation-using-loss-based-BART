@@ -62,15 +62,15 @@ GDP_LT <- as.data.frame((log10(cia_wf_data_LT$GDP_PC) - min(log10(cia_wf_data_LT
 GDP_LT <- as.matrix(GDP_LT)
 rownames(GDP_LT) <- 1:nrow(GDP_LT)
 
-n.chain_par <- 5
-n.iter_par <- 25000
+n.chain_par <- 4
+n.iter_par <- 50000
 n.born.out.par <- 500
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
 moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
-n.tree <- 5
+n.tree <- 10
 
 ################################################################################
 # source files
@@ -82,7 +82,7 @@ source('import_functions.R')
 lb.prior.def <- list(fun = joint.prior.new.tree, param = c(1.5618883, 0.6293944)) 
 ##########################################################
 
-if(T){
+if(F){
   gauss_GDP_LE_adapt <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP_LE,
@@ -174,7 +174,7 @@ if(T){
   gc()
 }
 
-if(T){
+if(F){
   gauss_GDP_LE <- multichain_MCMC_copula(n.iter = n.iter_par, n.burn = n.born.out.par,
                                          n.tree = n.tree, n.chain = n.chain_par, n.cores = 5,
                                          X = GDP_LE,

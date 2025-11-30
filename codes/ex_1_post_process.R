@@ -68,15 +68,15 @@ GDP_LT <- as.data.frame((log10(cia_wf_data_LT$GDP_PC) - min(log10(cia_wf_data_LT
 GDP_LT <- as.matrix(GDP_LT)
 rownames(GDP_LT) <- 1:nrow(GDP_LT)
 
-n.chain_par <- 5
-n.iter_par <- 25000
+n.chain_par <- 4
+n.iter_par <- 50000
 n.born.out.par <- 0
 n.thin <- 1
 incl.split_par <- TRUE
 cont.unif_par <- TRUE
 moves.prob_par <- c(0.1, 0.4, 0.25, 0.25)
 
-n.tree <- 10
+n.tree <- 5
 
 ################################################################################
 # source files
@@ -323,8 +323,8 @@ gc()
 if(F){
   
   if(n.tree == 5){
-    load("real_case_5_trees/dat_gauss_LE.Rdata")
-    load("real_case_5_trees/dat_t_LE.Rdata")
+    load("50k_real_case_5_trees/dat_gauss_LE.Rdata")
+    load("50k_real_case_5_trees/dat_t_LE.Rdata")
   }
   
   if(n.tree == 10){
@@ -342,8 +342,8 @@ if(F){
   pred_cond$true_obs = rep(log10(cia_wf_data_LE$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   if(n.tree == 5){
-    load("real_case_5_trees/dat_gauss_LE_adapt.Rdata")
-    load("real_case_5_trees/dat_t_LE_adapt.Rdata")
+    load("50k_real_case_5_trees/dat_gauss_LE_adapt.Rdata")
+    load("50k_real_case_5_trees/dat_t_LE_adapt.Rdata")
   }
   
   if(n.tree == 10){
@@ -549,9 +549,10 @@ if(F){
     ltheta = 120, ticktype = "simple",
     xlab = "F Life Exp", ylab = "M Life Exp", zlab = ""
   )
-    # helper for test statistics
+  
+  # helper for test statistics
     
-    library(cramer)
+  library(cramer)
     
     cram_gauss <- sapply(1:100, function(i){set.seed(i); cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP_LE)), family = 1, par = pred_cond_mod$gauss_theta_mean), replicates = 1000, sim = "permutation")$p.value})
     cram_t <- sapply(1:100, function(i){set.seed(i);cramer.test(cbind(U1_LE,U2_LE), BiCopSim(N = nrow(unique(GDP_LE)), family = 2, par = pred_cond_mod$t_theta_mean, par2 = 3), replicates = 1000)$p.value})
@@ -874,7 +875,7 @@ if(F){
   library(xtable)
   xtable(p_val_summ_adapt)
   
-  pl_tau_est + ylim(0.4,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.4,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+  pl_tau_est + ylim(0.3,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.3,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
   
   par(mar = c(5,5,2,1), mfrow = c(1,3))
   plot(log10(cia_wf_data_LT$GDP_PC), cia_wf_data_LT$Liter_M, xlab = "Log GDP", ylab = "M Literacy")
@@ -899,8 +900,8 @@ if(F){
   t_woa_5 <- get(load("real_case_5_trees/plot_t_LT.Rdata"))
   t_wa_5 <- get(load("real_case_5_trees/plot_t_LT_adapt.Rdata"))
   
-  (gauss_woa_10 + ylim(110,360) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(110,360) + labs(title="Gaussian (with adaption)")) / 
-    (t_woa_10 + ylim(100,370) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(100,370) + labs(title="Student-t (with adaption)"))
+  (gauss_woa_10 + ylim(200,300) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,300) + labs(title="Gaussian (with adaption)")) / 
+    (t_woa_10 + ylim(200,300) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,300) + labs(title="Student-t (with adaption)"))
   
   (gauss_woa_5 + ylim(200,300) + labs(title="Gaussian (without adaption)") + gauss_wa_5 + ylim(200,300) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_5 + ylim(200,300) + labs(title="Student-t (without adaption)") + t_wa_5 + ylim(200,300) + labs(title="Student-t (with adaption)")) #/

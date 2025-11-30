@@ -27,6 +27,7 @@
 \newtheorem{corollary}{Corollary}[section]
 \newtheorem{lemma}{Lemma}[section]
 \newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}{Assumption}[section]
 %
 
 \usepackage[authoryear, round]{natbib}
@@ -49,10 +50,11 @@
 
 \date{\today}
 
-	\begin{document}
+\begin{document}
 
 \begin{abstract}
-We present a novel semi-parametric Bayesian approach for modelling conditional copulas to understand the dependence structure between two random variables when it is influenced by an external factor. We use a Bayesian Additive Regression Trees (BART) model along with recently proposed loss-based priors, which recovers the true parsimonious tree structures and reduces overfitting — a common issue in classical BART models. We introduce a novel adaptive Reversible Jump Markov Chain Monte Carlo (RJ-MCMC) type algorithm that automatically tunes the proposal variance, giving us greater flexibility in analysing models with non-trivial or non-smooth likelihood function. We assess the efficiency of our approach using simulated datasets. We show that our method can efficiently recover the true tree structure and approximate a complex conditional copula parameter, and that our adaptive routine is efficient in exploring the true likelihood region under sub-optimal proposal variance. Lastly, we demonstrate the applicability of our method using a real data set involving the effect of gross domestic product on the dependence between the life expectancies and literacy rates of the male and female populations of different countries.
+The study of dependence between random variables under an external influence is a challenging problem in multivariate analysis. We seek to address this problem by proposing a novel semi-parametric approach for conditional copula models using Bayesian additive regression trees (BART). BART is becoming a popular in the statistical modelling community due to its simple ensemble type formulation complemented by its inherent ability to provide inferential insights. While BART allows us to model complex functional relationships, it tends to suffer from overfitting, reducing the desired flexibility. In this article, we exploit a loss-based prior for tree topology that is designed to reduce the tree complexity. In addition, we propose a novel adaptive Reversible Jump Markov Chain Monte Carlo (RJ-MCMC) algorithm that requires very little assumptions allowing us to model with complex and non-smooth likelihood functions with ease. We show that our proposed algorithm is ergodic in nature and validate it synthetic datasets. Moreover, we show that our method can efficiently recover the true tree structure and approximate a complex conditional copula parameter, and that our adaptive routine is efficient in exploring the true likelihood region under sub-optimal proposal variance. Lastly, we demonstrate the applicability of our method using a real data set involving the effect of gross domestic product on the dependence between the life expectancies and literacy rates of the male and female populations of different countries.
+
 \end{abstract}
 
 \keywords{Conditional Copula; BART; Objective Bayes; Semi-parametric estimation}
@@ -66,7 +68,7 @@ In many situations, the dependence between random variables can have an external
 
 The introduction of the CART algorithm for conditional copula estimation motivates us to explore the viability of employing Bayesian additive Regression Trees (BART), the Bayesian alternative to CART introduced by \citet{chipman2010BART}. BART provides a generalisation of earlier Bayesian CART models \citep{chipman98BCART,denison98BCART}, where a single regression tree was used. Due to the flexible nature of BART, it has been explored in different contexts such as Poisson regression \citep{Murray03042021}; survival analysis \citep{Sparapani_BART}; gamma regression \citep{Linero_BART_gamma} and generalised BART \citep{Linero02012025}. Although the original tree prior proposed by \citet{chipman98BCART} is most commonly used in the BART literature, it is not very straightforward to incorporate prior information on the number of terminal nodes into this prior and the prior proposed by \citet{denison98BCART} tends to produce skewed trees. Several alternatives have been proposed \citep{Wu_CART,rockova_BART,Linero_BART_VS} to tackle this issue, but the choice of hyperparameters remains subjective. In order to reduce this subjectivity, \citet{serafini2024lossbasedpriortreetopologies} proposed a novel prior for regression trees using a loss based approach developed by \citet{villa_loss-prior}. The prior is formulated based on minimising the loss incurred due to the misspecification of the tree, which considers both the loss in information and complexity of the tree, making it appealing for BART models.
 
-In this article, we exploit the loss-based BART prior developed by \citet{serafini2024lossbasedpriortreetopologies} to propose a novel approach for modelling conditional copulas. However, unlike previous applications of BART models, we do not have a straightforward likelihood function to choose a conjugate prior. Therefore, we opt for a trans-dimensional Markov chain Monte Carlo (MCMC) algorithm that can sample a new tree of a different dimension, as well as sample new terminal node values. A similar method, proposed by \citet{Linero02012025} uses a Laplace approximation based approach for sampling terminal node values. Unfortunately, Laplace approximation is not viable for conditional copula modelling as the first and second order derivatives of the likelihood may not be numerically stable near the boundaries. To overcome this issue, we propose an efficient reversible jump MCMC (RJ-MCMC) type algorithm \citep{green_RJMCMC} to sample from the posterior. However, we notice that choosing the parameters of the proposal distribution is a rather difficult task for the sum of trees models and mixing can be extremely slow in some cases. This motivates us to introduce an adaptive RJ-MCMC routine, where we update the variance of a Gaussian proposal using previously accumulated MCMC samples. We also prove that our adaptive RJ-MCMC routine is ergodic. Initial analyses show that our adaptive RJ-MCMC algorithm converges faster to a higher likelihood regions than the non-adaptive counterpart. We illustrate our method using different simulated conditional copulas to show the efficiency of our approach in identifying the true tree structure, as well as estimating the true conditional dependence. Furthermore, due to the simple and explicable implementation of our adaptive RJ-MCMC algorithm, it can easily be adapted for other modelling problems using BART. 
+In this article, we exploit the loss-based BART prior developed by \citet{serafini2024lossbasedpriortreetopologies} to introduce a new framework for modelling conditional copulas. However, unlike existing applications of BART models, we do not have a straightforward likelihood function to choose a conjugate prior. Consequently, we adopt a trans-dimensional Markov chain Monte Carlo (MCMC) algorithm that propose trees of varying dimensions, coupled with new terminal node values. Although a related method was recently proposed by \citet{Linero02012025}, their method relies on Laplace approximation to sample terminal node values. Unfortunately, such approximations are not viable for conditional copula modelling as the first and second order derivatives of the likelihood may not be numerically stable. To overcome this issue, we develop an efficient reversible jump MCMC (RJ-MCMC) type algorithm \citep{green_RJMCMC} tailored to the BART models. During the implementation, we notice that choosing the parameters of the proposal distribution is a rather difficult task for the sum of trees models and mixing can be extremely slow in some cases. So, we introduce an adaptive RJ-MCMC routine, that updates the variance of a Gaussian proposal by learning from previously sampled states. We further prove the ergodicity of this adaptive scheme, providing theoretical support for its applicability. Our initial analyses show that our both versions of our proposed RJ-MCMC algorithm perform well and are able to converge to the true likelihood region. Moreover, we notice that even for a subpar choice of an initial proposal variance, our adaptive RJ-MCMC routine can converge quickly to the high posterior region. Through a comprehensive simulation study with simulated conditional copulas, we illustrate our method's efficiency in identifying the true tree structure, as well as in estimating the true conditional dependence. Furthermore, due to the simple and explicable implementation of our adaptive RJ-MCMC algorithm, it can be employed to a wide range of other modelling problems showing its potential as a computation tool for BART models. 
 
 The rest of the paper is organised as follows: in \cref{sec:prelim} we introduce preliminary concepts of conditional copulas and Bayesian additive regression trees, followed by our semi-parametric estimation approach for conditional copulas in \cref{sec:cond:cop}. In \cref{sec:rjmcmc}, we discuss our proposed reversible jump MCMC routine for sampling from the posterior, along with its adaptive variant. After that, we illustrate our method using two synthetic datasets in \cref{sec:sim} to show its efficiency and accuracy; followed by case studies using the CIA world fact dataset in \cref{sec:cia}. Finally, we discuss the results shown in the paper and give conclusions in \cref{sec:conc}.
 
@@ -195,11 +197,11 @@ Unfortunately, we do not have the conjugacy property in our case, and we use a r
 
 \subsection{Proposal for RJ-MCMC}
 
-Reversible jump MCMC is a common strategy for trans-dimensional cases where we need to grow or reduce the dimension of our model. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. We consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at the $(\eta+1)$-th iteration given by:
+Reversible jump MCMC is a common strategy for trans-dimensional cases where we need to grow or reduce the dimension of our model. This allows us to work around the issue of not having a conjugate prior for the terminal node values and we can sample $(T_k,M_k)$ efficiently in each iteration. We consider a proposal function to generate a new pair $\left(T_k^{\ast}, M_k^{\ast}\right)$ at the $(\eta+1)$-th iteration given by:
 \begin{align}\label{eq:prop}
-	q\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right) = q\left(T_k^{\eta};T_k^\ast\right) q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right).
+	q\left(T_k^{\eta},M_k^{\eta};T_k^{\ast}, M_k^{\ast}\right) = q\left(T_k^{\eta};T_k^{\ast}\right) q_{\left(T_k^{\eta};T_k^{\ast}\right)}\left(M_k^{\eta};M_k^{\ast}\right).
 \end{align}
-Here, $q\left(T_k^{\eta};T_k^\ast\right)$ denotes the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps given by:
+Here, $q\left(T_k^{\eta};T_k^{\ast}\right)$ denotes the tree proposal as described by \citet{chipman98BCART}. They suggested four different tree steps given by:
 \begin{itemize}
 	\item \textsc{grow}: Randomly choose a terminal node and split it into two terminal nodes
 	\item \textsc{prune}: Randomly choose a parent of terminal nodes and turn it into a terminal node
@@ -208,16 +210,16 @@ Here, $q\left(T_k^{\eta};T_k^\ast\right)$ denotes the tree proposal as described
 \end{itemize}
 For a detailed discussion on the splitting rule, we suggest  \citet{chipman98BCART,serafini2024lossbasedpriortreetopologies}. 
 
-The generation of new terminal node values relies on the proposed tree structure that we represent with $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$. Clearly, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
+The generation of new terminal node values relies on the proposed tree structure that we represent with $q_{\left(T_k^{\eta};T_k^{\ast}\right)}\left(M_k^{\eta};M_k^{\ast}\right)$. Clearly, we only need a proposal for \textsc{grow} and \textsc{prune} steps to get new candidates, as the dimension does not change for the other two tree steps. Therefore, the proposal for terminal node values is given by:
 \begin{itemize}
 	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_l$ and $j_r$ so,
-	$q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$ = $\pi_{prop}(\mu_{j_l})\times\pi_{prop}(\mu_{j_r})$
-	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned, then $q_{\left(T_k^{\eta};T_k^\ast\right)}\left(M_k^{\eta};M_k^\ast\right)$ = $\pi_{prop}(\mu_j)$
+	$q_{\left(T_k^{\eta};T_k^{\ast}\right)}\left(M_k^{\eta};M_k^{\ast}\right)$ = $\pi_{prop}(\mu_{j_l})\times\pi_{prop}(\mu_{j_r})$
+	\item For \textsc{prune} we consider the $j_l$th and $j_r$th leaves to be pruned, then $q_{\left(T_k^{\eta};T_k^{\ast}\right)}\left(M_k^{\eta};M_k^{\ast}\right)$ = $\pi_{prop}(\mu_j)$
 \end{itemize}
 where $\pi_{prop}$ denotes the proposal density function.
 
 For the choice of proposal we consider a normal distribution with mean being the terminal node values at the $\eta$-th iteration and variance $\sigma^2_{\text{prop}}$. We notice that choosing $\sigma^2_{\text{prop}}$ is rather difficult. Monitoring the likelihood gives us some idea but, due to slow mixing nature of RJ-MCMC, convergence may take a large number of iterations. So, we suggest an adaptive variance for the proposal. Our approach is motivated by the seminal work of \citet{haario_AMH} where they suggest the use of MCMC samples to update the covariance. They also provided a simple updating formula that reduced the computation cost of the covariance matrix. However, in our case, we need to adapt the method to facilitate the \textsc{grow} and \textsc{prune} moves. So we propose an adaptive covariance based on a partition of the predictor space. First, we define the following:
-\begin{definition}[Value at observation]
+\begin{definition}[Value at observation]\label{def:val:at:obs}
     Let $(T,M)$ be the regression tree along with the vector of terminal node values. Then the value at observation, $V_i$ is the terminal node value assigned to $x_i$. That is,
     \begin{equation*}
         V_i = g(x_i, T,M).
@@ -283,30 +285,30 @@ The formulation in \cref{eq:var:adapt} ensures that the proposal variance repres
 
 Once we have the proposals for both trees and the terminal node values, we define the acceptance probability:
 \begin{equation}\label{eq:acc:prob}
-	\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)
-	= \min\left\{1,\frac{\mathcal{L}(U_1,U_2\mid T_k^\ast,M_k^\ast)\pi(T_k^\ast,M_k^\ast)q\left(T_k^\ast, M_k^\ast;T_k^{\eta},M_k^{\eta}\right)}
-	{\mathcal{L}(U_1,U_2\mid T_k^{\eta},M_k^{\eta})\pi(T_k^{\eta},M_k^{\eta}) q\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)}\right\},
+	\alpha\left(T_k^{\eta},M_k^{\eta};T_k^{\ast}, M_k^{\ast}\right)
+	= \min\left\{1,\frac{\mathcal{L}(U_1,U_2\mid T_k^{\ast},M_k^{\ast})\pi(T_k^{\ast},M_k^{\ast})q\left(T_k^{\ast}, M_k^{\ast};T_k^{\eta},M_k^{\eta}\right)}
+	{\mathcal{L}(U_1,U_2\mid T_k^{\eta},M_k^{\eta})\pi(T_k^{\eta},M_k^{\eta}) q\left(T_k^{\eta},M_k^{\eta};T_k^{\ast}, M_k^{\ast}\right)}\right\},
 \end{equation}
 where 
 \begin{equation*}
 	\mathcal{L}(U_1,U_2\mid T_k, M_{k})\coloneqq \prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right).
 \end{equation*}
 
-Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values of $M_k^{\eta+1}$ using an MH step followed by a Metropolis within Gibbs step to update $\sigma_{k}^{2;(\eta+1)}$ conditional on $(T_k^{\eta+1},M_k^{\eta+1})$. We summarise one iteration of the RJ-MCMC algorithm in \cref{alg:MCMC}.
+Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values of $M_k^{\eta+1}$ using an MH step followed by a Metropolis within Gibbs step to update $\sigma_{k}^{2;(\eta+1)}$ conditional on $(T_k^{\eta+1},M_k^{\eta+1})$. We summarise one iteration of the sampling algorithm in \cref{alg:MCMC}.
 
 \begin{algorithm}[h]
-	\caption{One iteration of RJ-MCMC for copula BART}\label{alg:MCMC}
+	\caption{$\eta$-th iteration MCMC sampling}\label{alg:MCMC}
 	\begin{algorithmic}[1]
 		\State The $\eta$-th iteration gives us $(T_k^{\eta},M_k^{\eta})$.
 		\State Set $\theta(x_i) \leftarrow h\left(\sum_{t=1}^{m} g(x_i, T_t^{\eta},M_t^{\eta})\right)$ for $i = 1, \ldots, n$.
 		\For{$k = 1, \ldots, m$}
 		\State Set $R_{ik} \leftarrow \sum_{t\not=k}g(x_i, T_t^{\eta},M_t^{\eta})$ for $i = 1, \ldots, n$.
 		
-		\State Sample $(T_k^\ast, M_k^\ast)$ using $q\left(T_k^\ast, M_k^\ast \mid T_k^{\eta},M_k^{\eta}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap}.
+		\State Sample $(T_k^{\ast}, M_k^{\ast})$ using $q\left(T_k^{\ast}, M_k^{\ast} \mid T_k^{\eta},M_k^{\eta}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap}.
 		
-		\State Compute the acceptance probability using $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ in \cref{eq:acc:prob}.
+		\State Compute the acceptance probability using $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^{\ast}, M_k^{\ast}\right)$ in \cref{eq:acc:prob}.
 		
-		\State Set $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^\ast, M_k^\ast\right)$ with probability $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ or $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^{\eta},M_k^{\eta}\right)$.
+		\State Set $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^{\ast}, M_k^{\ast}\right)$ with probability $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^{\ast}, M_k^{\ast}\right)$ or $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^{\eta},M_k^{\eta}\right)$.
 		
 		\State Set $\theta(x_i) \leftarrow h\left(R_{ik} + g\left(x_i, T_k^{\eta+1}, M_k^{\eta+1}\right)\right)$ for $i = 1, \ldots, n$
 		
@@ -321,6 +323,59 @@ Lastly, after sampling a new $(T_k^{\eta+1},M_k^{\eta+1})$, we update the values
 \end{algorithm}
 
 \subsection{Convergence of the adaptive RJ-MCMC algorithm}
+
+In this section, we provide the theoretical justification of our proposed algorithm. That is, we show that our adaptive RJ-MCMC algorithm converges. That is the Markov chain corresponding to the $k$-th tree, $\left\{\left(T_k^{\eta},M_k^{\eta}\right):\eta\in \mathbb{N}\right\}$ is ergodic. 
+
+For the sake of notational convenience, let $\mathcal{S}\coloneqq\mathcal{T}\times \mathcal{M}$ be the state space for tree exploration equipped with a $\sigma$-algebra $\mathcal{F}$. Let,  $S^{\eta}_k\coloneqq\left(T_k^{\eta},M_k^{\eta}\right) \in \mathcal{S}$ be the $\eta$-th state of the $k$-th tree and let $\Gamma_k^{\eta}\in \mathcal{Y}$ denote the random variable associated with the choice of kernel for updating from state $\eta$ to state $\eta+1$. Then we can define the family of kernel $\left\{\mathcal{K}_{k;\gamma}:\gamma\in\mathcal{Y}\right\}$ in the following way:
+
+\begin{equation*}
+	P\left(S^{\eta+1}_k \in A\mid S^{\eta}_k = s, \Gamma_k^{\eta} = \gamma, \mathcal{G}^{\eta}_k\right) 
+	= \mathcal{K}_{k;\gamma}(s;A)
+	= \int_{A}\mathcal{K}_{k;\gamma}(s;ds^{\ast})
+\end{equation*}
+where $\mathcal{G}^{\eta}_k$ is a filtration generated by $\left\{(S_k^{\eta}, \Gamma_k^{\eta})\right\}$. That is, $\mathcal{G}_k^{\eta}$ an increasing sequence of $\sigma$-algebra such that
+\begin{equation*}
+	\mathcal{G}_k^{\eta} \coloneqq \sigma\left(S_k^1,\cdots,S_k^{\eta},\Gamma_k^1,\cdots,\Gamma_k^{\eta}\right).
+\end{equation*}
+
+Before stating the ergodicity of our RJ-MCMC algorithm, we state the following assumptions that are essential for the convergence.
+
+\begin{assumption}\label{ass:bounded:cop}
+	$\exists$ \(\delta>0\) such that the copula density satisfies
+	\begin{equation*}
+		0 < c(u_1,u_2\mid\theta(h(g(x,T,M)))) < \infty\qquad\forall(u_1,u_2)\in[\delta,1-\delta]^2;\forall M \in \mathcal{M}
+	\end{equation*}
+\end{assumption}
+
+\begin{assumption}\label{ass:bounded:prior}
+	All prior densities for the terminal node values are bounded above.
+\end{assumption}
+
+\begin{assumption}\label{ass:bounded:prop}
+	All proposal densities of the terminal node values are uniformly bounded.
+\end{assumption}
+
+\cref{ass:bounded:cop} is not very restrictive as in practice, we often use rank based pseudo observations for modelling copulas. \cref{ass:bounded:prior} is a direct consequence of choosing a prior density with finite variance and lastly \cref{ass:bounded:prop} can be justified by the construction of the covariance matrix $C^{\eta}_k$. Since $C^{\eta}_k$ is uniformly bounded by construction \citep{haario_AMH}, hence the proposal variance obtained from $C^{\eta}_k$ are also uniformly bounded leading to a bounded proposal density.
+
+
+\begin{theorem}
+	If \cref{ass:bounded:cop}-\cref{ass:bounded:prop} are satisfied and $\gamma$ adaption strategy is defined by \cref{alg:ada:prop}. Then the following two conditions hold:
+	\begin{enumerate}
+		\item Diminishing adaptation $\rightarrow$ $\left\|\mathcal{K}_{\Gamma_k^{\eta+1}}(s;\cdot)-\mathcal{K}_{\Gamma_k^{\eta}}(s;\cdot)\right\|_{TV}\to 0$ in probability as $\eta\to \infty$.
+		\item Containment $\rightarrow$ $\forall\iota>0$, $\exists N = N(\iota)\in \mathbb{N}$ such that 
+		\begin{equation*}
+			\left\|\mathcal{K}^N_{k;\gamma}(s;\cdot) - \pi(\cdot\mid u_1,u_2)\right\|_{TV} \le \iota
+		\end{equation*}
+	\end{enumerate}
+	where $\pi(\cdot\mid u_1, u_2)$ denote the target distribution (posterior conditional on $R_{\cdot k}$ and $\sigma^2_k$) defined on $\mathcal{S}$.
+\end{theorem}
+
+\begin{proof}
+	See \cref{app:rj-mcmc}.
+\end{proof}
+
+The above two conditions ensure that an adaptive MCMC algorithm is ergodic as shown by \citet{roberts-rosenthal-ada_MCMC2007} and hence our proposed adaptive RJ-MCMC algorithm is ergodic. Moreover, updating the terminal node values from full conditional satisfies the diminishing adaptation and is performed by a simple Metropolis Hastings step with Gaussian proposal. Therefore, it is equivalent to adaptive Metropolis algorithm proposed by \citet{haario_AMH}, which is proven to be ergodic. Lastly, updating the variance term $\sigma^2_k$ is ergodic due to properties of Metropolis within Gibbs sampling. Since all the composition of the backfitting algorithm is ergodic therefore our proposed sampling strategy for BART models is ergodic.
+
 
 \section{Simulation Studies}\label{sec:sim}
 
@@ -481,7 +536,7 @@ We analyse the dependence between the female life expectancy and male life expec
 	\label{fig:data:dist:LE}
 \end{figure}
 
-We notice that the pseudo observations have an elliptical shape. Therefore, to model the dependence structure we consider Gaussian and Student-t copula families. We present the conditional taus in \cref{fig:taus:LE}, where the red (blue) solid line shows expected conditional taus for the Gaussian (Student-t) copula and the dashed lines show the credible interval. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for both families of copula except for one specific point, where the conditional Kendall's tau for Gaussian copula family gives us a very low value. We notice that countries with lower per capita GDP shows a very strong dependence between male and female life expectancies with the value being close to 0.9. As the per capita GDP increases, we notice that the dependence starts decreasing. For countries with extremely high per capita GDP, the dependence between male and female life expectancy stabilises near 0.8. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}, where the shape of the empirical distributions of male and female life expectancies show strong resemblance for lower values of per capita GDP.
+We notice that the pseudo observations have an elliptical shape. Therefore, to model the dependence structure we consider Gaussian and Student-t copula families. We present the conditional taus in \cref{fig:taus:LE}, where the red (blue) solid line shows expected conditional taus for the Gaussian (Student-t) copula and the dashed lines show the credible interval. We notice that for both C-BART and A-C-BART the estimated conditional Kendall's taus are in good agreement for both families of copula except for one specific point, where the conditional Kendall's tau for Gaussian copula family gives us a very low value. This can be explained from \cref{fig:data:dist:LE} as well. We can see that for the same value of log-GDP there are outliers present in the scatterplots. We notice that countries with lower per capita GDP shows a very strong dependence between male and female life expectancies with the value being close to 0.9. As the per capita GDP increases, we notice that the dependence starts decreasing. For countries with extremely high per capita GDP, the dependence between male and female life expectancy stabilises near 0.8. This can also be verified from the scatterplots in \cref{fig:data:dist:LE}, where the shape of the empirical distributions of male and female life expectancies show strong resemblance for lower values of per capita GDP.
  
 \begin{figure}
 	\centering
@@ -629,39 +684,35 @@ While we get promising results with our method across simulation and real case s
 
 \appendix
 
-\section{Description of RJ-MCMC}
+\section{Description of RJ-MCMC}\label{app:rj-mcmc}
 
 \subsection{Markov transition kernel of the RJ-MCMC step}
 
-Let $\mathcal{T}\times \mathcal{M}$ a the state space and $T_k,M_k \in \mathcal{T}\times \mathcal{M}$ be the current state of the $k$-th tree. Let $\mathcal{K}_{\gamma}$ denote the transition kernel of the RJ-MCMC algorithm with $\gamma$ adaption and $p_{\textsc{g}}$, $p_{\textsc{p}}$, $p_{\textsc{c}}$ and $p_{\textsc{s}}$ be the probabilities of selecting \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap} move respectively. Then we can decompose the kernel in the following way:
+Let $\mathcal{T}\times \mathcal{M}$ a the state space and $T_k,M_k \in \mathcal{T}\times \mathcal{M}$ be the current state of the $k$-th tree. Let $\mathcal{K}_{k;\gamma}$ denote the transition kernel of the RJ-MCMC algorithm with $\gamma$ adaption and $p_{\textsc{g}}$, $p_{\textsc{p}}$, $p_{\textsc{c}}$ and $p_{\textsc{s}}$ be the probabilities of selecting \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap} move respectively. Then we can decompose the kernel in the following way:
 \begin{align*}
-	\mathcal{K}_{\gamma}\left(T_k,M_k, \cdot\right) 
-	& = p_{\textsc{g}}\mathcal{K}_{\gamma;\textsc{grow}}\left(T_k,M_k, \cdot\right) + 
-	p_{\textsc{p}}\mathcal{K}_{\gamma;\textsc{prune}}\left(T_k,M_k, \cdot\right)\\
+	\mathcal{K}_{k;\gamma}\left(T_k,M_k; \cdot\right) 
+	& = p_{\textsc{g}}\mathcal{K}_{k;\gamma;\textsc{grow}}\left(T_k,M_k; \cdot\right) + 
+	p_{\textsc{p}}\mathcal{K}_{k;\gamma;\textsc{prune}}\left(T_k,M_k; \cdot\right)\\
 	&\qquad + 
-	p_{\textsc{c}}\mathcal{K}_{\gamma;\textsc{change}}\left(T_k,M_k, \cdot\right)+ 
-	p_{\textsc{s}}\mathcal{K}_{\gamma;\textsc{swap}}\left(T_k,M_k, \cdot\right).
+	p_{\textsc{c}}\mathcal{K}_{k;\gamma;\textsc{change}}\left(T_k,M_k; \cdot\right)+ 
+	p_{\textsc{s}}\mathcal{K}_{k;\gamma;\textsc{swap}}\left(T_k,M_k; \cdot\right).
 \end{align*}
 Here, for the \textsc{change} and \textsc{swap} moves, we do not need to propose any new terminal node values hence $\gamma$ adaption is not utilised and the notation is used for the sake of consistency. Each of this kernel is given by:
 \begin{align*}
-	&\mathcal{K}_{\gamma;\textsc{move}}\left(T_k,M_k, \cdot\right) = \alpha_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) q_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)d(T_k^\ast, M_k^\ast) \\
-	&+ \left(1 - \int_{\mathcal{T}\times\mathcal{M}} \alpha_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) q_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)d(T_k^\ast, M_k^\ast)\right) \delta_{(T_k,M_k)}(d(T_k^\ast, M_k^\ast))
+	&\mathcal{K}_{k;\gamma;\textsc{move}}\left(T_k,M_k, \cdot\right) = \alpha_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right) 
+	q_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)d(T_k^{\ast}, M_k^{\ast}) \\
+	&+ \left(1 - \int_{\mathcal{T}\times\mathcal{M}} \alpha_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right) 
+	q_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)d(T_k^{\ast}, M_k^{\ast})\right) \delta_{(T_k,M_k)}(d(T_k^{\ast}, M_k^{\ast}))
 \end{align*}
 for $\textsc{move}\in \left\{\textsc{grow}, \textsc{prune}, \textsc{change}, \textsc{swap}\right\}$ with $\gamma$ adaption and $\delta_x(dy)$ as the Dirac measure at $x$.
 
 \subsubsection{Proposal for each moves}
 
-Before describing the detailed proposal for each moves corresponding to the pair $(T_k,M_k)$, we first define the following:
-\begin{itemize}
-	\item $\mathcal{TN}(T_k)=$ set of terminal nodes
-	\item $\mathcal{PN}(T_k)=$ set of prunable nodes
-	\item $\mathcal{IN}(T_k)=$ set of internal nodes
-	\item $\mathcal{PCN}(T_k)=$ set of internal parent-child pairs
-	\item $\pi_{\textsc{rule}}(l\mid c)=$ probability of splitting $l$-th terminal node at cutpoint $c$
-\end{itemize}
-Lastly, let $AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)$ denote the acceptance ratio of moving from $(T_k,M_k)$ to $(T_k^\ast,M_k^\ast)$, such that
+Before describing the detailed proposal for each moves corresponding to the pair $(T_k,M_k)$, we first define the following. $\mathcal{TN}(T_k)$ denotes the set of terminal nodes; $\mathcal{PN}(T_k)$ denotes the set of prunable nodes; $\mathcal{IN}(T_k)$ denotes the set of internal nodes; $\mathcal{PCN}(T_k)$ denotes the set of internal parent-child pairs and $\pi_{\textsc{rule}}(l\mid c)$ denotes the probability of splitting $l$-th terminal node at cutpoint $c$
+
+Lastly, let $AR_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)$ denote the acceptance ratio of moving from $(T_k,M_k)$ to $(T_k^{\ast},M_k^{\ast})$, such that
 \begin{equation*}
-	\alpha_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) = \min\left\{1,AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\right\},
+	\alpha_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right) = \min\left\{1,AR_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)\right\},
 \end{equation*}
 where $\textsc{move}\in \left\{\textsc{grow}, \textsc{prune}, \textsc{change}, \textsc{swap}\right\}$. Then the proposals and acceptance ratios are given in the following manners.
 
@@ -669,17 +720,19 @@ where $\textsc{move}\in \left\{\textsc{grow}, \textsc{prune}, \textsc{change}, \
 For growing a tree $T^{\ast}_k$ from $T_k$, we first randomly sample a terminal node $j$ from the set of all terminal nodes. Followed by a cut point for the splitting rule of the terminal node. Lastly, we sample terminal node values for the new left and right terminal nodes. Then we have the following:
 \begin{equation*}
 	q\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right) 
-	= \frac{1}{\#\{\mathcal{TN}(T_k)\}} \pi_{\textsc{rule}}(c\mid j)\mathcal{N}\left(\mu_{jr}^{*};\mu_{jr},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{*};\mu_{jl},\gamma_{jl}\right),
+	= \frac{1}{\#\{\mathcal{TN}(T_k)\}} \pi_{\textsc{rule}}(c\mid j)\mathcal{N}\left(\mu_{jr}^{\ast};\mu_{j},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{\ast};\mu_{j},\gamma_{jl}\right),
 \end{equation*} 
-where $\mathcal{N}(\mu^{\ast};\mu,\gamma)$ is the probability of getting $\mu^{\ast}$ from a normal distribution with mean $\mu$ and variance $\gamma$. To go back from $T^{\ast}_k$ to $T_k$, we prune the $jl$-th terminal node and $jr$-th terminal node. For that, we calculate the probability of choosing the $j$-th node that becomes an internal node now. Followed by the proposal for terminal node value. Then,
+where $\mathcal{N}(a;b,c^2)$ is the probability of getting $a$ from a normal distribution with mean $b$ and variance $c^2$. Here $\mu_j$ is same for both the proposals as the value at observations (\cref{def:val:at:obs}) remain same after growing. However, the variance contribution changes.
+
+To go back from $T^{\ast}_k$ to $T_k$, we prune the $jl$-th terminal node and $jr$-th terminal node. For that, we calculate the probability of choosing the $j$-th node that becomes an internal node now. Followed by the proposal for terminal node value. Then,
 \begin{equation*}
 	q\left(T_k^{\ast}, M_k^{\ast};T_k,M_k\right) 
-	= \frac{1}{\#\{\mathcal{PN}(T_k^{\ast})\}} \mathcal{N}\left(\mu_j;\mu_{j}^{*},\gamma_j^{*}\right).
+	= \frac{1}{\#\{\mathcal{PN}(T_k^{\ast})\}} \mathcal{N}\left(\mu_j;\mu^{\ast}_j,\gamma_j\right)
 \end{equation*} 
-Therefore, the proposal ratio of the \textsc{growth} move is given by:
+where $\mu^{\ast}_j = \frac{ \#\{\mathcal{I}^k_{jr}\}\mu_{jr}^{\ast} +  \#\{\mathcal{I}^k_{jl}\}\mu_{jl}^{\ast}}{ \#\{\mathcal{I}^k_{jr}\}+ \#\{\mathcal{I}^k_{jl}\}}$. Therefore, the proposal ratio of the \textsc{growth} move is given by:
 \begin{equation*}
 	\frac{q\left(T_k^{\ast}, M_k^{\ast};T_k,M_k\right)}{q\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right) } 
-	= \frac{\frac{1}{\#\{\mathcal{PN}(T_k^{\ast})\}} \mathcal{N}\left(\mu_j;\mu_{j}^{*},\gamma_j^{*}\right)}{\frac{1}{\#\{\mathcal{TN}(T_k)\}} \pi_{\textsc{rule}}(c\mid j)\mathcal{N}\left(\mu_{jr}^{*};\mu_{jr},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{*};\mu_{jl},\gamma_{jl}\right)}.
+	= \frac{\frac{1}{\#\{\mathcal{PN}(T_k^{\ast})\}} \mathcal{N}\left(\mu_j;\mu_{j}^{\ast},\gamma_j\right)}{\frac{1}{\#\{\mathcal{TN}(T_k)\}} \pi_{\textsc{rule}}(c\mid j)\mathcal{N}\left(\mu_{jr}^{\ast};\mu_{j},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{\ast};\mu_{j},\gamma_{jl}\right)}.
 \end{equation*}
 Similarly, we get the prior ratio for a \textsc{growth} move. Note that when a tree is grown at the $j$-th terminal node, we need additional splitting rule at that node. Therefore the ratio is given by:
 \begin{equation*}
@@ -687,66 +740,74 @@ Similarly, we get the prior ratio for a \textsc{growth} move. Note that when a t
 \end{equation*}
 Finally, combining with the likelihood we get
 \begin{align*}
-	&AR_{\gamma;\textsc{grow}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
+	&AR_{k;\gamma;\textsc{grow}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)\\
 	&= \frac{
-		\frac{\pi(T_k^\ast,M_k^\ast)}{\#\{\mathcal{PN}(T_k^{\ast})\}} 
-		\prod_{i\in \mathcal{I}_{jr}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^\ast_{jr}\right)\right)
-		\prod_{i\in \mathcal{I}_{jl}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^\ast_{jl}\right)\right)
-		\mathcal{N}\left(\mu_j;\mu_{j}^{\ast},\gamma_j^{\ast}\right)}
+		\frac{\pi(T_k^{\ast},M_k^{\ast})}{\#\{\mathcal{PN}(T_k^{\ast})\}} 
+		\prod_{i\in \mathcal{I}_{jr}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^{\ast}_{jr}\right)\right)
+		\prod_{i\in \mathcal{I}_{jl}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^{\ast}_{jl}\right)\right)
+		\mathcal{N}\left(\mu_j;\mu_{j}^{\ast},\gamma_j\right)}
 	{\frac{\pi(T_k,M_k)}{\#\{\mathcal{TN}(T_k)\}} 
 		\prod_{i\in \mathcal{I}_{j}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu_j\right)\right) 
-		\mathcal{N}\left(\mu_{jr}^{\ast};\mu_{jr},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{\ast};\mu_{jl},\gamma_{jl}\right)}.
+		\mathcal{N}\left(\mu_{jr}^{\ast};\mu_{j},\gamma_{jr}\right)\mathcal{N}\left(\mu_{jl}^{\ast};\mu_{j},\gamma_{jl}\right)}.
 \end{align*}
 Since \textsc{prune} is the reverse process of the \textsc{grow} move, we have
 \begin{align*}
-	&AR_{\gamma;\textsc{prune}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)\\
+	&AR_{k;\gamma;\textsc{prune}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)\\
 	&= \frac{
 		\frac{\pi(T^{\ast}_k,M^{\ast}_k)}{\#\{\mathcal{TN}(T^{\ast}_k)\}} 
 		\prod_{i\in \mathcal{I}_{j}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu^{\ast}_j\right)\right) 
-		\mathcal{N}\left(\mu_{jr};\mu^{\ast}_{jr},\gamma^{\ast}_{jr}\right)
-		\mathcal{N}\left(\mu_{jl};\mu^{\ast}_{jl},\gamma^{\ast}_{jl}\right)}
+		\mathcal{N}\left(\mu_{jr};\mu^{\ast}_{j},\gamma_{jr}\right)
+		\mathcal{N}\left(\mu_{jl};\mu^{\ast}_{j},\gamma_{jl}\right)}
 	{\frac{\pi(T_k,M_k)}{\#\{\mathcal{PN}(T_k)\}} 
 		\prod_{i\in \mathcal{I}_{jr}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu_{jr}\right)\right)
 		\prod_{i\in \mathcal{I}_{jl}^k}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+\mu_{jl}\right)\right)
-		\mathcal{N}\left(\mu^{\ast}_j;\mu_{j},\gamma_j\right)}.
+		\mathcal{N}\left(\mu^{\ast}_j;\mu_{j},\gamma_j\right)}
 \end{align*}
+where $\mu_j = \frac{\#\{\mathcal{I}^k_{jr}\}\mu_{jr} + \#\{\mathcal{I}^k_{jl}\}\mu_{jl}}{\#\{\mathcal{I}^k_{jr}\} + \#\{\mathcal{I}^k_{jl}\}}$.
 
 \paragraph{\textsc{change}/\textsc{swap} move:}
 For the \textsc{change} or the \text{swap} move. The proposals only rely on the internal nodes and the terminal nodes and values remain unchanged. Moreover, for each of these moves $\mathcal{IN}(T_k)$ and $\mathcal{PCN}(T_k)$ remain invariant in nature. That is for a proposed tree $T_k^{\ast}$, $\mathcal{IN}(T_k)=\mathcal{IN}(T_k^{\ast})$ and $\mathcal{PCN}(T_k)=\mathcal{PCN}(T_k^{\ast})$. Therefore, the proposal ratios of these two moves are equal to 1. This gives the following:
 
 \begin{align*}
-	AR_{\gamma;\textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right)= \frac{
+	AR_{k;\gamma;\textsc{move}}\left(T_k,M_k;T_k^{\ast}, M_k^{\ast}\right)= \frac{
 		\pi(T^{\ast}_k,M^{\ast}_k) 
-		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k^\ast, M_k^\ast)\right)\right)}
+		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k^{\ast}, M_k^{\ast})\right)\right)}
 	{\pi(T_k,M_k) 
-		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)}.
+		\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)}
 \end{align*}
+for $\textsc{move}\in\{\textsc{change},\textsc{swap}\}$.
 
-Now, we show that our adaptive RJ-MCMC routine is ergodic. For that we first show that diminishing adaptation holds for our RJ-MCMC routine. For the proof of ergodicity the tree index $k$ plays no role so we drop it for notational convenience.
+\subsection{Proof of Ergodicity}
 
-\subsection{Diminishing Adaptation}
+Here we show that the proposed RJ-MCMC algorithm is ergodic. For convenience, we will drop the tree index denoted by $k$ as it has no implications in our proof. Before providing the proof of ergodicity. We prove two lemmas that are necessary for showing ergodicity.
 
-Let $\left(T,M\right)$ be a state in the state space $\mathcal{T}\times \mathcal{M}$. Let $\Gamma^{\eta} \coloneqq \left(\Gamma_{1}^{\eta}, \cdots\Gamma^{\eta}_{n_L(T)}\right)$ be the adaption at the $\eta$-th iteration. Such that
+Let $S\coloneqq \left(T,M\right)$ be a state in the state space $\mathcal{S}\coloneqq\mathcal{T}\times \mathcal{M}$. Let $\Gamma^{\eta} \coloneqq \left(\Gamma_{1}^{\eta}, \cdots\Gamma^{\eta}_{n_L(T)}\right)\in\mathcal{Y}$ be the adaption at the $\eta$-th iteration such that for $j \in \{1,2,\cdots, n_L(T)\}$
 \begin{equation*}
 	\Gamma^{\eta}_{j} \coloneqq \frac{2.4^2}{\left(\#\left\{\mathcal{I}_{j}\right\}\right)^3}
 	\sum_{c\in\mathcal{I}_{j}}\sum_{d\in\mathcal{I}_{j}}\left[C^{\eta}\right]_{cd}.
 \end{equation*}
-Then the following lemma holds
+Then the following two lemmas are true.
 
 \begin{lemma}\label{lemm:bounded:ratio}
-	Let $\delta>0$, then $\forall$ $(u_{1i},u_{2i})\in [\delta, 1-\delta]^2$,  the acceptance ratios are bounded. That is, there exist values $0\le b_{\gamma, \textsc{move}} <  B_{\gamma, \textsc{move}} \le \infty$ such that
+	If \cref{ass:bounded:cop}-\cref{ass:bounded:prop} is satisfied then the acceptance ratios are bounded. That is, there exist values $0\le b_{\textsc{move}} <  B_{\textsc{move}} \le \infty$ such that
 	\begin{equation*}
-		\frac{1}{B_{\gamma, \textsc{move}}} \le AR_{\gamma, \textsc{move}}\left(T_k,M_k;T_k^\ast, M_k^\ast\right) \le \frac{1}{b_{\gamma, \textsc{move}}}.
+		\frac{1}{B_{\textsc{move}}} \le AR_{\gamma, \textsc{move}}\left(s;s^{\ast}\right) \le \frac{1}{b_{\textsc{move}}}
 	\end{equation*}
+	$\forall\gamma \in \mathcal{Y}$.
 \end{lemma}
-This holds as the copula likelihood ratio becomes bounded in the compact set $[\delta, 1-\delta]^2$ and the adaptive proposal is bounded by construction leading to a bounded proposal ratio.
+
+\begin{proof}
+	In a compact support of $[\delta,1-\delta]^2$, the bivariate copula density functions presented in this article are bounded. Besides this, the prior and proposal for a tree is from a discrete space and the priors and proposals for the terminal node values have finite variances. Therefore, the posterior is bounded for all possible terminal node values in a compact subset of $\mathbb{R}$. Moreover, since the proposal variances are uniformly bounded \citep{haario_AMH}, these bounds are independent of $\gamma$ adaption.
+\end{proof}
+
+This lemma ensures that we do not have degenerate values for the acceptance rate which is otherwise problematic for the convergence of MCMC algorithm.
 
 \begin{lemma}\label{lemm:stable:var}
 	$\left\|\Gamma^{\eta+1}_{j} - \Gamma^{\eta}_{j}\right\|_{\infty}\to 0$ as $\eta\to\infty$.
 \end{lemma}
 
 \begin{proof}
-	Recall the iterative variance formula given by \cref{eq:iter:var}. We define the increment by:
+	Recall the iterative variance formula given by \cref{eq:iter:var}, we define the change in variance in two consecutive iterations in the following way:
 	\begin{equation*}
 		\Delta C^{\eta + 1} \coloneqq \frac{1}{\eta}\left(\eta \left(\overline{V}_{\cdot }^{\eta}\right)\left(\overline{V}_{\cdot }^{\eta}\right)^T 
 		- (\eta+1)\left(\overline{V}_{\cdot }^{\eta+1}\right)\left(\overline{V}_{\cdot }^{\eta+1}\right)^T 
@@ -755,8 +816,8 @@ This holds as the copula likelihood ratio becomes bounded in the compact set $[\
 	and let, $ n_j = \#\left\{\mathcal{I}_{j}\right\}$ denote the number of observations contained in the $j$-th partition. Then
 	\begin{align*}
 		\Gamma^{\eta+1}_j 
-		&= \frac{2.4^2}{\left(n_{j}\right)^3}
-		\sum_{c\in\mathcal{I}_{j}}\sum_{d\in\mathcal{I}_{j}}\left[C^{\eta+1}\right]_{cd}\\
+		= \frac{2.4^2}{\left(n_{j}\right)^3}
+		\sum_{c\in\mathcal{I}_{j}}\sum_{d\in\mathcal{I}_{j}}\left[C^{\eta+1}\right]_{cd}
 		&= \frac{2.4^2}{\left(n_{j}\right)^3}
 		\left[\sum_{c\in\mathcal{I}_{j}}\sum_{d\in\mathcal{I}_{j}}\left[\frac{\eta-1}{\eta} C_k^{\eta} + \Delta C^{\eta + 1}\right]_{cd}\right] \\
 		&= \frac{\eta-1}{\eta}
@@ -764,72 +825,87 @@ This holds as the copula likelihood ratio becomes bounded in the compact set $[\
 	\end{align*}
 	Since the increment is of $O(1/\eta)$ in the $\eta$-th iteration, therefore $\left\|\Gamma^{\eta+1}_j - \Gamma^{\eta}_j\right\|_{\infty} \to 0$ as $\eta\to \infty$.
 \end{proof}
+This way, we ensure that variance in each iterative steps does not change rapidly and eventually the change becomes infinitesimally small.
 
-Let $s = (T,M)$ and $s^\ast = (T^\ast,M^\ast)$ and the \textsc{grow} move is denoted by \textsc{g}. Then the kernel corresponding \textsc{grow} gives us
-\begin{align*}
-	&\left\|\mathcal{K}_{\Gamma_{\eta+1;\textsc{g}}}(s,\cdot)-\mathcal{K}_{\Gamma_{\eta};\textsc{g}}(s,\cdot)\right\|_{TV}\\
-	&\le 2\int \left|\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast) - \alpha_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast\\
-	&\le 2\int \left|\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)\left(q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast) - q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right)\right|ds^\ast 
-	+ 2\int \left|\left(\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)-\alpha_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right)q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast\\
-	&\le 2\int \left|q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast) - q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast 
-	+ 2\int \left|\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)-\alpha_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast\int \left|q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast\\
-	&\le 2\int \left|q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast) - q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast + 2D_1\int \left|\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)-\alpha_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right|ds^\ast
-\end{align*}
-for some constant $0<D_1<\infty$ as the proposal is bounded by construction.
+\begin{theorem}
+	If \cref{ass:bounded:cop}-\cref{ass:bounded:prop} are satisfied and $\gamma$ adaption strategy is defined by \cref{alg:ada:prop}. Then the following two conditions hold:
+	\begin{enumerate}
+		\item Diminishing adaptation $\rightarrow$ $\left\|\mathcal{K}_{\Gamma_k^{\eta+1}}(s;\cdot)-\mathcal{K}_{\Gamma_k^{\eta}}(s;\cdot)\right\|_{TV}\to 0$ in probability as $\eta\to \infty$.
+		\item Containment $\rightarrow$ $\forall\iota>0$, $\exists N = N(\iota)\in \mathbb{N}$ such that 
+		\begin{equation*}
+			\left\|\mathcal{K}^N_{k;\gamma}(s;\cdot) - \pi(\cdot\mid u_1,u_2)\right\|_{TV} \le \iota
+		\end{equation*}
+	\end{enumerate}
+	where $\pi(\cdot\mid u_1, u_2)$ denote the target distribution (posterior conditional on $R_{\cdot k}$ and $\sigma^2_k$) defined on $\mathcal{S}$.
+\end{theorem}
 
-Since $q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)$ is a product of Gaussian probabilities with bounded variances and the adaption $\Gamma_{\eta+1}$ converges to $\Gamma_{\eta}$ by \cref{lemm:stable:var}, we can show that $\left\|q_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)-q_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Similarly, from \cref{lemm:bounded:ratio}, we know that the acceptance ratio is bounded and  $\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)$ is trivially dominated by 1. Hence exploiting pointwise convergence of $\Gamma_\eta$ and continuity of $\alpha_{\Gamma_{\eta+1}}(s,s^\ast)$, we can show that $\left\|\alpha_{\Gamma_{\eta+1};\textsc{g}}(s,s^\ast)-\alpha_{\Gamma_{\eta};\textsc{g}}(s,s^\ast)\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Hence $\left\|\mathcal{K}_{\Gamma_{\eta+1;\textsc{g}}}(s,\cdot)-\mathcal{K}_{\Gamma_{\eta};\textsc{g}}(s,\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$.
-
-We can follow similar arguments for the \textsc{change} move to show that $\left\|\mathcal{K}_{\Gamma_{\eta+1;\textsc{c}}}(s,\cdot)-\mathcal{K}_{\Gamma_{\eta};\textsc{c}}(s,\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$. Therefore, we can show that the diminishing adaption holds for our proposed adaptive RJ-MCMC algorithm.
-
-\subsection{Containment}
-
-Recall the state space defined by $\mathcal{T}\times\mathcal{M}$. Then we can express this space as finite union of subspaces such that $\mathcal{T}\times\mathcal{M} \coloneq \bigcup_{i=1}^n \mathcal{T}_i \times \mathbb{R}^i$, where $\mathcal{T}_i$ is the space of all trees with $i$ terminal nodes and the vector of terminal nodes are in $\mathbb{R}^i$.
-
-Let $T^{(i)}$ denote a tree with $i$ terminal nodes and $M^{(i)}$ denote the vector of terminal node values. Then for each $i=2,\cdots,n$, we have
-\begin{align*}
-	&\mathcal{K}_{\gamma}\left(T^{(i)},M^{(i)};\left(T^{(i-1)},M^{(i-1)}\right)\right)\\
-	&\ge p_{\textsc{p}}\mathcal{K}_{\gamma,\textsc{prune}}\left(T^{(i)},M^{(i)};\left(T^{(i-1)},M^{(i-1)}\right)\right)\\
-	&\ge p_{\textsc{p}}\alpha_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(T^{(i)},M^{(i)};T^{(i-1)},M^{(i-1)}\right)d\left(M^{(i-1)}\right)\\
-	&\ge \frac{p_{\textsc{p}}}{B_{\gamma;\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
-\end{align*}
-Therefore there exist $\nu>0$ such that for all $i=2,\cdots,n$
-\begin{equation}\label{eq:reach:trivial}
-	\mathcal{K}_{\gamma}\left(T^{(i)},M^{(i)};d\left(T^{(i-1)},M^{(i-1)}\right)\right)
-	\ge \frac{\nu}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{*};\mu_{j},\gamma_j\right)d\mu_j^\ast.
-\end{equation}
-Let $(T^{(1)},M^{(1)})$ denote the trivial tree. That is tree with only one node. Then for all $i$, we can reach the trivial tree with non-zero probability. Hence, we can define be a measure, $\phi$ such that $\phi\left(d\left(T^{(i)},M^{(i)}\right)\right) = \delta_{1}(i)$, where $\delta(\cdot)$ is Kronecker's delta. This shows that $\mathcal{K}(\cdot;\cdot)$ is $\phi$-irreducible. Now, let $\pi(\cdot\mid y)$ be the target density. Then by construction of the RJ-MCMC algorithm, $\pi(\cdot\mid y)$ is an invariant distribution of $\mathcal{K}(\cdot,\cdot)$. Therefore, $\mathcal{K}(\cdot,\cdot)$ is $\pi$-irreducible. Aperiodicity of the $\mathcal{K}(\cdot,\cdot)$ is also achieved through the construction. For instance, we can propose a pair $\left(T^{(2)},M^{(2)}\right)$ for which $\alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) < 1$. Then the rejection probability $r_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}\right)$ of \textsc{grow} is given by:
-\begin{align*}
-	& r_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}\right)\\
-	&=1-\int \alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right)q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right)\\
-	&=\int\left(1 - \alpha_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right)\right) q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right)\\
-	& > \int q_{\gamma,\textsc{grow}}\left(T^{(1)},M^{(1)}, T^{(2)},M^{(2)}\right) d\left(T^{(2)},M^{(2)}\right) > 0.
-\end{align*}
-Therefore, there exists $1>\nu_0 >0$ such that
-\begin{equation}\label{eq:stay:trivial}
-	\mathcal{K}_{\gamma}\left(T^{(1)},M^{(1)};d\left(T^{(1)},M^{(1)}\right)\right) \ge \nu_0 = \nu_0 \phi\left(d\left(T^{(1)},M^{(1)}\right)\right).
-\end{equation}
-
-Now, to show that the Markov chain is uniformly ergodic we show that $\mathcal{T}\times \mathcal{M}$ is a small set. Then for $k=2,\cdots,n$, we iterate the kernel $n$ times and using Chapman Kolmogorov equation we get
-\begin{align*}
-	& \mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right)\\
-	& = \int_{\mathcal{T}\times\mathcal{M}}\mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T,M\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T,M;d\left(T^{(1)},M^{(1)}\right)\right)\\
-	& \ge \int_{\mathcal{T}_1\times\mathbb{R}}\mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T,M\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T,M;d\left(T^{(1)},M^{(1)}\right)\right)\\
-	& = \mathcal{K}_{\gamma}^{k-1}\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right)\mathcal{K}_{\gamma}^{n+1-k}\left(T^{(1)},M^{(1)};d\left(T^{(1)},M^{(1)}\right)\right).
-\end{align*}
-Therefore, from \cref{eq:reach:trivial} and \cref{eq:stay:trivial}, we get
-\begin{equation*}
-	\mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(1)},M^{(1)}\right)\right) \ge \nu^{k-1} \nu_0^{n+1-k}\phi\left(d\left(T^{(1)},M^{(1)}\right)\right).
-\end{equation*}
-This holds true for $k=1$ as well. Therefore, for any $\left(T^{(k')},M^{(k')}\right)$ in $\mathcal{T}\times\mathcal{M}$
-
-\begin{equation*}
-	\mathcal{K}_{\gamma}^n\left(T^{(k)},M^{(k)};d\left(T^{(k')},M^{(k')}\right)\right) \ge \vartheta\phi\left(d\left(T^{(k')},M^{(k')}\right)\right),
-\end{equation*}
-where $\vartheta = \min_{1\le k\le n}\left\{\nu^{k-1} \nu_0^{n+1-k}\right\}$. Then following the proposition given by \citet{Tierney1994}, we can find a constant $L_0>0$ such that for all $N$
-\begin{equation}
-	\left\|\mathcal{K}^N_{\gamma}(T,M;\cdot) - \pi(\cdot\mid y)\right\|_{TV} \le L_0 (1-\vartheta)^{\lfloor N/n\rfloor}.
-\end{equation}
-Therefore, $K_{\gamma}(T,M;)$ is geometrically ergodic for all values of $\gamma$ and $(T,M)$. 
+\begin{proof}
+	To show diminishing adaptation, we check the total variation norm for each move. Let the \textsc{grow} move is denoted by \textsc{g}. Then the kernel corresponding \textsc{grow} gives us
+	\begin{align*}
+		&\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{g}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{g}}(s;\cdot)\right\|_{TV}\\
+		&\le 2\int \left|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast}) - \alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast}\\
+		&\le 2\int \left|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})\left(q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast}) - q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right)\right|ds^{\ast} 
+		+ 2\int \left|\left(\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-\alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right)q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast}\\
+		&\le 2\int \left|q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast}) - q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast} 
+		+ 2\int \left|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-\alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast}\int \left|q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast}\\
+		&\le 2\int \left|q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast}) - q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast} + 2\int \left|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-\alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right|ds^{\ast}.
+	\end{align*}
+	
+	Since $q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})$ is a product of Gaussian probabilities with bounded variances and the adaption $\Gamma^{\eta+1}$ converges to $\Gamma^{\eta}$ by \cref{lemm:stable:var}, we can show that $\left\|q_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-q_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Similarly, from \cref{lemm:bounded:ratio}, we know that the acceptance ratio is uniformly bounded and  $\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})$ is trivially dominated by 1. Hence exploiting pointwise convergence of $\Gamma^{\eta}$ and continuity of $\alpha_{\Gamma^{\eta+1}}(s;s^{\ast})$, we can show that $\left\|\alpha_{\Gamma^{\eta+1};\textsc{g}}(s;s^{\ast})-\alpha_{\Gamma^{\eta};\textsc{g}}(s;s^{\ast})\right\|_{TV}$ goes to 0 as $\eta \to \infty$. Hence $\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{g}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{g}}(s;\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$.
+	
+	With a similar argument for the \textsc{change} move, we have $\left\|\mathcal{K}_{\Gamma^{\eta+1};\textsc{c}}(s;\cdot)-\mathcal{K}_{\Gamma^{\eta};\textsc{c}}(s;\cdot)\right\|_{TV}$ goes to 0 as $\eta\to \infty$. For \textsc{change} and \textsc{swap} moves, no adaption takes place. Therefore, we can show that the diminishing adaption holds for our proposed adaptive RJ-MCMC algorithm.
+	
+	To show the containment condition, we follow a similar approach to that of \citet{andrieu_RJ_MCMC}. Recall the state space denoted by $\mathcal{S}\coloneqq\mathcal{T}\times\mathcal{M}$. Then we can express this space as finite union of subspaces such that $\mathcal{S} \coloneq \bigcup_{i=1}^n \mathcal{S}_i$, where $\mathcal{S}_i = \mathcal{T}_i \times \mathcal{M}_i$ is the space of all trees with $i$ terminal nodes and the corresponding vector of terminal nodes of length $i$ and $\mathcal{M}_i\subseteq\mathbb{R}^i$.
+	
+	Let $s^{(i)} \coloneqq\left(T^{(i)}, M^{(i)}\right)$ denote a pair of tree with $i$ terminal nodes and corresponding of terminal node values. Then for each $i=2,\cdots,n$, we have
+	\begin{align*}
+		\mathcal{K}_{\gamma}\left(s^{(i)};d\left(s^{(i-1)}\right)\right)
+		&\ge p_{\textsc{p}}\mathcal{K}_{\gamma,\textsc{prune}}\left(s^{(i)};d\left(s^{(i-1)}\right)\right)\\
+		&\ge p_{\textsc{p}}\alpha_{\gamma;\textsc{prune}}\left(s^{(i)};s^{(i-1)}\right)q_{\gamma;\textsc{prune}}\left(s^{(i)};s^{(i-1)}\right)d\left(s^{(i-1)}\right)\\
+		&\ge \frac{p_{\textsc{p}}}{B_{\textsc{prune}}}\frac{1}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{\ast};\mu_{j},\gamma_j\right)d\mu_j^{\ast}.
+	\end{align*}
+	Therefore there exist $\nu>0$ such that for all $i=2,\cdots,n$ and $\gamma\in \mathcal{Y}$ such that
+	\begin{equation}\label{eq:reach:trivial}
+		\mathcal{K}_{\gamma}\left(s^{(i)};d\left(s^{(i-1)}\right)\right)
+		\ge \frac{\nu}{\#\left\{\mathcal{PN}(T^{(i)})\right\}}\mathcal{N}\left(\mu_j^{\ast};\mu_{j},\gamma_j\right)d\mu_j^{\ast}.
+	\end{equation}
+	
+	Now, let $s^{(1)} = \left(T^{(1)},M^{(1)}\right)$ denote the trivial tree. That is, a tree with only one node. Then for all $i=2,\cdots, n$, we can reach the trivial tree with non-zero probability. Hence, we can define a measure $\phi$ such that
+	\begin{equation*}
+		\phi(A) = \int_{\mathcal{M}_1}\mathbb{I}\left(s^{(1)}\in A\right)\mathcal{N}\left(\mu;0,\sigma^2\right)d\mu.
+	\end{equation*}
+	This shows that $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is $\phi$-irreducible \citep{meyn_tweedie1994}. 
+	
+	Now, the target density is given by $\pi(\cdot\mid u_1,u_2)$. Then by construction of the RJ-MCMC algorithm, $\pi(\cdot\mid u_1,u_2)$ is an invariant distribution of $\mathcal{K}_{\gamma}(\cdot;\cdot)$. Therefore, $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is $\pi$-irreducible. 
+	
+	Aperiodicity of the $\mathcal{K}_{\gamma}(\cdot;\cdot)$ is also achieved through the construction. For instance, we can propose $s^{(2)}$ for which $\alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) < 1$, independent of $\gamma$. Then the rejection probability $r_{\gamma;\textsc{grow}}\left(s^{(1)}\right)$ of \textsc{grow} is given by:
+	\begin{align*}
+		r_{\gamma;\textsc{grow}}\left(s^{(1)}\right)
+		&=1-\int \alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right)q_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) d\left(s^{(2)}\right)\\
+		&=\int\left(1 - \alpha_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right)\right) q_{\gamma;\textsc{grow}}\left(s^{(1)}; s^{(2)}\right) d\left(s^{(2)}\right) > 0.
+	\end{align*}
+	Therefore, $\forall\gamma\in\mathcal{Y}$, there exists $1>\nu_0 >0$ such that
+	\begin{equation}\label{eq:stay:trivial}
+		\mathcal{K}_{\gamma}\left(s^{(1)};\left\{s^{(1)}\right\}\right) \ge \nu_0 = \nu_0 \phi\left(\left\{s^{(1)}\right\}\right).
+	\end{equation}
+	
+	Now, to prove that the Markov chain is uniformly ergodic we show that $\mathcal{S}$ is a small set. For $k=2,\cdots,n$, we iterate the kernel $n$ times and using Chapman Kolmogorov equation we get
+	\begin{align*}
+		\mathcal{K}_{\gamma}^n\left(s^{(k)};s^{(1)}\right)
+		= \int_{\mathcal{S}}\mathcal{K}_{\gamma}^{k-1}\left(s^{(k)};s\right)\mathcal{K}_{\gamma}^{n+1-k}\left(s;s^{(1)}\right)ds
+		& \ge \int_{\mathcal{S}_1}\mathcal{K}_{\gamma}^{k-1}\left(s^{(k)};s\right)\mathcal{K}_{\gamma}^{n+1-k}\left(s;s^{(1)}\right)ds\\
+		& = \mathcal{K}_{\gamma}^{k-1}\left(s^{(k)};s^{(1)}\right)\mathcal{K}_{\gamma}^{n+1-k}\left(s^{(1)};\left\{s^{(1)}\right\}\right).
+	\end{align*}
+	Therefore, from \cref{eq:reach:trivial} and \cref{eq:stay:trivial}, we get $\mathcal{K}_{\gamma}^n\left(s^{(k)};s^{(1)}\right) \ge \nu^{k-1} \nu_0^{n+1-k}\phi\left(s^{(1)}\right)$. This holds true for $k=1$ as well. Therefore, for any $s^{(k')}$ in $\mathcal{S}$, $\mathcal{K}_{\gamma}^n\left(s^{(k)};s^{(k')}\right) \ge \vartheta\phi\left(s^{(k')}\right)$ where $\vartheta = \min_{1\le k\le n}\left\{\nu^{k-1} \nu_0^{n+1-k}\right\}$. Then following the proposition given by \citet{Tierney1994}, we can find a constant $L_0>0$ such that for all $N$
+	\begin{equation}
+		\left\|\mathcal{K}^N_{\gamma}(s;\cdot) - \pi(\cdot\mid y)\right\|_{TV} \le L_0 (1-\vartheta)^{\lfloor N/n\rfloor}.
+	\end{equation}
+	Therefore, $K_{\gamma}(s;)$ is uniformly ergodic for all values of $\gamma$ and $s$. Hence, for all $\iota>0$, we can find $N = n\left(\frac{\log(\iota)-\log(L_0)}{\log(1-\vartheta)} +1\right)$ such that
+	\begin{equation}
+		\left\|\mathcal{K}^N_{\gamma}(s;\cdot) - \pi(\cdot\mid y)\right\|_{TV} \le \iota \qquad\forall s\in \mathcal{S}, \gamma\in\mathcal{Y}.
+	\end{equation}
+		
+\end{proof}
 
 \section{Synthetic dataset}\label{app:results}
 
@@ -971,7 +1047,6 @@ Additional figures related to our analyses with 10 trees.
 	\caption{Scatter plots of pseudo observations and simulated values from the fitted copulas obtained for literacy of male and female population using A-C-BART with 10 trees.}
 	\label{fig:pseudo:LT:wa10}
 \end{figure}
-
 
 \bibliographystyle{plainnat}
 \bibliography{example}
