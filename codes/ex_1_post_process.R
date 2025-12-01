@@ -108,6 +108,8 @@ gauss_pl_like <- gauss_like_df %>%
   guides(color = "none") +
   theme_minimal()
 
+gauss_pl_like
+
 save(gauss_pl_like, file = "plot_gauss_LE.Rdata")
 save(gauss_pred_val, file = "dat_gauss_LE.Rdata")
 
@@ -133,6 +135,8 @@ gauss_pl_like <- gauss_like_df %>%
   ) +
   guides(color = "none") +
   theme_minimal()
+
+gauss_pl_like
 
 save(gauss_pl_like, file = "plot_gauss_LE_adapt.Rdata")
 save(gauss_pred_val, file = "dat_gauss_LE_adapt.Rdata")
@@ -163,6 +167,8 @@ gauss_pl_like <- gauss_like_df %>%
   guides(color = "none") +
   theme_minimal()
 
+gauss_pl_like
+
 save(gauss_pl_like, file = "plot_gauss_LT.Rdata")
 save(gauss_pred_val, file = "dat_gauss_LT.Rdata")
 
@@ -191,6 +197,8 @@ gauss_pl_like <- gauss_like_df %>%
   ) +
   guides(color = "none") +
   theme_minimal()
+
+gauss_pl_like
 
 save(gauss_pl_like, file = "plot_gauss_LT_adapt.Rdata")
 save(gauss_pred_val, file = "dat_gauss_LT_adapt.Rdata")
@@ -221,6 +229,8 @@ t_pl_like <- t_like_df %>%
   guides(color = "none") +
   theme_minimal()
 
+t_pl_like
+
 save(t_pl_like, file = "plot_t_LE.Rdata")
 save(t_pred_val, file = "dat_t_LE.Rdata")
 
@@ -249,6 +259,8 @@ t_pl_like <- t_like_df %>%
   ) +
   guides(color = "none") +
   theme_minimal()
+
+t_pl_like
 
 save(t_pl_like, file = "plot_t_LE_adapt.Rdata")
 save(t_pred_val, file = "dat_t_LE_adapt.Rdata")
@@ -279,6 +291,8 @@ t_pl_like <- t_like_df %>%
   guides(color = "none") +
   theme_minimal()
 
+t_pl_like
+
 save(t_pl_like, file = "plot_t_LT.Rdata")
 save(t_pred_val, file = "dat_t_LT.Rdata")
 
@@ -308,6 +322,8 @@ t_pl_like <- t_like_df %>%
   guides(color = "none") +
   theme_minimal()
 
+t_pl_like
+
 save(t_pl_like, file = "plot_t_LT_adapt.Rdata")
 save(t_pred_val, file = "dat_t_LT_adapt.Rdata")
 
@@ -328,8 +344,8 @@ if(F){
   }
   
   if(n.tree == 10){
-    load("10_trees/dat_gauss_LE.Rdata")
-    load("10_trees/dat_t_LE.Rdata")
+    load("50k_10_trees/dat_gauss_LE.Rdata")
+    load("50k_10_trees/dat_t_LE.Rdata")
   }
   
   # data plotting
@@ -347,8 +363,8 @@ if(F){
   }
   
   if(n.tree == 10){
-    load("10_trees/dat_gauss_LE_adapt.Rdata")
-    load("10_trees/dat_t_LE_adapt.Rdata")
+    load("50k_10_trees/dat_gauss_LE_adapt.Rdata")
+    load("50k_10_trees/dat_t_LE_adapt.Rdata")
   }
   
   pred_cond_adapt <- data.frame("obs" = rep(GDP_LE, each = (n.chain_par * (n.iter_par - n.born.out.par))))
@@ -574,7 +590,7 @@ if(F){
                               c(mean(cram_t_adapt), median(cram_t_adapt), sd(cram_t_adapt), mean(ff_t_adapt), median(ff_t_adapt), sd(ff_t_adapt)))
     
     library(xtable)
-    xtable(p_val_summ_adapt)
+    xtable(p_val_summ_adapt, digits = 3)
     
     pl_tau_est + ylim(0.0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0,1) + geom_hline(yintercept = cor(U1_LE,U2_LE, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
     
@@ -589,17 +605,17 @@ if(F){
 
 if(F){
   
-  gauss_woa_10 <- get(load("10_trees/plot_gauss_LE.Rdata"))
-  gauss_wa_10 <- get(load("10_trees/plot_gauss_LE_adapt.Rdata"))
+  gauss_woa_10 <- get(load("50k_10_trees/plot_gauss_LE.Rdata"))
+  gauss_wa_10 <- get(load("50k_10_trees/plot_gauss_LE_adapt.Rdata"))
   
-  t_woa_10 <- get(load("10_trees/plot_t_LE.Rdata"))
-  t_wa_10 <- get(load("10_trees/plot_t_LE_adapt.Rdata"))
+  t_woa_10 <- get(load("50k_10_trees/plot_t_LE.Rdata"))
+  t_wa_10 <- get(load("50k_10_trees/plot_t_LE_adapt.Rdata"))
   
-  gauss_woa_5 <- get(load("real_case_5_trees/plot_gauss_LE.Rdata"))
-  gauss_wa_5 <- get(load("real_case_5_trees/plot_gauss_LE_adapt.Rdata"))
+  gauss_woa_5 <- get(load("50k_real_case_5_trees/plot_gauss_LE.Rdata"))
+  gauss_wa_5 <- get(load("50k_real_case_5_trees/plot_gauss_LE_adapt.Rdata"))
   
-  t_woa_5 <- get(load("real_case_5_trees/plot_t_LE.Rdata"))
-  t_wa_5 <- get(load("real_case_5_trees/plot_t_LE_adapt.Rdata"))
+  t_woa_5 <- get(load("50k_real_case_5_trees/plot_t_LE.Rdata"))
+  t_wa_5 <- get(load("50k_real_case_5_trees/plot_t_LE_adapt.Rdata"))
   
   (gauss_woa_10 + ylim(280,380) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(280,380) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_10 + ylim(280,380) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(280,380) + labs(title="Student-t (with adaption)"))
@@ -622,13 +638,13 @@ if(F){
 if(F){
   
   if(n.tree == 5){
-    load("real_case_5_trees/dat_gauss_LT.Rdata")
-    load("real_case_5_trees/dat_t_LT.Rdata")
+    load("50k_real_case_5_trees/dat_gauss_LT.Rdata")
+    load("50k_real_case_5_trees/dat_t_LT.Rdata")
   }
   
   if(n.tree == 10){
-    load("10_trees/dat_gauss_LT.Rdata")
-    load("10_trees/dat_t_LT.Rdata")
+    load("50k_10_trees/dat_gauss_LT.Rdata")
+    load("50k_10_trees/dat_t_LT.Rdata")
   }
   
   # data plotting
@@ -641,13 +657,13 @@ if(F){
   pred_cond$true_obs = rep(log10(cia_wf_data_LT$GDP_PC), each = (n.chain_par * (n.iter_par - n.born.out.par)))
   
   if(n.tree == 5){
-    load("real_case_5_trees/dat_gauss_LT_adapt.Rdata")
-    load("real_case_5_trees/dat_t_LT_adapt.Rdata")
+    load("50k_real_case_5_trees/dat_gauss_LT_adapt.Rdata")
+    load("50k_real_case_5_trees/dat_t_LT_adapt.Rdata")
   }
   
   if(n.tree == 10){
-    load("10_trees/dat_gauss_LT_adapt.Rdata")
-    load("10_trees/dat_t_LT_adapt.Rdata")
+    load("50k_10_trees/dat_gauss_LT_adapt.Rdata")
+    load("50k_10_trees/dat_t_LT_adapt.Rdata")
   }
   
   pred_cond_adapt <- data.frame("obs" = rep(GDP_LT, each = (n.chain_par * (n.iter_par - n.born.out.par))))
@@ -873,9 +889,9 @@ if(F){
                             c(mean(cram_t_adapt), median(cram_t_adapt), sd(cram_t_adapt), mean(ff_t_adapt), median(ff_t_adapt), sd(ff_t_adapt)))
   
   library(xtable)
-  xtable(p_val_summ_adapt)
+  xtable(p_val_summ_adapt, digits = 3)
   
-  pl_tau_est + ylim(0.3,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.3,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
+  pl_tau_est + ylim(0.2,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="Without adaption") + xlab("Log GDP") + pl_tau_est_adapt + ylim(0.2,1) + geom_hline(yintercept = cor(U1_LT,U2_LT, method = "kendall"), linetype = "dotted", linewidth = 0.2) + labs(title="With adaption") + xlab("Log GDP")
   
   par(mar = c(5,5,2,1), mfrow = c(1,3))
   plot(log10(cia_wf_data_LT$GDP_PC), cia_wf_data_LT$Liter_M, xlab = "Log GDP", ylab = "M Literacy")
@@ -888,17 +904,17 @@ if(F){
 
 if(F){
   
-  gauss_woa_10 <- get(load("10_trees/plot_gauss_LT.Rdata"))
-  gauss_wa_10 <- get(load("10_trees/plot_gauss_LT_adapt.Rdata"))
+  gauss_woa_10 <- get(load("50k_10_trees/plot_gauss_LT.Rdata"))
+  gauss_wa_10 <- get(load("50k_10_trees/plot_gauss_LT_adapt.Rdata"))
   
-  t_woa_10 <- get(load("10_trees/plot_t_LT.Rdata"))
-  t_wa_10 <- get(load("10_trees/plot_t_LT_adapt.Rdata"))
+  t_woa_10 <- get(load("50k_10_trees/plot_t_LT.Rdata"))
+  t_wa_10 <- get(load("50k_10_trees/plot_t_LT_adapt.Rdata"))
   
-  gauss_woa_5 <- get(load("real_case_5_trees/plot_gauss_LT.Rdata"))
-  gauss_wa_5 <- get(load("real_case_5_trees/plot_gauss_LT_adapt.Rdata"))
+  gauss_woa_5 <- get(load("50k_real_case_5_trees/plot_gauss_LT.Rdata"))
+  gauss_wa_5 <- get(load("50k_real_case_5_trees/plot_gauss_LT_adapt.Rdata"))
   
-  t_woa_5 <- get(load("real_case_5_trees/plot_t_LT.Rdata"))
-  t_wa_5 <- get(load("real_case_5_trees/plot_t_LT_adapt.Rdata"))
+  t_woa_5 <- get(load("50k_real_case_5_trees/plot_t_LT.Rdata"))
+  t_wa_5 <- get(load("50k_real_case_5_trees/plot_t_LT_adapt.Rdata"))
   
   (gauss_woa_10 + ylim(200,300) + labs(title="Gaussian (without adaption)") + gauss_wa_10 + ylim(200,300) + labs(title="Gaussian (with adaption)")) / 
     (t_woa_10 + ylim(200,300) + labs(title="Student-t (without adaption)") + t_wa_10 + ylim(200,300) + labs(title="Student-t (with adaption)"))

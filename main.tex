@@ -524,7 +524,7 @@ To fit the copula, we first get the pseudo observations by converting the origin
 \end{equation}
 where $r_{ij}$ is the rank of $y_{ij}$ among $(y_{1j}, y_{2j},\cdots, y_{nj})$ for $j=1,2$.
 
-For illustration purposes we run 5 parallel chains of 25000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 500 iterations to calculate the proposal variance. For monitoring goodness-of-fit we consider two different two-sample tests to understand the goodness-of-fit of the simulated values from the fitted copulas: the Cramer test for multivariate data \citep{BARINGHAUS2004190}; and the Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we simulate 100 replicates of copulas using estimated parameter and perform these tests with 1000 permutations.
+For illustration purposes we run 4 parallel chains of 50000 MCMC iterations with 5 and 10 trees for both C-BART and A-C-BART. For A-C-BART, we use the first 500 iterations to calculate the proposal variance. For monitoring goodness-of-fit we consider two different two-sample tests to understand the goodness-of-fit of the simulated values from the fitted copulas: the Cramer test for multivariate data \citep{BARINGHAUS2004190}; and the Fasano-Franceschini test \citep{fasano-franceschini}, which is a generalised version of Kolmogorov–Smirnov test. These tests are designed to check if two sets of samples belong to the same distribution. The null hypothesis is rejected if the $p$-value is below $0.05$. Since these are permutation based tests, we simulate 100 replicates of copulas using estimated parameter and perform these tests with 1000 permutations.
 
 \subsection{Life Expectancy}
 We analyse the dependence between the female life expectancy and male life expectancy conditioned on the per capita GDP in log-scale. We use a total 221 observations of countries/territories for our analyses, out of which only 180 countries/territories have unique per capita GDP. We present the empirical distributions of these observations against the log GDP in \cref{fig:data:dist:LE} along with the pseudo observations of female and male life expectancies. We see that the female life expectancy lies within $[56.1,93.7]$ with the average being 77 years. For the male population, these numbers are slightly lower; the range being $[52.8, 86]$ and the average being 72 years. We notice that the life expectancy has a very strong tail dependence and the Kendall's tau is approximately equal to 0.83. 
@@ -541,7 +541,7 @@ We notice that the pseudo observations have an elliptical shape. Therefore, to m
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on per capita log-GDP. For modelling, we use 5 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on per capita log-GDP. For modelling, we use 5 trees and run 4 parallel chains of 50000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE}
 \end{figure}
 % 0.81
@@ -551,7 +551,7 @@ We present the traceplots of the log-likelihood in \cref{fig:trace:like:real:LE}
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 4 parallel chains, each with 50000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE}
 \end{figure}
 
@@ -584,17 +584,17 @@ We have provided additional figures for our analyses with 10 trees in \cref{app:
 		\midrule
 		\multicolumn{7}{c}{5 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.69 & 0.77 & 0.28 & 0.72 & 0.85 & 0.28 \\ 
-		Student-t (C-BART) & 0.69 & 0.78 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
-		Gaussian (A-C-BART) & 0.69 & 0.77 & 0.28 & 0.72 & 0.85 & 0.28 \\ 
-		Student-t (A-C-BART) & 0.69 & 0.77 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
+		Gaussian (C-BART) & 0.690 & 0.773 & 0.276 & 0.721 & 0.853 & 0.276 \\ 
+		Student-t (C-BART) & 0.694 & 0.777 & 0.272 & 0.735 & 0.853 & 0.270 \\ 
+		Gaussian (A-C-BART) & 0.689 & 0.774 & 0.276 & 0.721 & 0.844 & 0.278 \\ 
+		Student-t (A-C-BART) & 0.694 & 0.775 & 0.272 & 0.735 & 0.859 & 0.270 \\ 
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.69 & 0.77 & 0.28 & 0.71 & 0.85 & 0.28 \\ 
-		Student-t (C-BART) & 0.69 & 0.79 & 0.27 & 0.74 & 0.85 & 0.27 \\ 
-		Gaussian (A-C-BART) & 0.69 & 0.77 & 0.28 & 0.71 & 0.81 & 0.28 \\ 
-		Student-t (A-C-BART) & 0.69 & 0.79 & 0.27 & 0.74 & 0.84 & 0.27 \\ 
+		Gaussian (C-BART) & 0.689 & 0.774 & 0.276 & 0.710 & 0.828 & 0.283 \\ 
+		Student-t (C-BART) & 0.694 & 0.791 & 0.271 & 0.742 & 0.858 & 0.267 \\ 
+		Gaussian (A-C-BART) & 0.688 & 0.775 & 0.276 & 0.715 & 0.815 & 0.276 \\ 
+		Student-t (A-C-BART) & 0.694 & 0.793 & 0.271 & 0.739 & 0.849 & 0.270 \\ 
 	\end{tabular}
 	\caption{Goodness of fit tests of our proposed method for life expectancy conditional on log-GDP. We split our results into two general columns: left for the Cramer test and right for the Fasano-Franceschini test (FF test). We create subcolumns under each column to present the mean, the median and the standard deviation of the $p$-values obtained from 100 repetitions.}
 	\label{tab:LE:p-val}
@@ -610,7 +610,7 @@ In this section, we discuss our analyses with the literacy rate of different cou
 \end{figure}
 
 Similar to our analyses with life expectancy, we notice that there is an overall agreement between the estimated conditional dependence using C-BART and A-C-BART. We notice that there is a strong similarity between the Gaussian and Student-t copula. We also see that the Gaussian copula exhibits an abrupt drop in the conditional dependence, which we present in \cref{fig:taus:LT}. Other than that, for both families, the literacy rates of the male and female populations have an almost constant dependence 
-with respect to the log-GDP.  We also present the traceplots of the log-likelihood in \cref{fig:trace:like:real:LT}. Unlike, our analyses with life expectancies, we notice that C-BART and A-C-BART tend to behave differently. For our analysis with the Gaussian copula, we notice that different chains remain at different likelihood regions. However, this is not the case for A-C-BART, where all the chains stabilises in the same likelihood region very quickly and one chain starts exploring a higher likelihood region. For our analysis with Student-t copula, the results are also very interesting. In this case, one of the chains of C-BART explores a higher likelihood region but exhibits a very high autocorrelation, whereas for A-C-BART all the chains remain stable in the same region. 
+with respect to the log-GDP.  We also present the traceplots of the log-likelihood in \cref{fig:trace:like:real:LT}. Unlike, our analyses with life expectancies, we notice that C-BART and A-C-BART tend to behave differently. For our analysis with the Gaussian copula, we notice that different chains remain at different likelihood regions. However, this is not the case for A-C-BART, where all the chains stabilises in the same likelihood region very quickly and two chains start exploring a higher likelihood region later. For our analysis with Student-t copula, the results are also very interesting. In this case, one of the chains of C-BART explores a higher likelihood region but exhibits a very high autocorrelation, whereas for A-C-BART, all the chains remain stable in the same region. 
 
 We present the scatterplots and 3-d histograms of simulated values from the fitted copulas in \cref{fig:pseudo:LT:woa} and \cref{fig:pseudo:LT:wa}; and the results of goodness-of-fit tests in \cref{tab:LT:p-val}. Like before, we notice that there is no significant evidence that the simulated values from the fitted copulas and the pseudo observations generated from literacy rate data belong to two different families. Unlike our analyses with the life expectancy data, there is no clear winner. Additionally, we present our results with 10 trees and see no significant improvement.
 
@@ -625,17 +625,17 @@ We present the scatterplots and 3-d histograms of simulated values from the fitt
 		\midrule
 		\multicolumn{7}{c}{5 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.69 & 0.77 & 0.27 & 0.71 & 0.77 & 0.25 \\ 
-		Student-t (C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.24 \\ 
-		Gaussian (A-C-BART) & 0.69 & 0.78 & 0.27 & 0.71 & 0.77 & 0.25 \\ 
-		Student-t (A-C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.25 \\ 
+		Gaussian (C-BART) & 0.691 & 0.775 & 0.272 & 0.708 & 0.782 & 0.249 \\ 
+		Student-t (C-BART) & 0.690 & 0.758 & 0.269 & 0.713 & 0.784 & 0.243 \\ 
+		Gaussian (A-C-BART) & 0.691 & 0.778 & 0.273 & 0.708 & 0.774 & 0.252 \\ 
+		Student-t (A-C-BART) & 0.690 & 0.761 & 0.269 & 0.711 & 0.785 & 0.244 \\ 
 		\midrule
 		\multicolumn{7}{c}{10 trees} \\
 		\midrule
-		Gaussian (C-BART) & 0.69 & 0.78 & 0.27 & 0.72 & 0.79 & 0.25 \\ 
-		Student-t (C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.78 & 0.25 \\ 
-		Gaussian (A-C-BART) & 0.69 & 0.78 & 0.27 & 0.72 & 0.79 & 0.25 \\ 
-		Student-t (A-C-BART) & 0.69 & 0.76 & 0.27 & 0.71 & 0.80 & 0.25 \\ 
+		Gaussian (C-BART) & 0.690 & 0.782 & 0.272 & 0.721 & 0.794 & 0.253 \\ 
+		Student-t (C-BART) & 0.689 & 0.757 & 0.268 & 0.708 & 0.750 & 0.241 \\ 
+		Gaussian (A-C-BART) & 0.691 & 0.786 & 0.272 & 0.721 & 0.778 & 0.251 \\ 
+		Student-t (A-C-BART) & 0.689 & 0.759 & 0.268 & 0.709 & 0.756 & 0.244 \\ 
 	\end{tabular}
 	\caption{Goodness of fit tests of our proposed method for literacy conditional on log-GDP. We split our results into two general columns: left for the Cramer test and right for the Fasano-Franceschini test (FF test). We create subcolumns under each column to present the mean, the median and the standard deviation of the $p$-values obtained from 100 repetitions.}
 	\label{tab:LT:p-val}
@@ -644,14 +644,14 @@ We present the scatterplots and 3-d histograms of simulated values from the fitt
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_likelihood.pdf"}
-	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 4 parallel chains, each with 50000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LT_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 5 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 5 trees and run 4 parallel chains of 50000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT}
 \end{figure}
 % 0.84
@@ -995,14 +995,14 @@ Additional figures related to our analyses with 10 trees.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on log-GDP. For modelling, we use 10 trees and run 5 parallel chains of 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on log-GDP. For modelling, we use 10 trees and run 4 parallel chains of 50000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.75\linewidth]{"LE_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with life expectancies of the male and female populations. The plots are obtained by running 4 parallel chains, each with 50000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE10}
 \end{figure}
 
@@ -1023,14 +1023,14 @@ Additional figures related to our analyses with 10 trees.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_likelihood_10.pdf"}
-	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 5 parallel chains, each with 25000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\caption{Trace plots of the log-likelihood obtained from our analyses with literacy rates of the male and female populations. The plots are obtained by running 4 parallel chains, each with 50000 MCMC iterations and 10 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LT10}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width = 0.75\linewidth]{"LT_vs_GDP_taus_10.pdf"}
-	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 10 trees and run 5 parallel chains involving 25000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{Estimated dependence between male literacy and female literacy, conditional on log-GDP. For modelling, we use 10 trees and run 4 parallel chains of 50000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LT10}
 \end{figure}
 % 0.84
