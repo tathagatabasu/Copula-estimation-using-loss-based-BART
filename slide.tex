@@ -1,7 +1,7 @@
 % Latex template: mahmoud.s.fahmy@students.kasralainy.edu.eg
 % For more details: https://www.sharelatex.com/learn/Beamer
 \documentclass[11pt]{beamer}
-\usetheme{Rochester}
+\usetheme{default}
 \usecolortheme{dolphin}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{mathtools}
@@ -17,7 +17,7 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{mathtools}
 
-\usepackage{biblatex}
+\usepackage[backend=biber]{biblatex}
 \usepackage{cleveref}
 \usetikzlibrary{arrows.meta, shapes.multipart, positioning, calc}
 
@@ -44,11 +44,12 @@
 \newcommand{\Prob}{\mathbb{P}}
 \newcommand{\vecc}[1]{\boldsymbol{#1}}
 
-\title[]{Conditional Copula models using loss-based Bayesian Additive Regression Trees (Ongoing)}% Presentation title
+\title[]{Conditional Copula models using loss-based Bayesian Additive Regression Trees}% Presentation title
 
 \author[]{\small{\underline{Tathagata Basu} \inst{1} \and F. Leisen \inst{2} \and C. Vila \inst{3} \and K. Wilson  \inst{1}}}								% Presentation author
 \institute{\inst{1} Newcastle University, UK \\\inst{2} Kings College London, UK \\\inst{3} Duke Kunshan University, China}
-\date{\scriptsize{14th Nov, 2025}}									% Today's date	
+\date{\scriptsize{15th Dec, 2025\\
+Session CO414, CMStatistics 2025}}									% Today's date	
 
 \begin{document}
 	
@@ -73,17 +74,11 @@
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_hist.pdf"}
 \end{figure}
-
-\begin{figure}
-	\centering
-	\includegraphics[width = 0.95\linewidth]{"LE_scatter.pdf"}
-\end{figure}
-
     \end{frame}
     
     \section{Conditional Copulas}
 
-    \begin{frame}{Definition of a Copula}
+    \begin{frame}{Copula}
     \begin{block}{Copula}
     A \emph{copula} is a $d$-dimensional distribution function $C:[0,1]^d\to[0,1]$ with uniform $\mathrm{Unif}(0,1)$ marginals such that
     \vspace{0.5em}
@@ -94,6 +89,15 @@
     \[ C\big(u_1,\dots,u_d\mid \theta\big) = H\left(F_1^{-1}(u_1),\dots,F_d^{-1}(u_d)\right). \]
     \end{itemize}
     \end{block}
+    \end{frame}
+    
+    \begin{frame}{}
+        \begin{figure}
+	\centering
+	\includegraphics[width = 0.95\linewidth]{"cia_LE_plots.pdf"}
+\end{figure}
+
+
     \end{frame}
     
 
@@ -108,8 +112,7 @@
     \end{enumerate}
     \end{itemize}
     \end{frame}
-    
-    
+
     \begin{frame}{Conditional Sklar's Theorem}
     \begin{itemize}
         \item For continuous conditional marginals $F_{1x},\dots,F_{dx}$ and joint conditional cdf $H_{x}(\cdot|x)$,
@@ -260,7 +263,7 @@
         
     
     \end{frame}
-    
+    \iffalse
     \begin{frame}{Hierarchical Prior Specification}
     This leads to the hierarchical prior:
     \begin{align}
@@ -271,7 +274,7 @@
     where $\pi$ denotes a prior density.
     \end{frame}
 
-
+\fi
 
     \section{Conditional Copula Modelling}
 
@@ -286,34 +289,34 @@
     
     \begin{align}\label{eq:bayes:hier}
     \begin{split}
-    u_{1i}, u_{2i} \mid \theta(x_i) &\sim c\Big(u_{1i}, u_{2i} \mid \alert{h}\Big( \sum_{t=1}^m g(x_i, T_t, M_t) \Big)\Big),\\
-    T_t &\propto \exp\Big(\omega n_L(T_t) - \zeta \Delta(T_t)\Big),\\
+    \pi\left(u_{1i}, u_{2i} \mid \theta(x_i)\right) &\sim c\Big(u_{1i}, u_{2i} \mid \alert{h}\Big( \sum_{t=1}^m g(x_i, T_t, M_t) \Big)\Big),\\
+    \pi\left(T_t\right) &\propto \exp\Big(\omega n_L(T_t) - \zeta \Delta(T_t)\Big),\\
     \pi(M_t \mid T_t) &\propto \prod_{j=1}^{n_L(T_t)} \pi(\mu_j \mid T_t), \quad t=1,2,\dots,m.
     \end{split}
     \end{align}
     
     \end{frame}
-
-    \begin{frame}[allowframebreaks]{Posterior Sampling}
+\iftrue
+    \begin{frame}[shrink=10]{Backfitting algorithm}
     Let 
 \begin{align*}
-	&(T_{-k},M_{-k})\\
-    &\coloneq \left\{(T_1,M_1),\cdots,(T_{k-1},M_{k-1}),(T_{k+1},M_{k+1}),\cdots(T_m,M_m)\right\},
+	(T_{-k},M_{-k})\coloneq \left\{(T_1,M_1),\cdots,(T_{k-1},M_{k-1}),(T_{k+1},M_{k+1}),\cdots(T_m,M_m)\right\},
 \end{align*}
 We want sample $(T_k, M_k)$ from 
 \begin{equation*}
-	(T_k,M_k)\mid T_{-k},M_{-k}, \sigma^2_{k}, U_1, U_2, X
+	(T_k,M_k)\mid \alert{T_{-k}},\alert{M_{-k}}, \sigma^2_{k}, U_1, U_2, X
 \end{equation*}
 Let $R_{ik} = \sum_{t\not=k}g(x_i, T_t, M_t)$ and $R_{\cdot k}\coloneqq(R_{1k},R_{2k},\cdots,R_{nk})$ such that
 \begin{align}\label{eq:post:res}
 	\begin{split}
-		&\pi(T_k,M_k \mid R_{\cdot k}, \sigma^2_{k}, U_1,U_2, X) \\
-        &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
+		&\pi(T_k,M_k \mid \alert{R_{\cdot k}}, \sigma^2_{k}, U_1,U_2, X) \\
+        &\propto \pi(T_k)\prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(\alert{R_{ik}}+g(x_i, T_k, M_k)\right)\right)\prod_{j=1}^{n_L(T_k)}\pi(\mu_j\mid T_k)
 	\end{split}
 \end{align}
 \end{frame}
+\fi
 
-\begin{frame}[allowframebreaks]{RJ-MCMC Algorithm}
+\begin{frame}[shrink=10]{RJ-MCMC Algorithm}
 
         We consider a proposal function to generate a new pair $\left(T_k^\ast, M_k^\ast\right)$ at the $(\eta+1)$-th iteration given by:
 \begin{align}\label{eq:prop}
@@ -326,15 +329,239 @@ Here, $q\left( T_k^\ast\mid T_k^{\eta}\right)$ denotes the tree proposals given 
 	\item \textsc{change}: Randomly choose an internal node and assign a new splitting rule
 	\item \textsc{swap}: Randomly choose a parent-child pair of internal node and swap their splitting rules
 \end{itemize}
-\newpage
-For terminal node values, we use $q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ given by:
+\end{frame}
+    
+\begin{frame}{BART Move: \textsc{grow}}
+    \centering
+    \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+    	
+    	%----------------------------------
+    	% Top tree
+    	%----------------------------------
+    	\node[yshift=2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=40mm},
+    			level 2/.style={level distance=6mm, sibling distance=20mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_1 < c_1$}
+    			child { node[internal] {$x_2 < c_2$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[term] {$\mu$} };
+    		\end{tikzpicture}
+    	};
+    	
+    	%----------------------------------
+    	% Arrow
+    	%----------------------------------
+    	\node at (0,0) {\Large$\Downarrow$};
+    	
+    	%----------------------------------
+    	% Bottom tree
+    	%----------------------------------
+    	\node[yshift=-2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=40mm},
+    			level 2/.style={level distance=6mm, sibling distance=20mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_1 < c_1$}
+    			child { node[internal] {$x_2 < c_2$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[internal] {$x_3 < c_3$}
+    				child { node[term] {$\mu_L$} }
+    				child { node[term] {$\mu_R$} }
+    			};
+    		\end{tikzpicture}
+    	};
+    	
+    \end{tikzpicture}
+    
+    
+    \end{frame}
+    
+    
+    \begin{frame}{BART Move: \textsc{prune}}
+    \centering
+    \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+    	
+    	%----------------------------------
+    	% Top tree (full tree)
+    	%----------------------------------
+    	\node[yshift=2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=40mm},
+    			level 2/.style={level distance=6mm, sibling distance=20mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_1 < c_1$}
+    			child { node[internal] {$x_2 < c_2$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[internal] {$x_3 < c_3$}
+    				child { node[term] {$\mu_L$} }
+    				child { node[term] {$\mu_R$} }
+    			};
+    		\end{tikzpicture}
+    	};
+    	
+    	%----------------------------------
+    	% Arrow
+    	%----------------------------------
+    	\node at (0,0) {\Large$\Downarrow$};
+    	
+    	%----------------------------------
+    	% Bottom tree (pruned tree)
+    	%----------------------------------
+    	\node[yshift=-2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=40mm},
+    			level 2/.style={level distance=6mm, sibling distance=20mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_1 < c_1$}
+    			child { node[internal] {$x_2 < c_2$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[term] {$\mu$} };
+    		\end{tikzpicture}
+    	};
+    	
+    \end{tikzpicture}
+    
+    \end{frame}
+    
+    
+    \begin{frame}{BART Move: \textsc{change}}
+    \centering
+    \centering
+    \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+    	
+    	%----------------------------------
+    	% Top tree (old threshold)
+    	%----------------------------------
+    	\node[yshift=1.6cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=22mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=11mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_3 < 0.5$}
+    			child { node[term] {$\mu_L$} }
+    			child { node[term] {$\mu_R$} };
+    		\end{tikzpicture}
+    	};
+    	
+    	%----------------------------------
+    	% Arrow
+    	%----------------------------------
+    	\node at (0,0) {\Large$\Downarrow$};
+    	
+    	%----------------------------------
+    	% Bottom tree (new threshold)
+    	%----------------------------------
+    	\node[yshift=-1.6cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=22mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=11mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_3 < 0.8$}
+    			child { node[term] {$\mu_L$} }
+    			child { node[term] {$\mu_R$} };
+    		\end{tikzpicture}
+    	};
+    	
+    \end{tikzpicture}
+    
+    \end{frame}
+    
+    
+    \begin{frame}{BART Move: \textsc{swap}}
+    \centering
+    \begin{tikzpicture}[every node/.style={font=\scriptsize}]
+    	
+    	%----------------------------------
+    	% Top tree (original)
+    	%----------------------------------
+    	\node[yshift=2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=28mm},
+    			level 2/.style={level distance=6mm, sibling distance=16mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_1 < c_1$}
+    			child { node[internal] {$x_2 < c_2$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[term] {$\mu_3$} };
+    		\end{tikzpicture}
+    	};
+    	
+    	%----------------------------------
+    	% Arrow
+    	%----------------------------------
+    	\node at (0,0) {\Large$\Downarrow$};
+    	
+    	%----------------------------------
+    	% Bottom tree (swapped)
+    	%----------------------------------
+    	\node[yshift=-2.0cm] {
+    		\begin{tikzpicture}[
+    			level 1/.style={level distance=6mm, sibling distance=28mm},
+    			level 2/.style={level distance=6mm, sibling distance=16mm},
+    			treenode/.style={rectangle, draw=black, rounded corners,
+    				minimum width=12mm, minimum height=5mm, align=center},
+    			internal/.style={treenode, fill=blue!10},
+    			term/.style={treenode, fill=gray!10}]
+    			
+    			\node[internal] {$x_2 < c_2$}
+    			child { node[internal] {$x_1 < c_1$}
+    				child { node[term] {$\mu_1$} }
+    				child { node[term] {$\mu_2$} }
+    			}
+    			child { node[term] {$\mu_3$} };
+    		\end{tikzpicture}
+    	};
+    	
+    \end{tikzpicture}
+    
+    \end{frame}
+
+\begin{frame}[shrink=10]{RJ-MCMC Algorithm (cont.)}
+    For terminal node values, we use $q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ given by:
 \begin{itemize}
 	\item For \textsc{grow} we consider the $j$-th leaf to be grown to $j_L$ and$j_R$ so,
 	$q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ = $\pi_{prop}(\mu_{j_L})\times\pi_{prop}(\mu_{j_R})$
 	\item For \textsc{prune} we consider the $j_L$th and $j_R$th leaves to be pruned then $q\left(M_k^\ast\mid T_k^\ast, T_k^{\eta}, M_k^{\eta}\right)$ = $\pi_{prop}(\mu_j)$
 \end{itemize}
-where $\pi_{prop}$ denotes the proposal density function.
-\newpage
+
 We define the acceptance probability in the following way:
 \begin{align*}
     &\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)\\
@@ -345,177 +572,11 @@ where
 \begin{equation*}
 	\mathcal{L}(U_1,U_2\mid T_k, M_{k})\coloneqq \prod_{i=1}^{n}c\left(u_{1i},u_{2i}\mid h\left(R_{ik}+g(x_i, T_k, M_k)\right)\right).
 \end{equation*}
-    \end{frame}
-    \begin{frame}{BART Move: \textsc{grow}}
-    \centering
 
-    \begin{tikzpicture}[
-    level 1/.style={level distance=8mm, sibling distance=40mm},
-    level 2/.style={level distance=8mm, sibling distance=20mm},
-    every node/.style={font=\footnotesize},
-    treenode/.style={rectangle, draw=black, rounded corners, minimum width=14mm, minimum height=6mm, align=center},
-    internal/.style={treenode, fill=blue!10},
-    term/.style={treenode, fill=gray!10}
-    ]
-    
-    
-    % Root
-    \node[internal] (root) {$x_1 < c_1$}
-    child { node[internal] (n1) {$x_2 < c_2$}
-    child { node[term] (l1) {$\mu_1$} }
-    child { node[term] (l2) {$\mu_2$} }
-    }
-    child { node[term] (l3) {$\mu$}
-    };
-    
-    
-    \end{tikzpicture}
-
-    \vspace{5mm}
-    Grown version
-    \vspace{5mm}
-
-    
-    \begin{tikzpicture}[
-    level 1/.style={level distance=8mm, sibling distance=40mm},
-    level 2/.style={level distance=8mm, sibling distance=20mm},
-    every node/.style={font=\footnotesize},
-    treenode/.style={rectangle, draw=black, rounded corners, minimum width=14mm, minimum height=6mm, align=center},
-    internal/.style={treenode, fill=blue!10},
-    term/.style={treenode, fill=gray!10}
-    ]
-    
-    
-    % Root
-    \node[internal] (root) {$x_1 < c_1$}
-    child { node[internal] (n1) {$x_2 < c_2$}
-    child { node[term] (l1) {$\mu_1$} }
-    child { node[term] (l2) {$\mu_2$} }
-    }
-    child { node[internal] (n2) {$x_3 < c_3$}
-    child { node[term] (l3) {$\mu_L$} }
-    child { node[term] (l4) {$\mu_R$} }
-    };
-    
-    
-    \end{tikzpicture}
-    \end{frame}
-    
-    
-    \begin{frame}{BART Move: \textsc{prune}}
-    \centering
-    \begin{tikzpicture}[
-    level 1/.style={level distance=8mm, sibling distance=40mm},
-    level 2/.style={level distance=8mm, sibling distance=20mm},
-    every node/.style={font=\footnotesize},
-    treenode/.style={rectangle, draw=black, rounded corners, minimum width=14mm, minimum height=6mm, align=center},
-    internal/.style={treenode, fill=blue!10},
-    term/.style={treenode, fill=gray!10}
-    ]
-    
-    
-    % Root
-    \node[internal] (root) {$x_1 < c_1$}
-    child { node[internal] (n1) {$x_2 < c_2$}
-    child { node[term] (l1) {$\mu_1$} }
-    child { node[term] (l2) {$\mu_2$} }
-    }
-    child { node[internal] (n2) {$x_3 < c_3$}
-    child { node[term] (l3) {$\mu_L$} }
-    child { node[term] (l4) {$\mu_R$} }
-    };
-    
-    
-    \end{tikzpicture}
-
-    \vspace{5mm}
-    Pruned version:
-    \vspace{5mm}
-    
-
-    \begin{tikzpicture}[
-    level 1/.style={level distance=8mm, sibling distance=40mm},
-    level 2/.style={level distance=8mm, sibling distance=20mm},
-    every node/.style={font=\footnotesize},
-    treenode/.style={rectangle, draw=black, rounded corners, minimum width=14mm, minimum height=6mm, align=center},
-    internal/.style={treenode, fill=blue!10},
-    term/.style={treenode, fill=gray!10}
-    ]
-    
-    
-    % Root
-    \node[internal] (root) {$x_1 < c_1$}
-    child { node[internal] (n1) {$x_2 < c_2$}
-    child { node[term] (l1) {$\mu_1$} }
-    child { node[term] (l2) {$\mu_2$} }
-    }
-    child { node[term] (l3) {$\mu$}
-    };
-    
-    
-    \end{tikzpicture}
-    
-    \end{frame}
-    
-    
-    \begin{frame}{BART Move: \textsc{swap}}
-    \centering
-    \begin{tikzpicture}[scale=0.8, every node/.style={scale=0.8}]
-    \node[internal] (sP) {$x_1 < c_1$};
-    \node[internal, below left=5mm and 8mm of sP] (sC) {$x_2 < c_2$};
-    \node[term, below right=5mm and 8mm of sP] (sR) {$\mu_3$};
-    \node[term, below left=5mm and 6mm of sC] (sCL) {$\mu_1$};
-    \node[term, below right=5mm and 6mm of sC] (sCR) {$\mu_2$};
-    \draw[edge] (sP.south west) -- (sC.north);
-    \draw[edge] (sP.south east) -- (sR.north);
-    \draw[edge] (sC.south west) -- (sCL.north);
-    \draw[edge] (sC.south east) -- (sCR.north);
-    \end{tikzpicture}
-    
-    
-    \vspace{5mm}
-    Swapped version:
-    
-    
-    \begin{tikzpicture}[scale=0.8, every node/.style={scale=0.8}]
-    \node[internal] (sP2) {$x_2 < c_2$};
-    \node[internal, below left=5mm and 8mm of sP2] (sC2) {$x_1 < c_1$};
-    \node[term, below right=5mm and 8mm of sP2] (sR2) {$\mu_3$};
-    \node[term, below left=5mm and 6mm of sC2] (sCL2) {$\mu_1$};
-    \node[term, below right=5mm and 6mm of sC2] (sCR2) {$\mu_2$};
-    \draw[edge] (sP2.south west) -- (sC2.north);
-    \draw[edge] (sP2.south east) -- (sR2.north);
-    \draw[edge] (sC2.south west) -- (sCL2.north);
-    \draw[edge] (sC2.south east) -- (sCR2.north);
-    \end{tikzpicture}
-    \end{frame}
-    
-    
-    \begin{frame}{BART Move: \textsc{change}}
-    \centering
-    \begin{tikzpicture}[scale=0.8, every node/.style={scale=0.8}]
-    \node[internal] (c1) {$x_3 < 0.5$};
-    \node[term, below left=5mm and 8mm of c1] (cL) {$\mu_L$};
-    \node[term, below right=5mm and 8mm of c1] (cR) {$\mu_R$};
-    \draw[edge] (c1.south west) -- (cL.north);
-    \draw[edge] (c1.south east) -- (cR.north);
-    \end{tikzpicture}
-    
-    
-    \vspace{4mm}
-    After change:
-    
-    
-    \begin{tikzpicture}[scale=0.8, every node/.style={scale=0.8}]
-    \node[internal] (c2) {$x_3 < 0.8$};
-    \node[term, below left=5mm and 8mm of c2] (c2L) {$\mu_L$};
-    \node[term, below right=5mm and 8mm of c2] (c2R) {$\mu_R$};
-    \draw[edge] (c2.south west) -- (c2L.north);
-    \draw[edge] (c2.south east) -- (c2R.north);
-    \end{tikzpicture}
-    \end{frame}
+\end{frame}
 
     \begin{frame}{Adaptive Proposal}
+    \centering
         {\begin{algorithm}[H]
         \tiny
 	\caption{Computation of adaptive proposal}\label{alg:ada:prop}
@@ -523,15 +584,9 @@ where
 		\State Perform $\eta_0$ iterations with a fixed variance.
 		
 		\For{$k =1, \cdots, m$}
-		\State Collect MCMC samples for initial $\eta_0$ iterations of the $k$-th tree:
-		\begin{equation*}
-			V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0.
-		\end{equation*}
+		\State Collect MCMC samples for initial $\eta_0$ iterations of the $k$-th tree: $V_{ik}^{\eta} = g\left(x_i,T_k^{\eta},M_k^{\eta}\right)\quad 1\le i \le n; 1\le \eta \le \eta_0$.
 		
-		\State Calculate sample covariance matrix :
-		\begin{equation*}
-			C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0.
-		\end{equation*}
+		\State Calculate sample covariance matrix : $C_k^{\eta} \coloneqq Cov\left(V_{\cdot k}^{1},V_{\cdot k}^{2},\cdots,V_{\cdot k}^{\eta-1}\right) + \epsilon\mathbf{I}_n \quad \text{for } \epsilon>0; \eta>\eta_0$.
 		
 		\State Calculate the proposal variance of the $j$-th terminal node value:
 		\begin{equation*}
@@ -551,7 +606,8 @@ where
     \end{frame}
     
 
-    \begin{frame}{RJ-MCMC algorithm}
+    \begin{frame}{Complete MCMC algorithm}
+    \centering
 {        \begin{algorithm}[H]
 \tiny
 	\caption{One iteration of RJ-MCMC for copula BART}\label{alg:MCMC}
@@ -562,8 +618,6 @@ where
 		\State Set $R_{ik} \leftarrow \sum_{t\not=k}g(x_i, T_t^{\eta},M_t^{\eta})$ for $i = 1, \ldots, n$.
 		
 		\State Sample $(T_k^\ast, M_k^\ast)$ using $q\left(T_k^\ast, M_k^\ast \mid T_k^{\eta},M_k^{\eta}\right)$ in \cref{eq:prop} by randomly choosing between the \textsc{grow}, \textsc{prune}, \textsc{change} and \textsc{swap}.
-		
-		\State Compute the acceptance probability using $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ in \cref{eq:acc:prob}.
 		
 		\State Set $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^\ast, M_k^\ast\right)$ with probability $\alpha\left(T_k^{\eta},M_k^{\eta};T_k^\ast, M_k^\ast\right)$ or $\left(T_k^{\eta+1}, M_k^{\eta+1}\right)=\left(T_k^{\eta},M_k^{\eta}\right)$.
 		
@@ -580,6 +634,63 @@ where
 \end{algorithm}
 }
     \end{frame}
+
+\section{Theoretical Justification}
+
+\begin{frame}{Convergence of the Adaptive RJ-MCMC Algorithm}
+
+Consider a single tree (tree index $k$ dropped for notational convenience)
+\begin{itemize}
+    \item State space:
+    \[
+        \mathcal{S} = \mathcal{T} \times \mathcal{M}
+    \]
+    \item State at iteration $\eta$:
+    \[
+        S^{\eta} = (T^{\eta}, M^{\eta})
+    \]
+    \item $\Gamma^{\eta} \in \mathcal{Y}$ denotes the random variable associated with the adaption at $\eta$
+    
+    \item Family of transition kernels:
+    \[
+        P(S^{\eta+1} \in A \mid S^{\eta}=s, \Gamma^{\eta}=\gamma)
+        = \mathcal{K}_{\gamma}(s;A)
+    \]
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Assumptions and Ergodicity Result}
+\textbf{Regularity Assumptions}
+\begin{itemize}
+    \item Bounded copula density on $[\delta,1-\delta]^2$ for some $\delta>0$
+    \item Bounded prior densities for terminal node parameters
+    \item Uniformly bounded proposal densities
+    \item Tree structure constraints:
+    \begin{itemize}
+        \item Number of terminal nodes $n_L(T) \le n$
+        \item Any tree with $n_L(T) \ge 2$ has at least one prunable internal node
+    \end{itemize}
+\end{itemize}
+
+\pause
+\vspace{0.3cm}
+\textbf{Ergodicity Theorem}
+\begin{itemize}
+    \item \textbf{Diminishing adaptation}:
+    \[
+        \left\|\mathcal{K}_{\Gamma^{\eta+1}} - \mathcal{K}_{\Gamma^{\eta}}\right\|_{TV}
+        \xrightarrow{P} 0
+    \]
+    \item \textbf{Containment}: for all $\iota > 0$, there exists $N \in \mathbb{N}$ such that
+    \[
+        \left\|\mathcal{K}^N_{\gamma}(s;\cdot) - \pi(\cdot \mid u_1,u_2)\right\|_{TV}
+        \le \iota
+    \]
+\end{itemize}
+
+
+\end{frame}
+
 
     \section{Simulation Studies}
 
@@ -647,18 +758,18 @@ where $\mathbb{I}(.)$ is the indicator function.
 		\midrule
 		Gaussian & 3.149 & 0.110 & 2.059 & 0.095 & 0.161 & 0.011 \\ 
 		Student-t & 3.109 & 0.114 & 2.016 & 0.093 & 0.161 & 0.010 \\ 
-		Clayton & 3.177 & 0.065 & 2.046 & 0.055 & 0.179 & 0.007 \\ 
-		Gumbel & 3.143 & 0.044 & 2.033 & 0.036 & 0.171 & 0.010 \\ 
+		Clayton & \textbf{3.177} & 0.065 & \textbf{2.046} & 0.055 & 0.179 & 0.007 \\ 
+		Gumbel & \textbf{3.143} & 0.044 & \textbf{2.033} & 0.036 & 0.171 & 0.010 \\ 
 		Frank & 3.308 & 0.167 & 2.190 & 0.142 & 0.174 & 0.011 \\
 		\midrule
 		\multicolumn{1}{c|}{} &
 		\multicolumn{6}{c}{A-C-BART} \\
 		\midrule
-		Gaussian & 3.141 & 0.107 & 2.049 & 0.093 & 0.161 & 0.011 \\ 
-		Student-t & 3.084 & 0.150 & 1.995 & 0.134 & 0.160 & 0.011 \\ 
+		Gaussian & \textbf{3.141} & 0.107 & \textbf{2.049} & 0.093 & 0.161 & 0.011 \\ 
+		Student-t & \textbf{3.084} & 0.150 & \textbf{1.995} & 0.134 & 0.160 & 0.011 \\ 
 		Clayton & 3.199 & 0.093 & 2.065 & 0.079 & 0.179 & 0.008 \\ 
 		Gumbel & 3.146 & 0.045 & 2.035 & 0.034 & 0.170 & 0.010 \\ 
-		Frank & 3.251 & 0.174 & 2.141 & 0.150 & 0.172 & 0.010 \\
+		Frank & \textbf{3.251} & 0.174 & \textbf{2.141} & 0.150 & 0.172 & 0.010 \\
 	\end{tabular}
 	\caption{Efficiency of our proposed method for simulated dataset using a tree based conditional Kendall's tau. }
 	\label{tab:eff:ex1}
@@ -674,11 +785,11 @@ where $\mathbb{I}(.)$ is the indicator function.
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.075 & 0.218 & 0.932 & 0.076 & 0.219 & 0.921 \\ 
-		Student-t & 0.093 & 0.277 & 0.930 & 0.098 & 0.274 & 0.908 \\ 
-		Clayton & 0.067 & 0.192 & 0.925 & 0.067 & 0.192 & 0.923 \\ 
-		Gumbel & 0.069 & 0.217 & 0.959 & 0.070 & 0.216 & 0.936 \\ 
-		Frank & 0.083 & 0.251 & 0.930 & 0.083 & 0.254 & 0.925 
+		Gaussian & \textbf{0.075} & 0.218 & \textbf{0.932} & 0.076 & 0.219 & 0.921 \\ 
+		Student-t & \textbf{0.093} & 0.277 & \textbf{0.930} & 0.098 & 0.274 & 0.908 \\ 
+		Clayton & 0.067 & 0.192 & \textbf{0.925} & 0.067 & 0.192 & 0.923 \\ 
+		Gumbel & \textbf{0.069} & 0.217 & \textbf{0.959} & 0.070 & 0.216 & 0.936 \\ 
+		Frank & 0.083 & 0.251 & \textbf{0.930} & 0.083 & 0.254 & 0.925 
 	\end{tabular}
 	\caption{Prediction accuracy of our proposed method for simulated dataset using a tree based conditional Kendall's tau.}
 	\label{tab:pred:ex1}
@@ -698,16 +809,58 @@ where $\mathbb{I}(.)$ is the indicator function.
 		\midrule
 		& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
 		\midrule
-		Gaussian & 0.074 & 0.318 & 0.961 & 0.070 & 0.321 & 0.968 \\ 
-		Student-t & 0.082 & 0.377 & 0.978 & 0.082 & 0.381 & 0.981 \\ 
-		Clayton & 0.073 & 0.304 & 0.960 & 0.070 & 0.306 & 0.966 \\ 
-		Gumbel & 0.079 & 0.329 & 0.952 & 0.077 & 0.333 & 0.957 \\ 
-		Frank & 0.070 & 0.278 & 0.926 & 0.068 & 0.284 & 0.940 \\  
+		Gaussian & 0.074 & 0.318 & 0.961 & \textbf{0.070} & 0.321 & \textbf{0.968} \\ 
+		Student-t & 0.082 & 0.377 & 0.978 & 0.082 & 0.381 & \textbf{0.981} \\ 
+		Clayton & 0.073 & 0.304 & 0.960 & \textbf{0.070} & 0.306 & \textbf{0.966} \\ 
+		Gumbel & 0.079 & 0.329 & 0.952 & \textbf{0.077} & 0.333 & \textbf{0.957} \\ 
+		Frank & 0.070 & 0.278 & 0.926 & \textbf{0.068} & 0.284 & \textbf{0.940} \\  
 	\end{tabular}
-	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau (\cref{eq:sin:tau}). }
+	\caption{Prediction accuracy of our proposed method for simulated dataset using a non-linear conditional Kendall's tau. }
 	\label{tab:pred:ex2}
 \end{table}
 
+    \end{frame}
+
+    \begin{frame}[allowframebreaks]{Subp-optimal proposal variance}
+        \begin{figure}[H]
+		\centering
+		\includegraphics[width = 0.75\linewidth]{"frank_longer_sim.pdf"}
+		\caption{\tiny Trace plots of the log-likelihood; number of terminal nodes; and depth for Frank copula datasets with proposal variance fixed at $0.2$.}
+		\label{fig:trace:frank}
+	\end{figure}
+    
+    
+	\tiny{
+    \begin{table}[H]
+		\centering
+		\begin{tabular}{l|cccccc}
+			& Mean ($\hat{n}_L$) & SD ($\hat{n}_L$) & Mean ($\hat{D}$) & SD ($\hat{D}$) & Mean Acc. & SD Acc. \\ 
+			\midrule
+			Frank (C-BART) & 2.242 & 0.277 & 1.232 & 0.265 & 0.111 & 0.029 \\
+			Frank (A-C-BART) & 2.592 & 0.343 & 1.569 & 0.329 & 0.117 & 0.024 \\
+		\end{tabular}
+		\caption{Performance of our proposed method for Frank copula datasets  with proposal variance fixed at $0.2$}
+		\label{tab:eff:ex1:frank}
+	\end{table}
+    }
+	
+	\tiny{
+    \begin{table}[H]
+		\centering
+		\begin{tabular}{l|ccc|ccc}
+			\multicolumn{1}{c|}{} &
+			\multicolumn{3}{c|}{C-BART} &
+			\multicolumn{3}{c}{A-C-BART} \\
+			\midrule
+			& RMSE & CI-length & CI-cov & RMSE & CI-length & CI-cov \\ 
+			\midrule
+			Frank & 0.194 & 0.224 & 0.432 & 0.153 & 0.244 & 0.688 
+		\end{tabular}
+		\caption{Prediction accuracy of our proposed method for Frank copula datasets  with proposal variance fixed at $0.2$}
+		\label{tab:pred:ex1:frank}
+	\end{table}
+    }
+	    
     \end{frame}
 
     \section{CIA World Fact Data}
@@ -717,7 +870,7 @@ where $\mathbb{I}(.)$ is the indicator function.
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"cia_LE_plots.pdf"}
-	\caption{Scatterplot of male life expectancy(left) and female life expectancy against log-GDP (middle); and pseudo observations(right).}
+	\caption{\tiny Scatterplot of male life expectancy(left) and female life expectancy against log-GDP (middle); and pseudo observations(right).}
 	\label{fig:data:dist:LE}
 \end{figure}
 
@@ -730,14 +883,14 @@ where $\mathbb{I}(.)$ is the indicator function.
 \begin{figure}
 	\centering
 	\includegraphics[width = 0.95\linewidth]{"LE_vs_GDP_taus.pdf"}
-	\caption{Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 30000 iterations. For posterior inference, we discard the first 5000 samples.}
+	\caption{\tiny Estimated dependence between male life expectancy and female life expectancy conditional on scaled log-GDP. For modelling, we use 5 trees and run 4 parallel chains involving 50000 iterations. For posterior inference, we discard the first 5000 samples.}
 	\label{fig:taus:LE}
 \end{figure}
 
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.85\linewidth]{"LE_vs_GDP_likelihood.pdf"}
-	\caption{\tiny Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 30000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
+	\includegraphics[width = 0.8\linewidth]{"LE_vs_GDP_likelihood.pdf"}
+	\caption{\tiny Trace plots of log-likelihood obtained from our analyses with life expectancy of male and female population. The plots are obtained by running 4 parallel chains each one with 50000 MCMC iterations and 5 trees. The left columns shows analyses with C-BART and the right column shows analyses with A-C-BART.}
 	\label{fig:trace:like:real:LE}
 \end{figure}
 
@@ -755,48 +908,68 @@ where $\mathbb{I}(.)$ is the indicator function.
 	\label{fig:pseudo:LE:wa}
 \end{figure}
 
-\begin{table}[ht]
-\tiny
-	\centering
-	\begin{tabular}{l|ccc|ccc}
-		\multicolumn{1}{c|}{} &
-		\multicolumn{3}{c|}{Cramer test} &
-		\multicolumn{3}{c}{FF test} \\
-		\midrule
-		  & mean & median & sd & mean & median & sd \\ 
-		\midrule
-		\multicolumn{7}{c}{5 trees} \\
-		\midrule
-		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.53 & 0.53 & 0.05 \\ 
-		Student-t (C-BART) & 0.82 & 0.82 & 0.04 & 0.64 & 0.64 & 0.05 \\ 
-		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.75 & 0.76 & 0.04 \\ 
-		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.99 & 0.99 & 0.01 \\ 
-		\midrule
-		\multicolumn{7}{c}{10 trees} \\
-		\midrule
-		Gaussian (C-BART) & 0.64 & 0.63 & 0.05 & 0.56 & 0.56 & 0.05 \\ 
-		Student-t (C-BART) & 0.83 & 0.82 & 0.04 & 0.74 & 0.74 & 0.04 \\ 
-		Gaussian (A-C-BART) & 0.85 & 0.85 & 0.03 & 0.74 & 0.74 & 0.05 \\ 
-		Student-t (A-C-BART) & 0.96 & 0.96 & 0.02 & 0.98 & 0.99 & 0.01 \\ 
-	\end{tabular}
-	\caption{Goodness of fit test of our proposed method for life expectancy conditional on log-GDP. We split our results in two general columns: left of which is for Cramer test and the right one is for Fasano-Franceschini test (FF test). }
-	\label{tab:LE:p-val}
-    \end{table}
-
+	\tiny{\begin{table}[h]
+		\centering
+		\begin{tabular}{l|l|ccc|ccc}
+			\multicolumn{2}{c|}{} &
+			\multicolumn{3}{c|}{Cramer test} &
+			\multicolumn{3}{c}{FF test} \\
+			\hline
+			& & mean & median & sd & mean & median & sd \\ 
+			\hline
+			5 trees & Gaussian (C-BART) & 0.690 & 0.773 & 0.276 & 0.721 & 0.853 & 0.276 \\ 
+			& Student-t (C-BART) & 0.694 & 0.777 & 0.272 & 0.735 & 0.853 & 0.270 \\ 
+			& Gaussian (A-C-BART) & 0.689 & 0.774 & 0.276 & 0.721 & 0.844 & 0.278 \\ 
+			& Student-t (A-C-BART) & 0.694 & 0.775 & 0.272 & 0.735 & 0.859 & 0.270 \\ 
+			\hline
+			10 trees & Gaussian (C-BART) & 0.689 & 0.774 & 0.276 & 0.710 & 0.828 & 0.283 \\ 
+			& Student-t (C-BART) & 0.694 & 0.791 & 0.271 & 0.742 & 0.858 & 0.267 \\ 
+			& Gaussian (A-C-BART) & 0.688 & 0.775 & 0.276 & 0.715 & 0.815 & 0.276 \\ 
+			& Student-t (A-C-BART) & 0.694 & 0.793 & 0.271 & 0.739 & 0.849 & 0.270 \\ 
+		\end{tabular}
+		\caption{Goodness of fit tests of our proposed method for life expectancy conditional on log-GDP.}
+		\label{tab:LE:p-val}
+	\end{table}
+	}
     \end{frame}
 
     \section{Conclusion}
 
-    \begin{frame}{Ongoing}
-        \begin{itemize}
-            \item Ergodicity of the RJ-MCMC algorithm
-            \item Better way to select the number of trees (automatic model selection)
-        \end{itemize}
-    \end{frame}
+\begin{frame}{Conclusion}
+\begin{itemize}
+    \item Proposed a \textbf{Bayesian semi-parametric framework} for conditional copula modelling using \textbf{loss-based BART}
+    
+    \item Introduced an \textbf{adaptive RJ-MCMC algorithm} for efficient posterior inference that is \textbf{ergodic} under mild regularity conditions
+    
+    \item Simulation studies show:
+    \begin{itemize}
+        \item Accurate recovery of conditional dependence structures
+        \item Improved mixing and stability with adaptive proposals
+    \end{itemize}
+    
+    \item Real data application demonstrates:
+    \begin{itemize}
+        \item Flexible, data-driven dependence modelling
+        \item Strong empirical fit and interpretable conditional effects
+    \end{itemize}
+
+    \pause
+    \item \alert{We need to find an efficient way to select the number of trees!}
+\end{itemize}
+
+\end{frame}
+
 
     \begin{frame}{}
         \centering
         \Huge{Thank you!}
+
+        
+        \includegraphics[width = 0.2\linewidth]{Untitled.png}
+    \end{frame}
+    
+    \begin{frame}
+    	\printbibliography
     \end{frame}
 
 \end{document}
