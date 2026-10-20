@@ -24,9 +24,12 @@ cia_wf_data_LE <- na.omit(cia_wf_data_LE)
 U1_LE = pobs(cia_wf_data_LE$Life_expectancy_F)
 U2_LE = pobs(cia_wf_data_LE$Life_expectancy_M)
 
-plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_M)
-plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_F)
+par(mfrow = c(1,2), mar = c(4,4,2,2))
+plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_M, xlab = "log-GDP", ylab = "Life Exp M")
+plot(log10(cia_wf_data_LE$GDP_PC),cia_wf_data_LE$Life_expectancy_F, xlab = "log-GDP", ylab = "Life Exp F")
 
+hist(cia_wf_data_LE$Life_expectancy_M, xlab = "Life Exp M", main = "")
+hist(cia_wf_data_LE$Life_expectancy_F, xlab = "Life Exp F", main = "")
 plot(U1_LE,U2_LE)
 plot(cia_wf_data_LE$Life_expectancy_F,cia_wf_data_LE$Life_expectancy_M)
 
